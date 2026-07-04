@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --color-brand: #f97316;      /* naranja balonmano */
+  --color-brand-dark: #ea580c;
+}
+
+html {
+  height: 100%;
+  /* Evita rebote/zoom raro en móvil e integra safe-area del notch */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  /* Padding para la barra de estado / safe areas en PWA standalone */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Ocultar scrollbars horizontales de tabs/nav en móvil */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

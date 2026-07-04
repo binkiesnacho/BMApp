@@ -1,0 +1,35 @@
+name: CI - Quality Checks
+
+# Opción A: Vercel gestiona los despliegues (integración Git nativa).
+# Este workflow solo valida calidad en cada push y PR a main.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type Check
+        run: npx tsc --noEmit
+
+      - name: Build (verificación)
+        run: npm run build

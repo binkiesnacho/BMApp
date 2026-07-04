@@ -1,0 +1,95 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import {
+  createClubAction,
+  joinClubAction,
+  type OnboardingState,
+} from "./actions";
+
+const initialState: OnboardingState = {};
+type Mode = "create" | "join";
+
+export default function ClubForm({ canCreate = false }: { canCreate?: boolean }) {
+  // Quien no puede crear clubs (no super-admin) solo ve la opción de unirse.
+  const [mode, setMode] = useState<Mode>(canCreate ? "create" : "join");
+  const [createState, createAction, creating] = useActionState(
+    createClubAction,
+    initialState
+  );
+  const [joinState, joinAction, joining] = useActionState(
+    joinClubAction,
+    initialState
+  );
+
+  return (
+    <div className="w-full max-w-xs space-y-4">
+      {canCreate && (
+        <div className="flex rounded-xl border border-slate-800 p-1 text-sm">
+          <button
+            onClick={() => setMode("create")}
+            className={`flex-1 rounded-lg py-2 ${
+              mode === "create" ? "bg-brand text-white" : "text-slate-400"
+            }`}
+          >
+            Crear club
+          </button>
+          <button
+            onClick={() => setMode("join")}
+            className={`flex-1 rounded-lg py-2 ${
+              mode === "join" ? "bg-brand text-white" : "text-slate-400"
+            }`}
+          >
+            Unirme con código
+          </button>
+        </div>
+      )}
+
+      {canCreate && mode === "create" ? (
+        <form action={createAction} className="space-y-3">
+          <input
+            name="clubName"
+            type="text"
+            required
+            placeholder="Nombre del club (ej. CB Villanueva)"
+            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
+          />
+          {createState.error && (
+            <p className="text-sm text-red-400">{createState.error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={creating}
+            className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-50"
+          >
+            {creating ? "Creando…" : "Crear club (seré admin)"}
+          </button>
+        </form>
+      ) : (
+        <form action={joinAction} className="space-y-3">
+          <input
+            name="code"
+            type="text"
+            required
+            autoCapitalize="characters"
+            placeholder="Código del club (ej. A1B2C3)"
+            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 uppercase tracking-widest text-slate-100 outline-none focus:border-brand"
+          />
+          {joinState.error && (
+            <p className="text-sm text-red-400">{joinState.error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={joining}
+            className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-50"
+          >
+            {joining ? "Uniéndome…" : "Unirme como entrenador"}
+          </button>
+          <p className="text-center text-xs text-slate-500">
+            Pídele el código a tu administrador del club.
+          </p>
+        </form>
+      )}
+    </div>
+  );
+}
