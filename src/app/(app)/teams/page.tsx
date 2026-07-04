@@ -1,7 +1,7 @@
 import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile } from "@/lib/auth";
+import { canAdminister, getSessionProfile, isPlayer } from "@/lib/auth";
 import CreateTeamForm from "./CreateTeamForm";
 import type { Team } from "@/lib/types/database";
 
@@ -10,20 +10,31 @@ export const metadata = { title: "Equipos" };
 export default async function TeamsPage() {
   const { profile } = await getSessionProfile();
   const isAdmin = canAdminister(profile);
+  const player = isPlayer(profile);
 
   const supabase = await createClient();
-  // RLS: el admin ve los equipos de su club; el coach solo los suyos.
-  const { data: teams } = await supabase
+  // admin/superadmin → todos los del club; coach → los suyos; jugador → el suyo.
+  let query = supabase
     .from("teams")
     .select("*")
-    .order("created_at", { ascending: true })
-    .returns<Team[]>();
+    .order("created_at", { ascending: true });
+  let teams: Team[] = [];
+  if (player) {
+    if (profile?.team_id) {
+      const { data } = await query.eq("id", profile.team_id).returns<Team[]>();
+      teams = data ?? [];
+    }
+  } else {
+    if (!isAdmin && profile) query = query.eq("coach_id", profile.id);
+    const { data } = await query.returns<Team[]>();
+    teams = data ?? [];
+  }
 
   return (
     <>
       <AppHeader
-        title="Equipos"
-        subtitle={isAdmin ? "Gestión del club" : "Tus equipos asignados"}
+        title={player ? "Mi equipo" : "Equipos"}
+        subtitle={isAdmin ? "Gestión del club" : "Tus equipos"}
       />
 
       {isAdmin && (

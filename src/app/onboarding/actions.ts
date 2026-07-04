@@ -23,16 +23,23 @@ export async function createClubAction(
   redirect("/");
 }
 
-/** Se une a un club existente usando su código de invitación (como coach). */
+/** Se une a un club existente usando su código de invitación (coach o jugador). */
 export async function joinClubAction(
   _prev: OnboardingState,
   formData: FormData
 ): Promise<OnboardingState> {
   const code = String(formData.get("code") ?? "").trim();
+  const joinAs = String(formData.get("joinAs") ?? "coach");
   if (!code) return { error: "Escribe el código del club." };
+  if (joinAs !== "coach" && joinAs !== "player") {
+    return { error: "Rol no válido." };
+  }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("join_club_with_code", { code });
+  const { error } = await supabase.rpc("join_club_with_code", {
+    code,
+    join_as: joinAs,
+  });
 
   if (error) return { error: error.message };
 

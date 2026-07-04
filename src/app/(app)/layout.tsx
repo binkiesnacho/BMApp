@@ -15,8 +15,10 @@ export default async function AppLayout({
   if (!profile?.club_id) redirect("/onboarding");
 
   return (
-    <div className="mx-auto flex min-h-full max-w-md flex-col">
-      <main className="flex-1 px-4 pb-24 pt-2">{children}</main>
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col">
+      <main className="flex-1 px-4 pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
+        {children}
+      </main>
       <BottomNav />
     </div>
   );

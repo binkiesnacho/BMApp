@@ -1,35 +1,51 @@
 import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import SignOutButton from "@/components/auth/SignOutButton";
-import { canAdminister, getSessionProfile } from "@/lib/auth";
-
-const quickActions = [
-  { href: "/teams", title: "Mis equipos", desc: "Plantillas y jugadores", icon: "🛡️" },
-  { href: "/matches", title: "Partidos", desc: "Calendario y resultados", icon: "🤾" },
-  { href: "/matches/live", title: "Partido en vivo", desc: "Toma de estadísticas", icon: "⏱️" },
-  { href: "/stats", title: "Estadísticas", desc: "Análisis del equipo", icon: "📊" },
-];
+import { canAdminister, getSessionProfile, isPlayer } from "@/lib/auth";
 
 export default async function DashboardPage() {
   const { profile } = await getSessionProfile();
   const isAdmin = canAdminister(profile);
+  const player = isPlayer(profile);
+
   const roleLabel = profile?.is_superadmin
     ? "Administrador global"
     : isAdmin
       ? "Administrador"
-      : "Entrenador";
+      : player
+        ? "Jugador"
+        : "Entrenador";
 
-  const actions = isAdmin
-    ? [
-        {
-          href: "/admin",
-          title: "Administración",
-          desc: "Club, miembros y equipos",
-          icon: "⚙️",
-        },
-        ...quickActions,
-      ]
-    : quickActions;
+  const actions = [
+    ...(isAdmin
+      ? [
+          {
+            href: "/admin",
+            title: "Administración",
+            desc: "Club, miembros y equipos",
+            icon: "⚙️",
+          },
+        ]
+      : []),
+    {
+      href: "/teams",
+      title: player ? "Mi equipo" : "Equipos",
+      desc: "Plantillas y jugadores",
+      icon: "🛡️",
+    },
+    {
+      href: "/matches",
+      title: "Partidos",
+      desc: player ? "Resultados y eventos" : "Calendario y en vivo",
+      icon: "🤾",
+    },
+    {
+      href: "/stats",
+      title: "Estadísticas",
+      desc: "Acumulado por jugador",
+      icon: "📊",
+    },
+  ];
 
   return (
     <>

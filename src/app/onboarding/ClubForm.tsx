@@ -75,6 +75,17 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
             placeholder="Código del club (ej. A1B2C3)"
             className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 uppercase tracking-widest text-slate-100 outline-none focus:border-brand"
           />
+          <div>
+            <label className="mb-1 block text-xs text-slate-400">Te unes como</label>
+            <select
+              name="joinAs"
+              defaultValue="coach"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
+            >
+              <option value="coach">Entrenador (gestiona su equipo)</option>
+              <option value="player">Jugador (solo consulta)</option>
+            </select>
+          </div>
           {joinState.error && (
             <p className="text-sm text-red-400">{joinState.error}</p>
           )}

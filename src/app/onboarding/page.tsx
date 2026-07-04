@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
   const canCreate = profile?.is_superadmin ?? false;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8">
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 p-8">
       <div className="text-center">
         <div className="mb-2 text-4xl">🏟️</div>
         <h1 className="text-xl font-semibold text-slate-100">

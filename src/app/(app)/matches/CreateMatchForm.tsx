@@ -1,0 +1,88 @@
+"use client";
+
+import { useActionState, useEffect, useRef, useState } from "react";
+import { createMatchAction, type MatchFormState } from "./actions";
+import type { Team } from "@/lib/types/database";
+
+export default function CreateMatchForm({ teams }: { teams: Team[] }) {
+  const [open, setOpen] = useState(false);
+  const [state, formAction, pending] = useActionState<MatchFormState, FormData>(
+    createMatchAction,
+    {}
+  );
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!pending && !state.error && formRef.current) {
+      formRef.current.reset();
+      setOpen(false);
+    }
+  }, [pending, state]);
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full rounded-2xl border border-dashed border-slate-700 py-3 text-sm font-medium text-slate-300 hover:border-brand"
+      >
+        + Nuevo partido
+      </button>
+    );
+  }
+
+  return (
+    <form
+      ref={formRef}
+      action={formAction}
+      className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900 p-3"
+    >
+      <select
+        name="teamId"
+        required
+        defaultValue={teams.length === 1 ? teams[0].id : ""}
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+      >
+        <option value="">Equipo…</option>
+        {teams.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.name}
+          </option>
+        ))}
+      </select>
+      <input
+        name="opponent"
+        required
+        placeholder="Rival"
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+      />
+      <input
+        name="date"
+        type="datetime-local"
+        required
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+      />
+      <input
+        name="location"
+        placeholder="Lugar (opcional)"
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+      />
+      {state.error && <p className="text-sm text-red-400">{state.error}</p>}
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={pending}
+          className="flex-1 rounded-xl bg-brand px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {pending ? "Creando…" : "Crear partido"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="rounded-xl border border-slate-700 px-3 py-2.5 text-sm text-slate-300"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}

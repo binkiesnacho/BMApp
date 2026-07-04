@@ -23,8 +23,10 @@ $$;
 -- 1. ENUMS
 -- =============================================================================
 do $$ begin
-  create type user_role as enum ('admin', 'coach');
+  create type user_role as enum ('admin', 'coach', 'player');
 exception when duplicate_object then null; end $$;
+-- Si el tipo ya existía sin 'player', añadirlo.
+alter type user_role add value if not exists 'player';
 
 do $$ begin
   create type match_status as enum ('scheduled', 'live', 'finished');
@@ -61,12 +63,16 @@ create table if not exists public.profiles (
   club_id       uuid references public.clubs (id) on delete set null,
   name          text not null default '',
   role          user_role not null default 'coach',
+  -- Equipo del jugador (solo para role='player').
+  -- FK añadida tras crear la tabla teams (ver más abajo) para evitar ref circular.
+  team_id       uuid,
   -- Administrador GLOBAL (super-admin): acceso total a todos los clubs.
   -- Solo se activa por SQL (seed_superadmin.sql), nunca desde la app.
   is_superadmin boolean not null default false,
   created_at    timestamptz not null default now()
 );
 create index if not exists profiles_club_id_idx on public.profiles (club_id);
+create index if not exists profiles_team_id_idx on public.profiles (team_id);
 
 -- Teams -----------------------------------------------------------------------
 create table if not exists public.teams (
@@ -78,6 +84,13 @@ create table if not exists public.teams (
 );
 create index if not exists teams_club_id_idx  on public.teams (club_id);
 create index if not exists teams_coach_id_idx on public.teams (coach_id);
+
+-- FK diferida de profiles.team_id → teams (evita la referencia circular arriba).
+do $$ begin
+  alter table public.profiles
+    add constraint profiles_team_id_fkey
+    foreign key (team_id) references public.teams (id) on delete set null;
+exception when duplicate_object then null; end $$;
 
 -- Players ---------------------------------------------------------------------
 create table if not exists public.players (
@@ -98,6 +111,8 @@ create table if not exists public.matches (
   date       timestamptz not null,
   location   text,
   status     match_status not null default 'scheduled',
+  our_score  int not null default 0,
+  opp_score  int not null default 0,
   created_at timestamptz not null default now()
 );
 create index if not exists matches_team_id_idx on public.matches (team_id);
@@ -179,6 +194,24 @@ as $$
   );
 $$;
 
+-- ¿El usuario actual puede VER (solo lectura) los datos de un equipo?
+--  - staff (admin/coach/superadmin): can_manage_team
+--  - jugador: solo su equipo asignado (profiles.team_id)
+create or replace function public.can_view_team(target_team uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.can_manage_team(target_team) or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.role::text = 'player'
+      and p.team_id = target_team
+  );
+$$;
+
 -- =============================================================================
 -- 4. ROW LEVEL SECURITY
 -- =============================================================================
@@ -240,10 +273,11 @@ create policy teams_admin_write on public.teams
   with check ((club_id = public.current_club_id() and public.is_admin()) or public.is_superadmin());
 
 -- ---- PLAYERS ----------------------------------------------------------------
--- El coach SOLO gestiona jugadores de SU equipo; el admin, todos los del club.
+-- Lectura: staff de ese equipo + jugador de ese equipo (can_view_team).
+-- Escritura: solo staff que gestiona el equipo (can_manage_team).
 drop policy if exists players_select on public.players;
 create policy players_select on public.players
-  for select using (public.can_manage_team(team_id));
+  for select using (public.can_view_team(team_id));
 
 drop policy if exists players_write on public.players;
 create policy players_write on public.players
@@ -254,7 +288,7 @@ create policy players_write on public.players
 -- ---- MATCHES ----------------------------------------------------------------
 drop policy if exists matches_select on public.matches;
 create policy matches_select on public.matches
-  for select using (public.can_manage_team(team_id));
+  for select using (public.can_view_team(team_id));
 
 drop policy if exists matches_write on public.matches;
 create policy matches_write on public.matches
@@ -270,7 +304,7 @@ create policy stats_events_select on public.stats_events
   for select using (
     exists (
       select 1 from public.matches m
-      where m.id = match_id and public.can_manage_team(m.team_id)
+      where m.id = match_id and public.can_view_team(m.team_id)
     )
   );
 
@@ -382,9 +416,10 @@ $$;
 revoke all on function public.update_my_name(text) from public;
 grant execute on function public.update_my_name(text) to authenticated;
 
--- Unirse a un club existente con su código (como entrenador).
+-- Unirse a un club existente con su código, eligiendo rol (coach o player).
 -- Solo si el usuario aún no pertenece a ningún club.
-create or replace function public.join_club_with_code(code text)
+drop function if exists public.join_club_with_code(text);
+create or replace function public.join_club_with_code(code text, join_as text default 'coach')
 returns uuid
 language plpgsql
 security definer
@@ -393,10 +428,15 @@ as $$
 declare
   target_club uuid;
   current_club uuid;
+  new_role user_role;
 begin
   if auth.uid() is null then
     raise exception 'No autenticado';
   end if;
+  if join_as not in ('coach', 'player') then
+    raise exception 'Rol no válido';
+  end if;
+  new_role := join_as::user_role;
 
   select club_id into current_club from public.profiles where id = auth.uid();
   if current_club is not null then
@@ -412,15 +452,15 @@ begin
   end if;
 
   update public.profiles
-    set club_id = target_club, role = 'coach'
+    set club_id = target_club, role = new_role
     where id = auth.uid();
 
   return target_club;
 end;
 $$;
 
-revoke all on function public.join_club_with_code(text) from public;
-grant execute on function public.join_club_with_code(text) to authenticated;
+revoke all on function public.join_club_with_code(text, text) from public;
+grant execute on function public.join_club_with_code(text, text) to authenticated;
 
 -- Expulsar a un miembro del club (solo admin). Lo desasigna de sus equipos.
 create or replace function public.remove_member(target uuid)

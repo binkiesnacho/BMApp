@@ -16,13 +16,16 @@ interface LiveGameState {
   isRunning: boolean;
   /** segundos de reloj de partido transcurridos */
   elapsed: number;
+  /** goles del rival (los nuestros se cuentan de los eventos 'goal') */
+  oppScore: number;
   events: LiveEvent[];
 
-  startMatch: (matchId: string) => void;
+  startMatch: (matchId: string, initialOppScore?: number) => void;
   toggleClock: () => void;
   tick: () => void;
   addEvent: (playerId: string | null, eventType: StatEventType) => void;
   undoLast: () => void;
+  setOppScore: (n: number) => void;
   reset: () => void;
 }
 
@@ -30,10 +33,17 @@ export const useLiveGameStore = create<LiveGameState>((set, get) => ({
   matchId: null,
   isRunning: false,
   elapsed: 0,
+  oppScore: 0,
   events: [],
 
-  startMatch: (matchId) =>
-    set({ matchId, isRunning: false, elapsed: 0, events: [] }),
+  startMatch: (matchId, initialOppScore = 0) =>
+    set({
+      matchId,
+      isRunning: false,
+      elapsed: 0,
+      oppScore: initialOppScore,
+      events: [],
+    }),
 
   toggleClock: () => set((s) => ({ isRunning: !s.isRunning })),
 
@@ -55,6 +65,8 @@ export const useLiveGameStore = create<LiveGameState>((set, get) => ({
 
   undoLast: () => set((s) => ({ events: s.events.slice(0, -1) })),
 
+  setOppScore: (n) => set({ oppScore: Math.max(0, n) }),
+
   reset: () =>
-    set({ matchId: null, isRunning: false, elapsed: 0, events: [] }),
+    set({ matchId: null, isRunning: false, elapsed: 0, oppScore: 0, events: [] }),
 }));

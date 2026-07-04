@@ -6,13 +6,21 @@ import RenameClubForm from "./RenameClubForm";
 import JoinCodeCard from "./JoinCodeCard";
 import {
   assignCoachAction,
+  assignMemberTeamAction,
   deleteTeamAction,
   removeMemberAction,
+  renameTeamAction,
   setMemberRoleAction,
 } from "./actions";
 import type { Club, Profile, Team } from "@/lib/types/database";
 
 export const metadata = { title: "Administración" };
+
+const roleLabel: Record<string, string> = {
+  admin: "Administrador",
+  coach: "Entrenador",
+  player: "Jugador",
+};
 
 export default async function AdminPage() {
   const { profile } = await getSessionProfile();
@@ -38,8 +46,8 @@ export default async function AdminPage() {
         .returns<Team[]>(),
     ]);
 
-  const memberName = (id: string | null) =>
-    members?.find((m) => m.id === id)?.name || "—";
+  const teamName = (id: string | null) =>
+    teams?.find((t) => t.id === id)?.name;
 
   return (
     <>
@@ -51,7 +59,7 @@ export default async function AdminPage() {
         <RenameClubForm currentName={club?.name ?? ""} />
         {club && <JoinCodeCard code={club.join_code} />}
         <p className="text-xs text-slate-500">
-          Comparte este código con tus entrenadores para que se unan al club.
+          Comparte este código con entrenadores y jugadores para que se unan.
         </p>
       </section>
 
@@ -60,39 +68,26 @@ export default async function AdminPage() {
         <h2 className="text-sm font-semibold text-slate-300">
           Miembros ({members?.length ?? 0})
         </h2>
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {members?.map((m) => {
             const isSelf = m.id === profile.id;
             return (
               <li
                 key={m.id}
-                className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5"
+                className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-100">
-                    {m.name || "(sin nombre)"} {isSelf && "· tú"}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {m.role === "admin" ? "Administrador" : "Entrenador"}
-                  </p>
-                </div>
-
-                {!isSelf && (
-                  <>
-                    <form action={setMemberRoleAction}>
-                      <input type="hidden" name="memberId" value={m.id} />
-                      <input
-                        type="hidden"
-                        name="role"
-                        value={m.role === "admin" ? "coach" : "admin"}
-                      />
-                      <button
-                        type="submit"
-                        className="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-brand"
-                      >
-                        {m.role === "admin" ? "Hacer coach" : "Hacer admin"}
-                      </button>
-                    </form>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-100">
+                      {m.name || "(sin nombre)"} {isSelf && "· tú"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {roleLabel[m.role] ?? m.role}
+                      {m.role === "player" &&
+                        ` · ${teamName(m.team_id) ?? "sin equipo"}`}
+                    </p>
+                  </div>
+                  {!isSelf && (
                     <form action={removeMemberAction}>
                       <input type="hidden" name="memberId" value={m.id} />
                       <button
@@ -103,7 +98,50 @@ export default async function AdminPage() {
                         ✕
                       </button>
                     </form>
-                  </>
+                  )}
+                </div>
+
+                {!isSelf && (
+                  <div className="flex flex-wrap gap-2">
+                    {/* Cambiar rol */}
+                    <form action={setMemberRoleAction} className="flex gap-1">
+                      <input type="hidden" name="memberId" value={m.id} />
+                      <select
+                        name="role"
+                        defaultValue={m.role}
+                        className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+                      >
+                        <option value="admin">Administrador</option>
+                        <option value="coach">Entrenador</option>
+                        <option value="player">Jugador</option>
+                      </select>
+                      <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+                        Rol
+                      </button>
+                    </form>
+
+                    {/* Asignar equipo (solo jugadores) */}
+                    {m.role === "player" && (
+                      <form action={assignMemberTeamAction} className="flex gap-1">
+                        <input type="hidden" name="memberId" value={m.id} />
+                        <select
+                          name="teamId"
+                          defaultValue={m.team_id ?? ""}
+                          className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+                        >
+                          <option value="">Sin equipo</option>
+                          {teams?.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+                          Equipo
+                        </button>
+                      </form>
+                    )}
+                  </div>
                 )}
               </li>
             );
@@ -122,18 +160,28 @@ export default async function AdminPage() {
               key={t.id}
               className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-100">{t.name}</p>
+              {/* Renombrar + eliminar */}
+              <div className="flex gap-2">
+                <form action={renameTeamAction} className="flex flex-1 gap-1">
+                  <input type="hidden" name="teamId" value={t.id} />
+                  <input
+                    name="name"
+                    defaultValue={t.name}
+                    className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-brand"
+                  />
+                  <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+                    Renombrar
+                  </button>
+                </form>
                 <form action={deleteTeamAction}>
                   <input type="hidden" name="teamId" value={t.id} />
-                  <button
-                    type="submit"
-                    className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:text-red-400"
-                  >
+                  <button className="rounded-lg px-2 py-1.5 text-xs text-slate-500 hover:text-red-400">
                     Eliminar
                   </button>
                 </form>
               </div>
+
+              {/* Asignar entrenador */}
               <form action={assignCoachAction} className="flex gap-2">
                 <input type="hidden" name="teamId" value={t.id} />
                 <select
@@ -142,22 +190,18 @@ export default async function AdminPage() {
                   className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
                 >
                   <option value="">Sin entrenador</option>
-                  {members?.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name || "(sin nombre)"}
-                    </option>
-                  ))}
+                  {members
+                    ?.filter((m) => m.role !== "player")
+                    .map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name || "(sin nombre)"}
+                      </option>
+                    ))}
                 </select>
-                <button
-                  type="submit"
-                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-brand"
-                >
-                  Asignar
+                <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-brand">
+                  Entrenador
                 </button>
               </form>
-              <p className="text-xs text-slate-500">
-                Entrenador actual: {memberName(t.coach_id)}
-              </p>
             </li>
           ))}
         </ul>

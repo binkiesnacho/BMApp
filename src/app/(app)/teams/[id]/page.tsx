@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppHeader from "@/components/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
-import { deletePlayerAction } from "./actions";
+import { getSessionProfile, isStaff } from "@/lib/auth";
 import AddPlayerForm from "./AddPlayerForm";
+import PlayerRow from "./PlayerRow";
 import type { Player, Team } from "@/lib/types/database";
 
 export default async function TeamDetailPage({
@@ -12,9 +13,12 @@ export default async function TeamDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { profile } = await getSessionProfile();
+  const canEdit = isStaff(profile);
+
   const supabase = await createClient();
 
-  // RLS: solo devuelve el equipo si el usuario puede gestionarlo/verlo.
+  // RLS: solo devuelve el equipo si el usuario puede verlo/gestionarlo.
   const { data: team } = await supabase
     .from("teams")
     .select("*")
@@ -45,41 +49,20 @@ export default async function TeamDetailPage({
         }
       />
 
-      <div className="mt-4">
-        <AddPlayerForm teamId={team.id} />
-      </div>
+      {canEdit && (
+        <div className="mt-4">
+          <AddPlayerForm teamId={team.id} />
+        </div>
+      )}
 
       <ul className="mt-4 space-y-2">
         {players?.map((player) => (
-          <li
+          <PlayerRow
             key={player.id}
-            className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2.5"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-brand">
-              {player.number ?? "–"}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-slate-100">
-                {player.name}
-              </p>
-              {player.position && (
-                <p className="truncate text-xs text-slate-400">
-                  {player.position}
-                </p>
-              )}
-            </div>
-            <form action={deletePlayerAction}>
-              <input type="hidden" name="playerId" value={player.id} />
-              <input type="hidden" name="teamId" value={team.id} />
-              <button
-                type="submit"
-                className="rounded-lg px-2 py-1 text-xs text-slate-500 transition-colors hover:text-red-400"
-                aria-label={`Eliminar ${player.name}`}
-              >
-                ✕
-              </button>
-            </form>
-          </li>
+            player={player}
+            teamId={team.id}
+            canEdit={canEdit}
+          />
         ))}
       </ul>
 

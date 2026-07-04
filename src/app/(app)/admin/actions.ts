@@ -36,18 +36,38 @@ export async function renameClubAction(
   return { ok: true };
 }
 
-/** Cambia el rol de un miembro del club (admin/coach). No permite auto-cambio. */
+/** Cambia el rol de un miembro del club (admin/coach/player). No permite auto-cambio. */
 export async function setMemberRoleAction(formData: FormData): Promise<void> {
   const memberId = String(formData.get("memberId") ?? "");
   const role = String(formData.get("role") ?? "");
-  if (role !== "admin" && role !== "coach") return;
+  if (!["admin", "coach", "player"].includes(role)) return;
 
   const { profile } = await requireAdmin();
   if (!profile) return;
   if (memberId === profile.id) return; // no cambiarse el rol a uno mismo
 
   const supabase = await createClient();
-  await supabase.from("profiles").update({ role }).eq("id", memberId);
+  // Al dejar de ser jugador, se limpia su equipo asignado.
+  const patch =
+    role === "player" ? { role } : { role, team_id: null };
+  await supabase.from("profiles").update(patch).eq("id", memberId);
+  revalidatePath("/admin");
+}
+
+/** Asigna (o quita) el equipo de un jugador. */
+export async function assignMemberTeamAction(formData: FormData): Promise<void> {
+  const memberId = String(formData.get("memberId") ?? "");
+  const teamId = String(formData.get("teamId") ?? "");
+  if (!memberId) return;
+
+  const { profile } = await requireAdmin();
+  if (!profile) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("profiles")
+    .update({ team_id: teamId === "" ? null : teamId })
+    .eq("id", memberId);
   revalidatePath("/admin");
 }
 
@@ -75,6 +95,20 @@ export async function assignCoachAction(formData: FormData): Promise<void> {
     .from("teams")
     .update({ coach_id: coachId === "" ? null : coachId })
     .eq("id", teamId);
+  revalidatePath("/admin");
+}
+
+/** Renombra un equipo del club. */
+export async function renameTeamAction(formData: FormData): Promise<void> {
+  const teamId = String(formData.get("teamId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!teamId || !name) return;
+
+  const { profile } = await requireAdmin();
+  if (!profile) return;
+
+  const supabase = await createClient();
+  await supabase.from("teams").update({ name }).eq("id", teamId);
   revalidatePath("/admin");
 }
 

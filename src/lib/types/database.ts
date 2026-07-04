@@ -4,7 +4,7 @@
  *  `supabase gen types typescript --project-id gqslmipjchgbizkbtqqe`)
  */
 
-export type UserRole = "admin" | "coach";
+export type UserRole = "admin" | "coach" | "player";
 
 export type MatchStatus = "scheduled" | "live" | "finished";
 
@@ -30,6 +30,8 @@ export interface Profile {
   club_id: string | null;
   name: string;
   role: UserRole;
+  /** Equipo del jugador (solo para role='player'). */
+  team_id: string | null;
   /** Administrador global: acceso total a todos los clubs. */
   is_superadmin: boolean;
   created_at: string;
@@ -59,6 +61,8 @@ export interface Match {
   date: string;
   location: string | null;
   status: MatchStatus;
+  our_score: number;
+  opp_score: number;
   created_at: string;
 }
 

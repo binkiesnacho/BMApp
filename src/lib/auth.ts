@@ -27,3 +27,13 @@ export async function getSessionProfile() {
 export function canAdminister(profile: Profile | null): boolean {
   return !!profile && (profile.role === "admin" || profile.is_superadmin);
 }
+
+/** ¿Es staff (admin/coach/superadmin)? Es decir, puede escribir (según RLS por equipo). */
+export function isStaff(profile: Profile | null): boolean {
+  return !!profile && profile.role !== "player";
+}
+
+/** ¿Es jugador (acceso de solo lectura)? */
+export function isPlayer(profile: Profile | null): boolean {
+  return profile?.role === "player";
+}

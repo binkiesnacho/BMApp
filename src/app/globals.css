@@ -7,15 +7,23 @@
 }
 
 html {
+  /* Altura exacta del viewport, sin desbordes en móvil */
   height: 100%;
-  /* Evita rebote/zoom raro en móvil e integra safe-area del notch */
   -webkit-text-size-adjust: 100%;
 }
 
 body {
+  min-height: 100dvh;
   font-family: var(--font-sans), system-ui, sans-serif;
-  /* Padding para la barra de estado / safe areas en PWA standalone */
+  /* Sin rebote elástico raro en iOS al no haber contenido que scrollear */
+  overscroll-behavior-y: none;
+}
+
+/* Utilidades de safe-area (notch) reutilizables por header y bottom-nav */
+.safe-top {
   padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
