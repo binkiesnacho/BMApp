@@ -58,6 +58,8 @@ export default async function TrainingDetailPage({
     (s, p) => s + (Number(p.minutes) || 0),
     0
   );
+  // Ficha del roster vinculada a la cuenta del usuario actual (si es jugador).
+  const myPlayerId = players?.find((p) => p.profile_id === profile?.id)?.id;
 
   return (
     <>
@@ -135,13 +137,19 @@ export default async function TrainingDetailPage({
           <ul className="space-y-1.5">
             {players?.map((p) => {
               const present = attendedSet.has(p.id);
+              const mine = p.id === myPlayerId;
               return (
                 <li
                   key={p.id}
-                  className="flex items-center gap-3 rounded-xl bg-slate-950 px-3 py-2 text-sm"
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
+                    mine ? "bg-brand/10 ring-1 ring-brand/40" : "bg-slate-950"
+                  }`}
                 >
                   <span className="font-bold text-brand">{p.number ?? "–"}</span>
-                  <span className="flex-1 truncate text-slate-100">{p.name}</span>
+                  <span className="flex-1 truncate text-slate-100">
+                    {p.name}
+                    {mine && " · tú"}
+                  </span>
                   <span
                     className={`text-xs font-semibold ${
                       present ? "text-emerald-400" : "text-red-400"

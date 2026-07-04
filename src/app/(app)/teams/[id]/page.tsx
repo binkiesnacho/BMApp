@@ -34,6 +34,18 @@ export default async function TeamDetailPage({
     .order("number", { ascending: true, nullsFirst: false })
     .returns<Player[]>();
 
+  // Cuentas de jugador de este equipo (para vincular con la ficha del roster).
+  const accounts = canEdit
+    ? (
+        await supabase
+          .from("profiles")
+          .select("id, name")
+          .eq("team_id", id)
+          .eq("role", "player")
+          .returns<{ id: string; name: string }[]>()
+      ).data ?? []
+    : [];
+
   return (
     <>
       <AppHeader
@@ -62,6 +74,7 @@ export default async function TeamDetailPage({
             player={player}
             teamId={team.id}
             canEdit={canEdit}
+            accounts={accounts}
           />
         ))}
       </ul>

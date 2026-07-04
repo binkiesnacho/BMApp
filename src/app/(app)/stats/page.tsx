@@ -1,5 +1,6 @@
 import AppHeader from "@/components/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/auth";
 import { EVENT_LABELS } from "@/lib/events";
 import type { Player, StatEvent, StatEventType } from "@/lib/types/database";
 
@@ -16,11 +17,16 @@ const COLS: StatEventType[] = [
 
 export default async function StatsPage() {
   const supabase = await createClient();
+  const { profile } = await getSessionProfile();
 
   const [{ data: players }, { data: events }] = await Promise.all([
     supabase.from("players").select("*").returns<Player[]>(),
     supabase.from("stats_events").select("*").returns<StatEvent[]>(),
   ]);
+
+  const myPlayerId = (players ?? []).find(
+    (p) => p.profile_id === profile?.id
+  )?.id;
 
   // Agrega recuentos por jugador y tipo de evento.
   const counts = new Map<string, Record<string, number>>();
@@ -63,12 +69,18 @@ export default async function StatsPage() {
             </thead>
             <tbody>
               {rows.map(({ player, c }) => (
-                <tr key={player.id} className="border-t border-slate-800">
+                <tr
+                  key={player.id}
+                  className={`border-t border-slate-800 ${
+                    player.id === myPlayerId ? "bg-brand/10" : ""
+                  }`}
+                >
                   <td className="px-3 py-2 text-slate-100">
                     <span className="font-bold text-brand">
                       {player.number ?? "–"}
                     </span>{" "}
                     {player.name}
+                    {player.id === myPlayerId && " · tú"}
                   </td>
                   {COLS.map((col) => (
                     <td

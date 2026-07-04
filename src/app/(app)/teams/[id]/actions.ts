@@ -71,6 +71,41 @@ export async function editPlayerAction(
   return {};
 }
 
+/**
+ * Vincula (o desvincula) una cuenta de jugador con una ficha del roster.
+ * Antes de asignar, libera la cuenta de cualquier otra ficha (índice único).
+ */
+export async function linkPlayerAccountAction(
+  formData: FormData
+): Promise<void> {
+  const playerId = String(formData.get("playerId") ?? "");
+  const teamId = String(formData.get("teamId") ?? "");
+  const profileId = String(formData.get("profileId") ?? "");
+  if (!playerId) return;
+
+  const supabase = await createClient();
+
+  if (profileId === "") {
+    await supabase
+      .from("players")
+      .update({ profile_id: null })
+      .eq("id", playerId);
+  } else {
+    // Libera esa cuenta de otras fichas del equipo para no romper el índice único.
+    await supabase
+      .from("players")
+      .update({ profile_id: null })
+      .eq("team_id", teamId)
+      .eq("profile_id", profileId);
+    await supabase
+      .from("players")
+      .update({ profile_id: profileId })
+      .eq("id", playerId);
+  }
+
+  revalidatePath(`/teams/${teamId}`);
+}
+
 /** Elimina un jugador (RLS: solo quien gestiona el equipo). */
 export async function deletePlayerAction(formData: FormData): Promise<void> {
   const playerId = String(formData.get("playerId") ?? "");

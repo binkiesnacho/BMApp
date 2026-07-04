@@ -4,9 +4,15 @@ import { useActionState, useState } from "react";
 import {
   editPlayerAction,
   deletePlayerAction,
+  linkPlayerAccountAction,
   type PlayerFormState,
 } from "./actions";
 import type { Player } from "@/lib/types/database";
+
+export interface AccountOption {
+  id: string;
+  name: string;
+}
 
 const POSITIONS = [
   "Portero",
@@ -22,10 +28,12 @@ export default function PlayerRow({
   player,
   teamId,
   canEdit,
+  accounts = [],
 }: {
   player: Player;
   teamId: string;
   canEdit: boolean;
+  accounts?: AccountOption[];
 }) {
   const [editing, setEditing] = useState(false);
   const [state, formAction, pending] = useActionState<PlayerFormState, FormData>(
@@ -93,37 +101,72 @@ export default function PlayerRow({
     );
   }
 
+  const linkedName = accounts.find((a) => a.id === player.profile_id)?.name;
+
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2.5">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-brand">
-        {player.number ?? "–"}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-slate-100">{player.name}</p>
-        {player.position && (
-          <p className="truncate text-xs text-slate-400">{player.position}</p>
+    <li className="rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2.5">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-brand">
+          {player.number ?? "–"}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium text-slate-100">{player.name}</p>
+          {player.position && (
+            <p className="truncate text-xs text-slate-400">{player.position}</p>
+          )}
+          {player.profile_id && (
+            <p className="truncate text-xs text-emerald-400">
+              🔗 {linkedName ?? "cuenta vinculada"}
+            </p>
+          )}
+        </div>
+        {canEdit && (
+          <>
+            <button
+              onClick={() => setEditing(true)}
+              className="rounded-lg px-2 py-1 text-xs text-slate-400 hover:text-brand"
+            >
+              Editar
+            </button>
+            <form action={deletePlayerAction}>
+              <input type="hidden" name="playerId" value={player.id} />
+              <input type="hidden" name="teamId" value={teamId} />
+              <button
+                type="submit"
+                className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:text-red-400"
+                aria-label={`Eliminar ${player.name}`}
+              >
+                ✕
+              </button>
+            </form>
+          </>
         )}
       </div>
-      {canEdit && (
-        <>
-          <button
-            onClick={() => setEditing(true)}
-            className="rounded-lg px-2 py-1 text-xs text-slate-400 hover:text-brand"
+
+      {/* Vincular cuenta de jugador (staff) */}
+      {canEdit && accounts.length > 0 && (
+        <form
+          action={linkPlayerAccountAction}
+          className="mt-2 flex gap-1.5 border-t border-slate-800 pt-2"
+        >
+          <input type="hidden" name="playerId" value={player.id} />
+          <input type="hidden" name="teamId" value={teamId} />
+          <select
+            name="profileId"
+            defaultValue={player.profile_id ?? ""}
+            className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
           >
-            Editar
+            <option value="">Sin cuenta vinculada</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+          <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+            Vincular
           </button>
-          <form action={deletePlayerAction}>
-            <input type="hidden" name="playerId" value={player.id} />
-            <input type="hidden" name="teamId" value={teamId} />
-            <button
-              type="submit"
-              className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:text-red-400"
-              aria-label={`Eliminar ${player.name}`}
-            >
-              ✕
-            </button>
-          </form>
-        </>
+        </form>
       )}
     </li>
   );

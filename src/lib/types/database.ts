@@ -51,6 +51,8 @@ export interface Player {
   name: string;
   number: number | null;
   position: string | null;
+  /** Cuenta (profiles) vinculada a esta ficha del roster. */
+  profile_id: string | null;
   created_at: string;
 }
 

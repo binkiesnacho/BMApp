@@ -99,9 +99,14 @@ create table if not exists public.players (
   name       text not null,
   number     int,
   position   text,
+  -- Cuenta (profiles) vinculada a esta ficha del roster (rol 'player').
+  profile_id uuid references public.profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
 create index if not exists players_team_id_idx on public.players (team_id);
+-- Cada cuenta se vincula, como mucho, a una ficha (los NULL no cuentan).
+create unique index if not exists players_profile_id_uidx
+  on public.players (profile_id) where profile_id is not null;
 
 -- Matches ---------------------------------------------------------------------
 create table if not exists public.matches (
@@ -271,6 +276,8 @@ create policy profiles_select on public.profiles
     id = auth.uid()
     or (club_id = public.current_club_id() and public.is_admin())
     or public.is_superadmin()
+    -- staff (coach/admin/superadmin) ve las cuentas de jugador de su(s) equipo(s)
+    or (role::text = 'player' and public.can_manage_team(team_id))
   );
 
 -- NOTA de seguridad: NO existe una política de auto-UPDATE amplia sobre profiles.
