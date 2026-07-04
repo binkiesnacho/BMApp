@@ -34,17 +34,19 @@ export default async function TeamDetailPage({
     .order("number", { ascending: true, nullsFirst: false })
     .returns<Player[]>();
 
-  // Cuentas de jugador de este equipo (para vincular con la ficha del roster).
-  const accounts = canEdit
-    ? (
-        await supabase
-          .from("profiles")
-          .select("id, name")
-          .eq("team_id", id)
-          .eq("role", "player")
-          .returns<{ id: string; name: string }[]>()
-      ).data ?? []
-    : [];
+  // Cuentas de jugador del CLUB (para vincular con la ficha del roster; un jugador
+  // puede estar en varios equipos, así que no se limita a este equipo).
+  const accounts =
+    canEdit && profile?.club_id
+      ? (
+          await supabase
+            .from("profiles")
+            .select("id, name")
+            .eq("club_id", profile.club_id)
+            .eq("role", "player")
+            .returns<{ id: string; name: string }[]>()
+        ).data ?? []
+      : [];
 
   return (
     <>

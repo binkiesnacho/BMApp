@@ -62,9 +62,11 @@ export default async function TrainingsPage() {
     .map((p) => ({ p, n: faltas.get(p.id) ?? 0 }))
     .filter((r) => r.n > 0)
     .sort((a, b) => b.n - a.n);
-  const myPlayerId = (players ?? []).find(
-    (p) => p.profile_id === profile?.id
-  )?.id;
+  const myPlayerIds = new Set(
+    (players ?? [])
+      .filter((p) => p.profile_id === profile?.id)
+      .map((p) => p.id)
+  );
 
   const total = (t: Training) =>
     t.phases.reduce((s, ph) => s + (Number(ph.minutes) || 0), 0);
@@ -93,14 +95,14 @@ export default async function TrainingsPage() {
               <li
                 key={p.id}
                 className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${
-                  p.id === myPlayerId
+                  myPlayerIds.has(p.id)
                     ? "border-brand/60 bg-brand/10"
                     : "border-slate-700 bg-slate-950"
                 }`}
               >
                 <span className="text-slate-200">
                   {p.name}
-                  {p.id === myPlayerId && " · tú"}
+                  {myPlayerIds.has(p.id) && " · tú"}
                 </span>
                 <span className="rounded-full bg-red-600 px-1.5 font-bold text-white">
                   {n}
