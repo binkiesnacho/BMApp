@@ -40,6 +40,12 @@ export default async function DashboardPage() {
       icon: "🤾",
     },
     {
+      href: "/trainings",
+      title: "Entrenamientos",
+      desc: player ? "Sesiones y asistencia" : "Sesiones, fases y faltas",
+      icon: "🏋️",
+    },
+    {
       href: "/stats",
       title: "Estadísticas",
       desc: "Acumulado por jugador",

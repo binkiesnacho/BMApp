@@ -66,6 +66,30 @@ export interface Match {
   created_at: string;
 }
 
+export interface TrainingPhase {
+  name: string;
+  minutes: number;
+}
+
+export interface Training {
+  id: string;
+  team_id: string;
+  date: string;
+  title: string | null;
+  description: string | null;
+  phases: TrainingPhase[];
+  objectives: string[];
+  created_at: string;
+}
+
+export interface TrainingAttendance {
+  id: string;
+  training_id: string;
+  player_id: string;
+  attended: boolean;
+  created_at: string;
+}
+
 export interface StatEvent {
   id: string;
   match_id: string;

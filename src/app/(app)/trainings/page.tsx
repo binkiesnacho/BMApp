@@ -1,0 +1,138 @@
+import Link from "next/link";
+import AppHeader from "@/components/layout/AppHeader";
+import { createClient } from "@/lib/supabase/server";
+import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
+import CreateTrainingForm from "./CreateTrainingForm";
+import type {
+  Player,
+  Team,
+  Training,
+  TrainingAttendance,
+} from "@/lib/types/database";
+
+export const metadata = { title: "Entrenamientos" };
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleString("es-ES", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default async function TrainingsPage() {
+  const { profile } = await getSessionProfile();
+  const staff = isStaff(profile);
+
+  const supabase = await createClient();
+
+  // Equipos gestionables (para crear).
+  let manageable: Team[] = [];
+  if (staff && profile?.club_id) {
+    const q = supabase.from("teams").select("*").eq("club_id", profile.club_id);
+    const { data } = canAdminister(profile)
+      ? await q.returns<Team[]>()
+      : await q.eq("coach_id", profile.id).returns<Team[]>();
+    manageable = data ?? [];
+  }
+
+  const [{ data: trainings }, { data: attendance }, { data: players }] =
+    await Promise.all([
+      supabase
+        .from("trainings")
+        .select("*")
+        .order("date", { ascending: false })
+        .returns<Training[]>(),
+      supabase
+        .from("training_attendance")
+        .select("*")
+        .returns<TrainingAttendance[]>(),
+      supabase.from("players").select("*").returns<Player[]>(),
+    ]);
+
+  // Faltas acumuladas por jugador (attended=false).
+  const faltas = new Map<string, number>();
+  for (const a of attendance ?? []) {
+    if (!a.attended)
+      faltas.set(a.player_id, (faltas.get(a.player_id) ?? 0) + 1);
+  }
+  const faltasRows = (players ?? [])
+    .map((p) => ({ p, n: faltas.get(p.id) ?? 0 }))
+    .filter((r) => r.n > 0)
+    .sort((a, b) => b.n - a.n);
+
+  const total = (t: Training) =>
+    t.phases.reduce((s, ph) => s + (Number(ph.minutes) || 0), 0);
+
+  return (
+    <>
+      <AppHeader
+        title="Entrenamientos"
+        subtitle={staff ? "Sesiones y asistencia" : "Sesiones de tu equipo"}
+      />
+
+      {staff && manageable.length > 0 && (
+        <div className="mt-4">
+          <CreateTrainingForm teams={manageable} />
+        </div>
+      )}
+
+      {/* Faltas acumuladas */}
+      {faltasRows.length > 0 && (
+        <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <h2 className="mb-2 text-sm font-semibold text-slate-300">
+            Faltas acumuladas
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {faltasRows.map(({ p, n }) => (
+              <li
+                key={p.id}
+                className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs"
+              >
+                <span className="text-slate-200">{p.name}</span>
+                <span className="rounded-full bg-red-600 px-1.5 font-bold text-white">
+                  {n}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Histórico */}
+      <ul className="mt-4 space-y-2">
+        {trainings?.map((t) => (
+          <li key={t.id}>
+            <Link
+              href={`/trainings/${t.id}`}
+              className="block rounded-2xl border border-slate-800 bg-slate-900 p-3 transition-colors hover:border-brand/60"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-400">{fmtDate(t.date)}</span>
+                <span className="text-xs text-slate-500">{total(t)}&apos;</span>
+              </div>
+              <p className="mt-1 font-medium text-slate-100">
+                {t.title || "Entrenamiento"}
+              </p>
+              {t.objectives.length > 0 && (
+                <p className="truncate text-xs text-slate-400">
+                  🎯 {t.objectives.join(" · ")}
+                </p>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      {(!trainings || trainings.length === 0) && (
+        <div className="mt-4 rounded-2xl border border-dashed border-slate-800 p-8 text-center text-sm text-slate-400">
+          {staff
+            ? "Sin entrenamientos. Crea el primero arriba."
+            : "Tu equipo aún no tiene entrenamientos."}
+        </div>
+      )}
+    </>
+  );
+}
