@@ -33,3 +33,9 @@ jobs:
 
       - name: Build (verificación)
         run: npm run build
+        # Valores placeholder (NO secretos): el build de CI solo verifica que el
+        # proyecto compila. El deploy real lo hace Vercel con las variables reales.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-for-ci-build-only
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-for-ci-build-only
