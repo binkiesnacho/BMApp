@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Token temporal de Supabase Management API (NO subir)
 .sb_token
+
+# Token temporal de Vercel API (NO subir)
+.vercel_token
