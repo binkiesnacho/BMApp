@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getSessionProfile } from "@/lib/auth";
 import type { Match, Player } from "@/lib/types/database";
 import LiveMatch from "./LiveMatch";
 
@@ -13,7 +13,7 @@ export default async function LiveMatchPage({
 }) {
   const { id } = await params;
   const { profile } = await getSessionProfile();
-  if (!isStaff(profile)) redirect(`/matches/${id}`); // jugadores no capturan
+  if (!canCapture(profile)) redirect(`/matches/${id}`); // solo staff/técnico capturan
 
   const supabase = await createClient();
 

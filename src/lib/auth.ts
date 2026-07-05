@@ -28,9 +28,24 @@ export function canAdminister(profile: Profile | null): boolean {
   return !!profile && (profile.role === "admin" || profile.is_superadmin);
 }
 
-/** ¿Es staff (admin/coach/superadmin)? Es decir, puede escribir (según RLS por equipo). */
+/** Staff con escritura completa sobre su equipo (admin/coach/superadmin). */
 export function isStaff(profile: Profile | null): boolean {
-  return !!profile && profile.role !== "player";
+  return (
+    !!profile &&
+    (profile.role === "admin" ||
+      profile.role === "coach" ||
+      profile.is_superadmin)
+  );
+}
+
+/** ¿Es técnico? (ve como el entrenador; solo escribe stats en vivo y entrenamientos). */
+export function isTecnico(profile: Profile | null): boolean {
+  return profile?.role === "tecnico";
+}
+
+/** ¿Puede capturar? = staff o técnico (stats en vivo + crear entrenamientos). */
+export function canCapture(profile: Profile | null): boolean {
+  return isStaff(profile) || isTecnico(profile);
 }
 
 /** ¿Es jugador (acceso de solo lectura)? */

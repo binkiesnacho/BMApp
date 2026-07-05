@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import AppHeader from "@/components/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile } from "@/lib/auth";
+import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
 import RenameClubForm from "./RenameClubForm";
 import JoinCodeCard from "./JoinCodeCard";
 import {
@@ -19,13 +19,15 @@ export const metadata = { title: "Administración" };
 const roleLabel: Record<string, string> = {
   admin: "Administrador",
   coach: "Entrenador",
+  tecnico: "Técnico",
   player: "Jugador",
 };
 
 export default async function AdminPage() {
   const { profile } = await getSessionProfile();
   if (!profile?.club_id) redirect("/onboarding");
-  if (!canAdminister(profile)) redirect("/"); // admin de club o admin global
+  if (!isStaff(profile)) redirect("/"); // staff: admin, entrenador o superadmin
+  const isAdmin = canAdminister(profile);
 
   const supabase = await createClient();
 
@@ -51,15 +53,18 @@ export default async function AdminPage() {
 
   return (
     <>
-      <AppHeader title="Administración" subtitle={club?.name ?? "Tu club"} />
+      <AppHeader
+        title={isAdmin ? "Administración" : "Gestión"}
+        subtitle={club?.name ?? "Tu club"}
+      />
 
       {/* ---- Club ---- */}
       <section className="mt-4 space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-sm font-semibold text-slate-300">Club</h2>
-        <RenameClubForm currentName={club?.name ?? ""} />
+        {isAdmin && <RenameClubForm currentName={club?.name ?? ""} />}
         {club && <JoinCodeCard code={club.join_code} />}
         <p className="text-xs text-slate-500">
-          Comparte este código con entrenadores y jugadores para que se unan.
+          Comparte este código con entrenadores, técnicos y jugadores para que se unan.
         </p>
       </section>
 
@@ -71,6 +76,10 @@ export default async function AdminPage() {
         <ul className="space-y-3">
           {members?.map((m) => {
             const isSelf = m.id === profile.id;
+            const hasTeam = m.role === "player" || m.role === "tecnico";
+            // El coach solo puede gestionar a jugadores/técnicos.
+            const canManage =
+              !isSelf && (isAdmin || m.role === "player" || m.role === "tecnico");
             return (
               <li
                 key={m.id}
@@ -83,11 +92,10 @@ export default async function AdminPage() {
                     </p>
                     <p className="text-xs text-slate-500">
                       {roleLabel[m.role] ?? m.role}
-                      {m.role === "player" &&
-                        ` · ${teamName(m.team_id) ?? "sin equipo"}`}
+                      {hasTeam && ` · ${teamName(m.team_id) ?? "sin equipo"}`}
                     </p>
                   </div>
-                  {!isSelf && (
+                  {!isSelf && isAdmin && (
                     <form action={removeMemberAction}>
                       <input type="hidden" name="memberId" value={m.id} />
                       <button
@@ -101,7 +109,7 @@ export default async function AdminPage() {
                   )}
                 </div>
 
-                {!isSelf && (
+                {canManage && (
                   <div className="flex flex-wrap gap-2">
                     {/* Cambiar rol */}
                     <form action={setMemberRoleAction} className="flex gap-1">
@@ -111,8 +119,9 @@ export default async function AdminPage() {
                         defaultValue={m.role}
                         className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
                       >
-                        <option value="admin">Administrador</option>
-                        <option value="coach">Entrenador</option>
+                        {isAdmin && <option value="admin">Administrador</option>}
+                        {isAdmin && <option value="coach">Entrenador</option>}
+                        <option value="tecnico">Técnico</option>
                         <option value="player">Jugador</option>
                       </select>
                       <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
@@ -120,8 +129,8 @@ export default async function AdminPage() {
                       </button>
                     </form>
 
-                    {/* Asignar equipo (solo jugadores) */}
-                    {m.role === "player" && (
+                    {/* Asignar equipo (jugadores y técnicos) */}
+                    {hasTeam && (
                       <form action={assignMemberTeamAction} className="flex gap-1">
                         <input type="hidden" name="memberId" value={m.id} />
                         <select
@@ -149,7 +158,8 @@ export default async function AdminPage() {
         </ul>
       </section>
 
-      {/* ---- Equipos ---- */}
+      {/* ---- Equipos (solo admin) ---- */}
+      {isAdmin && (
       <section className="mt-4 space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
         <h2 className="text-sm font-semibold text-slate-300">
           Equipos ({teams?.length ?? 0})
@@ -191,7 +201,7 @@ export default async function AdminPage() {
                 >
                   <option value="">Sin entrenador</option>
                   {members
-                    ?.filter((m) => m.role !== "player")
+                    ?.filter((m) => m.role === "admin" || m.role === "coach")
                     .map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name || "(sin nombre)"}
@@ -211,6 +221,7 @@ export default async function AdminPage() {
           </p>
         )}
       </section>
+      )}
     </>
   );
 }

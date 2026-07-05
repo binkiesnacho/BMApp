@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppHeader from "@/components/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
 import { deleteMatchAction } from "../actions";
 import type { Match, Player, StatEvent, StatEventType } from "@/lib/types/database";
 import { EVENT_LABELS } from "@/lib/events";
@@ -35,6 +35,7 @@ export default async function MatchDetailPage({
   const { id } = await params;
   const { profile } = await getSessionProfile();
   const staff = isStaff(profile);
+  const capture = canCapture(profile);
 
   const supabase = await createClient();
 
@@ -112,8 +113,8 @@ export default async function MatchDetailPage({
         )}
       </div>
 
-      {/* Acciones de staff */}
-      {staff && (
+      {/* Acciones: capturar en vivo (staff+técnico), eliminar (solo staff) */}
+      {capture && (
         <div className="mt-3 flex gap-2">
           <Link
             href={`/matches/${match.id}/live`}
@@ -125,12 +126,14 @@ export default async function MatchDetailPage({
                 ? "▶ Continuar en vivo"
                 : "▶ Iniciar en vivo"}
           </Link>
-          <form action={deleteMatchAction}>
-            <input type="hidden" name="matchId" value={match.id} />
-            <button className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400 hover:text-red-400">
-              Eliminar
-            </button>
-          </form>
+          {staff && (
+            <form action={deleteMatchAction}>
+              <input type="hidden" name="matchId" value={match.id} />
+              <button className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400 hover:text-red-400">
+                Eliminar
+              </button>
+            </form>
+          )}
         </div>
       )}
 

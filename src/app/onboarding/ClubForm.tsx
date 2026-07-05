@@ -83,6 +83,7 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
               className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
             >
               <option value="coach">Entrenador (gestiona su equipo)</option>
+              <option value="tecnico">Técnico (stats en vivo y entrenamientos)</option>
               <option value="player">Jugador (solo consulta)</option>
             </select>
           </div>

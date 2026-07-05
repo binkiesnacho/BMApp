@@ -31,7 +31,7 @@ export async function joinClubAction(
   const code = String(formData.get("code") ?? "").trim();
   const joinAs = String(formData.get("joinAs") ?? "coach");
   if (!code) return { error: "Escribe el código del club." };
-  if (joinAs !== "coach" && joinAs !== "player") {
+  if (!["coach", "player", "tecnico"].includes(joinAs)) {
     return { error: "Rol no válido." };
   }
 

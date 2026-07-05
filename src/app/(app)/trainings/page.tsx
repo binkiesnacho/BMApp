@@ -1,7 +1,12 @@
 import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
+import {
+  canAdminister,
+  canCapture,
+  getSessionProfile,
+  isTecnico,
+} from "@/lib/auth";
 import CreateTrainingForm from "./CreateTrainingForm";
 import type {
   Player,
@@ -24,18 +29,20 @@ function fmtDate(iso: string) {
 
 export default async function TrainingsPage() {
   const { profile } = await getSessionProfile();
-  const staff = isStaff(profile);
+  const capture = canCapture(profile);
 
   const supabase = await createClient();
 
-  // Equipos gestionables (para crear).
+  // Equipos donde puede crear entrenamientos:
+  //   admin → todos; coach → los suyos; técnico → su equipo asignado.
   let manageable: Team[] = [];
-  if (staff && profile?.club_id) {
-    const q = supabase.from("teams").select("*").eq("club_id", profile.club_id);
-    const { data } = canAdminister(profile)
-      ? await q.returns<Team[]>()
-      : await q.eq("coach_id", profile.id).returns<Team[]>();
-    manageable = data ?? [];
+  if (capture && profile?.club_id) {
+    let q = supabase.from("teams").select("*").eq("club_id", profile.club_id);
+    if (isTecnico(profile)) q = q.eq("id", profile.team_id ?? "");
+    else if (!canAdminister(profile)) q = q.eq("coach_id", profile.id);
+    manageable = isTecnico(profile) && !profile.team_id
+      ? []
+      : (await q.returns<Team[]>()).data ?? [];
   }
 
   const [{ data: trainings }, { data: attendance }, { data: players }] =
@@ -75,10 +82,10 @@ export default async function TrainingsPage() {
     <>
       <AppHeader
         title="Entrenamientos"
-        subtitle={staff ? "Sesiones y asistencia" : "Sesiones de tu equipo"}
+        subtitle={capture ? "Sesiones y asistencia" : "Sesiones de tu equipo"}
       />
 
-      {staff && manageable.length > 0 && (
+      {capture && manageable.length > 0 && (
         <div className="mt-4">
           <CreateTrainingForm teams={manageable} />
         </div>
@@ -140,7 +147,7 @@ export default async function TrainingsPage() {
 
       {(!trainings || trainings.length === 0) && (
         <div className="mt-4 rounded-2xl border border-dashed border-slate-800 p-8 text-center text-sm text-slate-400">
-          {staff
+          {capture
             ? "Sin entrenamientos. Crea el primero arriba."
             : "Tu equipo aún no tiene entrenamientos."}
         </div>

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import SignOutButton from "@/components/auth/SignOutButton";
-import { canAdminister, getSessionProfile, isPlayer } from "@/lib/auth";
+import {
+  canAdminister,
+  getSessionProfile,
+  isPlayer,
+  isStaff,
+  isTecnico,
+} from "@/lib/auth";
 
 export default async function DashboardPage() {
   const { profile } = await getSessionProfile();
@@ -12,17 +18,20 @@ export default async function DashboardPage() {
     ? "Administrador global"
     : isAdmin
       ? "Administrador"
-      : player
-        ? "Jugador"
-        : "Entrenador";
+      : isTecnico(profile)
+        ? "Técnico"
+        : player
+          ? "Jugador"
+          : "Entrenador";
 
+  const staff = isStaff(profile);
   const actions = [
-    ...(isAdmin
+    ...(staff
       ? [
           {
             href: "/admin",
-            title: "Administración",
-            desc: "Club, miembros y equipos",
+            title: isAdmin ? "Administración" : "Gestión",
+            desc: isAdmin ? "Club, miembros y equipos" : "Miembros y roles",
             icon: "⚙️",
           },
         ]

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppHeader from "@/components/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getSessionProfile } from "@/lib/auth";
 import { deleteTrainingAction } from "../actions";
 import AttendanceEditor from "./AttendanceEditor";
 import type { Player, Training, TrainingAttendance } from "@/lib/types/database";
@@ -24,7 +24,7 @@ export default async function TrainingDetailPage({
 }) {
   const { id } = await params;
   const { profile } = await getSessionProfile();
-  const staff = isStaff(profile);
+  const staff = canCapture(profile);
 
   const supabase = await createClient();
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
 import type { StatEventType } from "@/lib/types/database";
 
 export type MatchFormState = { error?: string };
@@ -68,7 +68,7 @@ export async function saveLiveMatchAction(input: {
   if (!matchId) return { error: "Partido no válido." };
 
   const { profile } = await getSessionProfile();
-  if (!isStaff(profile)) return { error: "Sin permisos." };
+  if (!canCapture(profile)) return { error: "Sin permisos." };
 
   const supabase = await createClient();
 

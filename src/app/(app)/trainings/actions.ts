@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getSessionProfile } from "@/lib/auth";
 import type { Player, TrainingPhase } from "@/lib/types/database";
 
 export interface CreateTrainingInput {
@@ -19,7 +19,7 @@ export async function createTrainingAction(
   input: CreateTrainingInput
 ): Promise<{ error?: string; id?: string }> {
   const { profile } = await getSessionProfile();
-  if (!isStaff(profile)) return { error: "Sin permisos." };
+  if (!canCapture(profile)) return { error: "Sin permisos." };
   if (!input.teamId) return { error: "Selecciona un equipo." };
   if (!input.date) return { error: "Indica la fecha." };
 
@@ -65,7 +65,7 @@ export async function saveAttendanceAction(
   attendedIds: string[]
 ): Promise<{ error?: string }> {
   const { profile } = await getSessionProfile();
-  if (!isStaff(profile)) return { error: "Sin permisos." };
+  if (!canCapture(profile)) return { error: "Sin permisos." };
   if (!trainingId) return { error: "Entrenamiento no válido." };
 
   const supabase = await createClient();

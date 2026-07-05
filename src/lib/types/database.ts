@@ -4,7 +4,7 @@
  *  `supabase gen types typescript --project-id gqslmipjchgbizkbtqqe`)
  */
 
-export type UserRole = "admin" | "coach" | "player";
+export type UserRole = "admin" | "coach" | "player" | "tecnico";
 
 export type MatchStatus = "scheduled" | "live" | "finished";
 
