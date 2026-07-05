@@ -84,16 +84,16 @@ export default function LiveMatch({
   const recent = [...store.events].slice(-6).reverse();
 
   return (
-    <div className="pb-4">
+    <div className="px-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
       {/* Marcador + reloj */}
-      <div className="sticky top-0 z-20 -mx-4 border-b border-slate-800 bg-slate-950/95 px-4 py-3 backdrop-blur">
+      <div className="safe-top sticky top-0 z-20 -mx-4 border-b border-separator/60 bg-canvas/95 px-4 py-3 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <div className="text-center">
-            <p className="text-[10px] text-slate-400">Nosotros</p>
+            <p className="text-[10px] text-label-2">Nosotros</p>
             <p className="font-mono text-3xl font-bold text-brand">{ourScore}</p>
           </div>
           <div className="text-center">
-            <p className="font-mono text-lg text-slate-200">{clock(store.elapsed)}</p>
+            <p className="font-mono text-lg text-label">{clock(store.elapsed)}</p>
             <button
               onClick={() => store.toggleClock()}
               className={`mt-1 rounded-lg px-3 py-1 text-xs font-semibold ${
@@ -106,22 +106,22 @@ export default function LiveMatch({
             </button>
           </div>
           <div className="text-center">
-            <p className="max-w-20 truncate text-[10px] text-slate-400">
+            <p className="max-w-20 truncate text-[10px] text-label-2">
               {match.opponent}
             </p>
-            <p className="font-mono text-3xl font-bold text-slate-200">
+            <p className="font-mono text-3xl font-bold text-label">
               {store.oppScore}
             </p>
             <div className="mt-1 flex gap-1">
               <button
                 onClick={() => store.setOppScore(store.oppScore - 1)}
-                className="h-6 w-6 rounded bg-slate-800 text-slate-300"
+                className="h-6 w-6 rounded bg-surface-2 text-label"
               >
                 −
               </button>
               <button
                 onClick={() => store.setOppScore(store.oppScore + 1)}
-                className="h-6 w-6 rounded bg-slate-800 text-slate-300"
+                className="h-6 w-6 rounded bg-surface-2 text-label"
               >
                 +
               </button>
@@ -131,7 +131,7 @@ export default function LiveMatch({
       </div>
 
       {/* Selección de jugador */}
-      <p className="mt-4 mb-2 text-xs font-semibold text-slate-400">
+      <p className="mt-4 mb-2 text-xs font-semibold text-label-2">
         1 · Elige jugador
       </p>
       <div className="grid grid-cols-3 gap-2">
@@ -140,7 +140,7 @@ export default function LiveMatch({
           className={`rounded-xl border px-2 py-2 text-sm ${
             selected === null
               ? "border-brand bg-brand/20 text-white"
-              : "border-slate-700 bg-slate-900 text-slate-300"
+              : "border-separator bg-surface text-label"
           }`}
         >
           Equipo
@@ -152,7 +152,7 @@ export default function LiveMatch({
             className={`truncate rounded-xl border px-2 py-2 text-sm ${
               selected === p.id
                 ? "border-brand bg-brand/20 text-white"
-                : "border-slate-700 bg-slate-900 text-slate-300"
+                : "border-separator bg-surface text-label"
             }`}
           >
             <span className="font-bold text-brand">{p.number ?? "–"}</span>{" "}
@@ -162,9 +162,9 @@ export default function LiveMatch({
       </div>
 
       {/* Botones de evento */}
-      <p className="mt-4 mb-2 text-xs font-semibold text-slate-400">
+      <p className="mt-4 mb-2 text-xs font-semibold text-label-2">
         2 · Registra evento{" "}
-        <span className="text-slate-500">({playerLabel(selected)})</span>
+        <span className="text-label-3">({playerLabel(selected)})</span>
       </p>
       <div className="grid grid-cols-4 gap-2">
         {EVENT_ORDER.map((type) => {
@@ -173,7 +173,7 @@ export default function LiveMatch({
             <button
               key={type}
               onClick={() => store.addEvent(selected, type)}
-              className="flex flex-col items-center gap-1 rounded-xl border border-slate-700 bg-slate-900 py-2.5 text-[11px] text-slate-200 active:scale-95 active:border-brand"
+              className="flex flex-col items-center gap-1 rounded-xl border border-separator bg-surface py-2.5 text-[11px] text-label active:scale-95 active:border-brand"
             >
               <span className="text-lg">{info.icon}</span>
               {info.short}
@@ -184,13 +184,13 @@ export default function LiveMatch({
 
       {/* Eventos recientes */}
       <div className="mt-4 flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-400">
+        <p className="text-xs font-semibold text-label-2">
           Últimos ({store.events.length})
         </p>
         <button
           onClick={() => store.undoLast()}
           disabled={store.events.length === 0}
-          className="rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-300 disabled:opacity-40"
+          className="rounded-lg border border-separator px-2 py-1 text-xs text-label disabled:opacity-40"
         >
           ↶ Deshacer
         </button>
@@ -199,15 +199,15 @@ export default function LiveMatch({
         {recent.map((e) => (
           <li
             key={e.tempId}
-            className="flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs"
+            className="flex items-center gap-2 rounded-lg bg-surface px-3 py-1.5 text-xs"
           >
-            <span className="w-8 font-mono text-slate-500">
+            <span className="w-8 font-mono text-label-3">
               {Math.floor(e.gameSecond / 60)}
               {"'"}
             </span>
             <span>{EVENT_LABELS[e.eventType].icon}</span>
-            <span className="text-slate-300">{EVENT_LABELS[e.eventType].label}</span>
-            <span className="ml-auto truncate text-slate-400">
+            <span className="text-label">{EVENT_LABELS[e.eventType].label}</span>
+            <span className="ml-auto truncate text-label-2">
               {playerLabel(e.playerId)}
             </span>
           </li>
@@ -222,7 +222,7 @@ export default function LiveMatch({
         <button
           onClick={() => save(false)}
           disabled={saving}
-          className="flex-1 rounded-xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 disabled:opacity-50"
+          className="flex-1 rounded-xl border border-separator px-4 py-3 text-sm font-semibold text-label disabled:opacity-50"
         >
           Guardar
         </button>

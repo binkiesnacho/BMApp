@@ -20,7 +20,7 @@ export default function RenameClubForm({
         type="text"
         required
         defaultValue={currentName}
-        className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+        className="flex-1 rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
       />
       <button
         type="submit"

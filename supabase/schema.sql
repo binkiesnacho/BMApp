@@ -55,6 +55,7 @@ create table if not exists public.clubs (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
   join_code  text unique not null default public.gen_join_code(),
+  logo_url   text,
   created_at timestamptz not null default now()
 );
 

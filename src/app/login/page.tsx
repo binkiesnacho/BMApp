@@ -63,15 +63,15 @@ export default function LoginPage() {
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 p-8">
       <div className="text-center">
         <div className="mb-2 text-4xl">🤾</div>
-        <h1 className="text-xl font-semibold text-slate-100">BMApp</h1>
-        <p className="text-sm text-slate-400">Gestión de balonmano</p>
+        <h1 className="text-xl font-semibold text-label">BMApp</h1>
+        <p className="text-sm text-label-2">Gestión de balonmano</p>
       </div>
 
-      <div className="flex w-full max-w-xs rounded-xl border border-slate-800 p-1 text-sm">
+      <div className="flex w-full max-w-xs rounded-xl border border-separator/60 p-1 text-sm">
         <button
           onClick={() => setMode("signin")}
           className={`flex-1 rounded-lg py-2 ${
-            mode === "signin" ? "bg-brand text-white" : "text-slate-400"
+            mode === "signin" ? "bg-brand text-white" : "text-label-2"
           }`}
         >
           Iniciar sesión
@@ -79,7 +79,7 @@ export default function LoginPage() {
         <button
           onClick={() => setMode("signup")}
           className={`flex-1 rounded-lg py-2 ${
-            mode === "signup" ? "bg-brand text-white" : "text-slate-400"
+            mode === "signup" ? "bg-brand text-white" : "text-label-2"
           }`}
         >
           Crear cuenta
@@ -94,7 +94,7 @@ export default function LoginPage() {
             placeholder="Tu nombre"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
+            className="w-full rounded-xl border border-separator bg-surface px-4 py-3 text-label outline-none focus:border-brand"
           />
         )}
         <input
@@ -104,7 +104,7 @@ export default function LoginPage() {
           placeholder="tu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
+          className="w-full rounded-xl border border-separator bg-surface px-4 py-3 text-label outline-none focus:border-brand"
         />
         <input
           type="password"
@@ -113,7 +113,7 @@ export default function LoginPage() {
           placeholder="Contraseña (mín. 6)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
+          className="w-full rounded-xl border border-separator bg-surface px-4 py-3 text-label outline-none focus:border-brand"
         />
 
         {error && <p className="text-sm text-red-400">{error}</p>}

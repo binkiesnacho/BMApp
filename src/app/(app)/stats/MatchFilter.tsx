@@ -18,7 +18,7 @@ export default function MatchFilter({
         const v = e.target.value;
         router.push(v ? `/stats?match=${v}` : "/stats");
       }}
-      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+      className="w-full rounded-xl bg-surface px-3 py-2.5 text-[15px] text-label outline-none"
     >
       <option value="">Todos los partidos</option>
       {matches.map((m) => (

@@ -1,5 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Profile } from "@/lib/types/database";
+import type { Club, Profile } from "@/lib/types/database";
+
+/** Club del usuario actual (o null). */
+export async function getMyClub(): Promise<Club | null> {
+  const { profile } = await getSessionProfile();
+  if (!profile?.club_id) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("clubs")
+    .select("*")
+    .eq("id", profile.club_id)
+    .maybeSingle<Club>();
+  return data ?? null;
+}
 
 /**
  * Devuelve el usuario autenticado y su perfil (o null si no hay sesión).

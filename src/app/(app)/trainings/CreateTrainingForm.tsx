@@ -53,7 +53,7 @@ export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-2xl border border-dashed border-slate-700 py-3 text-sm font-medium text-slate-300 hover:border-brand"
+        className="w-full rounded-2xl border border-dashed border-separator py-3 text-sm font-medium text-label hover:border-brand"
       >
         + Nuevo entrenamiento
       </button>
@@ -61,10 +61,10 @@ export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
   }
 
   const inputCls =
-    "w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand";
+    "w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand";
 
   return (
-    <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-3">
+    <div className="space-y-3 rounded-2xl border border-separator/60 bg-surface p-3">
       <select
         value={teamId}
         onChange={(e) => setTeamId(e.target.value)}
@@ -99,7 +99,7 @@ export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
 
       {/* Fases */}
       <div>
-        <p className="mb-1 text-xs font-semibold text-slate-400">
+        <p className="mb-1 text-xs font-semibold text-label-2">
           Fases · {total}&apos; total
         </p>
         <div className="space-y-2">
@@ -116,11 +116,11 @@ export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
                 min={0}
                 value={p.minutes}
                 onChange={(e) => setPhase(i, { minutes: Number(e.target.value) })}
-                className="w-16 rounded-xl border border-slate-700 bg-slate-950 px-2 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+                className="w-16 rounded-xl border border-separator bg-canvas px-2 py-2.5 text-sm text-label outline-none focus:border-brand"
               />
               <button
                 onClick={() => setPhases((ps) => ps.filter((_, j) => j !== i))}
-                className="px-2 text-slate-500 hover:text-red-400"
+                className="px-2 text-label-3 hover:text-red-400"
                 aria-label="Quitar fase"
               >
                 ✕
@@ -138,7 +138,7 @@ export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
 
       {/* Objetivos */}
       <div>
-        <p className="mb-1 text-xs font-semibold text-slate-400">Objetivos</p>
+        <p className="mb-1 text-xs font-semibold text-label-2">Objetivos</p>
         <div className="space-y-2">
           {objectives.map((o, i) => (
             <div key={i} className="flex gap-2">
@@ -156,7 +156,7 @@ export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
                 onClick={() =>
                   setObjectives((os) => os.filter((_, j) => j !== i))
                 }
-                className="px-2 text-slate-500 hover:text-red-400"
+                className="px-2 text-label-3 hover:text-red-400"
                 aria-label="Quitar objetivo"
               >
                 ✕
@@ -183,7 +183,7 @@ export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
         </button>
         <button
           onClick={() => setOpen(false)}
-          className="rounded-xl border border-slate-700 px-3 py-2.5 text-sm text-slate-300"
+          className="rounded-xl border border-separator px-3 py-2.5 text-sm text-label"
         >
           Cancelar
         </button>

@@ -23,7 +23,7 @@ export default function CreateMatchForm({ teams }: { teams: Team[] }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-2xl border border-dashed border-slate-700 py-3 text-sm font-medium text-slate-300 hover:border-brand"
+        className="w-full rounded-2xl border border-dashed border-separator py-3 text-sm font-medium text-label hover:border-brand"
       >
         + Nuevo partido
       </button>
@@ -34,13 +34,13 @@ export default function CreateMatchForm({ teams }: { teams: Team[] }) {
     <form
       ref={formRef}
       action={formAction}
-      className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900 p-3"
+      className="space-y-2 rounded-2xl border border-separator/60 bg-surface p-3"
     >
       <select
         name="teamId"
         required
         defaultValue={teams.length === 1 ? teams[0].id : ""}
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+        className="w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
       >
         <option value="">Equipo…</option>
         {teams.map((t) => (
@@ -53,18 +53,18 @@ export default function CreateMatchForm({ teams }: { teams: Team[] }) {
         name="opponent"
         required
         placeholder="Rival"
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+        className="w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
       />
       <input
         name="date"
         type="datetime-local"
         required
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+        className="w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
       />
       <input
         name="location"
         placeholder="Lugar (opcional)"
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+        className="w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
       />
       {state.error && <p className="text-sm text-red-400">{state.error}</p>}
       <div className="flex gap-2">
@@ -78,7 +78,7 @@ export default function CreateMatchForm({ teams }: { teams: Team[] }) {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-xl border border-slate-700 px-3 py-2.5 text-sm text-slate-300"
+          className="rounded-xl border border-separator px-3 py-2.5 text-sm text-label"
         >
           Cancelar
         </button>

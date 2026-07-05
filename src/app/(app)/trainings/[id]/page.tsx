@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import AppHeader from "@/components/layout/AppHeader";
+import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile } from "@/lib/auth";
 import { deleteTrainingAction } from "../actions";
@@ -62,42 +61,33 @@ export default async function TrainingDetailPage({
   const myPlayerId = players?.find((p) => p.profile_id === profile?.id)?.id;
 
   return (
-    <>
-      <AppHeader
-        title={training.title || "Entrenamiento"}
-        subtitle={fmtDate(training.date)}
-        action={
-          <Link
-            href="/trainings"
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300"
-          >
-            ‹ Volver
-          </Link>
-        }
-      />
-
+    <Screen
+      title={training.title || "Entrenamiento"}
+      subtitle={fmtDate(training.date)}
+      back="/trainings"
+    >
       {training.description && (
-        <p className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300">
+        <p className="rounded-2xl bg-surface p-4 text-sm text-label">
           {training.description}
         </p>
       )}
 
       {/* Fases */}
-      <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+      <section className="mt-4 rounded-2xl border border-separator/60 bg-surface p-4">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-300">Fases</h2>
-          <span className="text-xs text-slate-500">{totalMin}&apos; total</span>
+          <h2 className="text-sm font-semibold text-label">Fases</h2>
+          <span className="text-xs text-label-3">{totalMin}&apos; total</span>
         </div>
         {training.phases.length === 0 ? (
-          <p className="text-xs text-slate-500">Sin fases definidas.</p>
+          <p className="text-xs text-label-3">Sin fases definidas.</p>
         ) : (
           <ol className="space-y-1.5">
             {training.phases.map((p, i) => (
               <li
                 key={i}
-                className="flex items-center justify-between rounded-xl bg-slate-950 px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-xl bg-canvas px-3 py-2 text-sm"
               >
-                <span className="text-slate-200">
+                <span className="text-label">
                   {i + 1}. {p.name}
                 </span>
                 <span className="font-mono text-brand">{p.minutes}&apos;</span>
@@ -109,11 +99,11 @@ export default async function TrainingDetailPage({
 
       {/* Objetivos */}
       {training.objectives.length > 0 && (
-        <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <h2 className="mb-2 text-sm font-semibold text-slate-300">Objetivos</h2>
+        <section className="mt-4 rounded-2xl border border-separator/60 bg-surface p-4">
+          <h2 className="mb-2 text-sm font-semibold text-label">Objetivos</h2>
           <ul className="space-y-1">
             {training.objectives.map((o, i) => (
-              <li key={i} className="flex gap-2 text-sm text-slate-300">
+              <li key={i} className="flex gap-2 text-sm text-label">
                 <span>🎯</span>
                 {o}
               </li>
@@ -123,8 +113,8 @@ export default async function TrainingDetailPage({
       )}
 
       {/* Asistencia */}
-      <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <h2 className="mb-2 text-sm font-semibold text-slate-300">Asistencia</h2>
+      <section className="mt-4 rounded-2xl border border-separator/60 bg-surface p-4">
+        <h2 className="mb-2 text-sm font-semibold text-label">Asistencia</h2>
         {staff ? (
           <AttendanceEditor
             trainingId={training.id}
@@ -132,7 +122,7 @@ export default async function TrainingDetailPage({
             initialAttended={attendedIds}
           />
         ) : !recorded ? (
-          <p className="text-xs text-slate-500">Asistencia aún sin registrar.</p>
+          <p className="text-xs text-label-3">Asistencia aún sin registrar.</p>
         ) : (
           <ul className="space-y-1.5">
             {players?.map((p) => {
@@ -142,11 +132,11 @@ export default async function TrainingDetailPage({
                 <li
                   key={p.id}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${
-                    mine ? "bg-brand/10 ring-1 ring-brand/40" : "bg-slate-950"
+                    mine ? "bg-brand/10 ring-1 ring-brand/40" : "bg-canvas"
                   }`}
                 >
                   <span className="font-bold text-brand">{p.number ?? "–"}</span>
-                  <span className="flex-1 truncate text-slate-100">
+                  <span className="flex-1 truncate text-label">
                     {p.name}
                     {mine && " · tú"}
                   </span>
@@ -168,11 +158,11 @@ export default async function TrainingDetailPage({
       {staff && (
         <form action={deleteTrainingAction} className="mt-4">
           <input type="hidden" name="trainingId" value={training.id} />
-          <button className="w-full rounded-xl border border-slate-800 py-2.5 text-sm text-slate-400 hover:text-red-400">
+          <button className="w-full rounded-xl border border-separator/60 py-2.5 text-sm text-label-2 hover:text-red-400">
             Eliminar entrenamiento
           </button>
         </form>
       )}
-    </>
+    </Screen>
   );
 }

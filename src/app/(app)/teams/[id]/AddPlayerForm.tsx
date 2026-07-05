@@ -30,7 +30,7 @@ export default function AddPlayerForm({ teamId }: { teamId: string }) {
     <form
       ref={formRef}
       action={formAction}
-      className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900 p-3"
+      className="space-y-2 rounded-2xl border border-separator/60 bg-surface p-3"
     >
       <input type="hidden" name="teamId" value={teamId} />
       <div className="flex gap-2">
@@ -40,20 +40,20 @@ export default function AddPlayerForm({ teamId }: { teamId: string }) {
           inputMode="numeric"
           min={0}
           placeholder="Nº"
-          className="w-16 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+          className="w-16 rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
         />
         <input
           name="name"
           type="text"
           required
           placeholder="Nombre del jugador"
-          className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+          className="flex-1 rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
         />
       </div>
       <select
         name="position"
         defaultValue=""
-        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+        className="w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
       >
         <option value="">Posición (opcional)</option>
         {POSITIONS.map((p) => (

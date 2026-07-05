@@ -25,11 +25,11 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
   return (
     <div className="w-full max-w-xs space-y-4">
       {canCreate && (
-        <div className="flex rounded-xl border border-slate-800 p-1 text-sm">
+        <div className="flex rounded-xl border border-separator/60 p-1 text-sm">
           <button
             onClick={() => setMode("create")}
             className={`flex-1 rounded-lg py-2 ${
-              mode === "create" ? "bg-brand text-white" : "text-slate-400"
+              mode === "create" ? "bg-brand text-white" : "text-label-2"
             }`}
           >
             Crear club
@@ -37,7 +37,7 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
           <button
             onClick={() => setMode("join")}
             className={`flex-1 rounded-lg py-2 ${
-              mode === "join" ? "bg-brand text-white" : "text-slate-400"
+              mode === "join" ? "bg-brand text-white" : "text-label-2"
             }`}
           >
             Unirme con código
@@ -52,7 +52,7 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
             type="text"
             required
             placeholder="Nombre del club (ej. CB Villanueva)"
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
+            className="w-full rounded-xl border border-separator bg-surface px-4 py-3 text-label outline-none focus:border-brand"
           />
           {createState.error && (
             <p className="text-sm text-red-400">{createState.error}</p>
@@ -73,14 +73,14 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
             required
             autoCapitalize="characters"
             placeholder="Código del club (ej. A1B2C3)"
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 uppercase tracking-widest text-slate-100 outline-none focus:border-brand"
+            className="w-full rounded-xl border border-separator bg-surface px-4 py-3 uppercase tracking-widest text-label outline-none focus:border-brand"
           />
           <div>
-            <label className="mb-1 block text-xs text-slate-400">Te unes como</label>
+            <label className="mb-1 block text-xs text-label-2">Te unes como</label>
             <select
               name="joinAs"
               defaultValue="coach"
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none focus:border-brand"
+              className="w-full rounded-xl border border-separator bg-surface px-4 py-3 text-label outline-none focus:border-brand"
             >
               <option value="coach">Entrenador (gestiona su equipo)</option>
               <option value="tecnico">Técnico (stats en vivo y entrenamientos)</option>
@@ -97,7 +97,7 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
           >
             {joining ? "Uniéndome…" : "Unirme como entrenador"}
           </button>
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-label-3">
             Pídele el código a tu administrador del club.
           </p>
         </form>

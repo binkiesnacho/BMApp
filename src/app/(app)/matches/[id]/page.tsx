@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import AppHeader from "@/components/layout/AppHeader";
+import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
 import { deleteMatchAction } from "../actions";
@@ -73,43 +73,30 @@ export default async function MatchDetailPage({
     .sort((a, b) => (b.c.goal ?? 0) - (a.c.goal ?? 0));
 
   return (
-    <>
-      <AppHeader
-        title={`vs ${match.opponent}`}
-        subtitle={fmtDate(match.date)}
-        action={
-          <Link
-            href="/matches"
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300"
-          >
-            ‹ Partidos
-          </Link>
-        }
-      />
-
+    <Screen title={`vs ${match.opponent}`} subtitle={fmtDate(match.date)} back="/matches">
       {/* Marcador */}
-      <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 text-center">
+      <div className="rounded-2xl bg-surface p-5 text-center">
         {match.status === "scheduled" ? (
-          <p className="text-sm text-slate-400">Aún no comenzado</p>
+          <p className="text-sm text-label-2">Aún no comenzado</p>
         ) : (
           <div className="flex items-center justify-center gap-4">
             <div className="flex-1 text-right">
-              <p className="text-xs text-slate-400">Nosotros</p>
+              <p className="text-xs text-label-2">Nosotros</p>
               <p className="font-mono text-4xl font-bold text-brand">
                 {match.our_score}
               </p>
             </div>
-            <span className="text-2xl text-slate-600">–</span>
+            <span className="text-2xl text-label-3">–</span>
             <div className="flex-1 text-left">
-              <p className="text-xs text-slate-400">{match.opponent}</p>
-              <p className="font-mono text-4xl font-bold text-slate-200">
+              <p className="text-xs text-label-2">{match.opponent}</p>
+              <p className="font-mono text-4xl font-bold text-label">
                 {match.opp_score}
               </p>
             </div>
           </div>
         )}
         {match.location && (
-          <p className="mt-2 text-xs text-slate-500">📍 {match.location}</p>
+          <p className="mt-2 text-xs text-label-3">📍 {match.location}</p>
         )}
       </div>
 
@@ -129,7 +116,7 @@ export default async function MatchDetailPage({
           {staff && (
             <form action={deleteMatchAction}>
               <input type="hidden" name="matchId" value={match.id} />
-              <button className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400 hover:text-red-400">
+              <button className="rounded-xl border border-separator px-4 py-3 text-sm text-label-2 hover:text-red-400">
                 Eliminar
               </button>
             </form>
@@ -140,13 +127,13 @@ export default async function MatchDetailPage({
       {/* Estadísticas por jugador del partido */}
       {statRows.length > 0 && (
         <>
-          <h2 className="mt-6 mb-2 text-sm font-semibold text-slate-300">
+          <h2 className="mt-6 mb-2 text-sm font-semibold text-label">
             Estadísticas del partido
           </h2>
-          <div className="overflow-x-auto no-scrollbar rounded-2xl border border-slate-800">
+          <div className="overflow-x-auto no-scrollbar rounded-2xl border border-separator/60">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-900 text-slate-400">
+                <tr className="bg-surface text-label-2">
                   <th className="px-3 py-2 text-left font-medium">Jugador</th>
                   {STAT_COLS.map((c) => (
                     <th
@@ -166,8 +153,8 @@ export default async function MatchDetailPage({
                 {statRows.map(({ player, c }) => {
                   const acc = shootingAccuracy(c);
                   return (
-                    <tr key={player.id} className="border-t border-slate-800">
-                      <td className="px-3 py-2 text-slate-100">
+                    <tr key={player.id} className="border-t border-separator/60">
+                      <td className="px-3 py-2 text-label">
                         <span className="font-bold text-brand">
                           {player.number ?? "–"}
                         </span>{" "}
@@ -176,12 +163,12 @@ export default async function MatchDetailPage({
                       {STAT_COLS.map((col) => (
                         <td
                           key={col}
-                          className="px-2 py-2 text-center text-slate-300"
+                          className="px-2 py-2 text-center text-label"
                         >
                           {c[col] ?? 0}
                         </td>
                       ))}
-                      <td className="px-2 py-2 text-center font-semibold text-slate-200">
+                      <td className="px-2 py-2 text-center font-semibold text-label">
                         {acc === null ? "–" : `${acc}%`}
                       </td>
                     </tr>
@@ -194,7 +181,7 @@ export default async function MatchDetailPage({
       )}
 
       {/* Cronología de eventos */}
-      <h2 className="mt-6 mb-2 text-sm font-semibold text-slate-300">
+      <h2 className="mt-6 mb-2 text-sm font-semibold text-label">
         Eventos ({events?.length ?? 0})
       </h2>
       <ul className="space-y-1.5">
@@ -204,15 +191,15 @@ export default async function MatchDetailPage({
           return (
             <li
               key={e.id}
-              className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm"
+              className="flex items-center gap-2 rounded-xl border border-separator/60 bg-surface px-3 py-2 text-sm"
             >
-              <span className="w-8 shrink-0 font-mono text-xs text-slate-500">
+              <span className="w-8 shrink-0 font-mono text-xs text-label-3">
                 {mm}
                 {"'"}
               </span>
               <span>{info?.icon}</span>
-              <span className="text-slate-300">{info?.label}</span>
-              <span className="ml-auto truncate text-slate-400">
+              <span className="text-label">{info?.label}</span>
+              <span className="ml-auto truncate text-label-2">
                 {playerName(e.player_id)}
               </span>
             </li>
@@ -220,10 +207,10 @@ export default async function MatchDetailPage({
         })}
       </ul>
       {(!events || events.length === 0) && (
-        <p className="rounded-xl border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500">
+        <p className="rounded-xl border border-dashed border-separator/70 p-6 text-center text-[13px] text-label-3">
           Sin eventos registrados.
         </p>
       )}
-    </>
+    </Screen>
   );
 }

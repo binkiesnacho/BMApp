@@ -24,7 +24,7 @@ export default function CreateTeamForm() {
         type="text"
         required
         placeholder="Nuevo equipo (ej. Senior Masculino)"
-        className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-brand"
+        className="flex-1 rounded-xl border border-separator bg-surface px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
       />
       <button
         type="submit"

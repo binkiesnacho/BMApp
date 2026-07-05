@@ -1,25 +1,46 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   Sistema de diseño — estilo iOS (Human Interface Guidelines), tema oscuro.
+   Colores semánticos por capas + acento azul del sistema (combina con el logo).
+   ============================================================================= */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --color-brand: #f97316;      /* naranja balonmano */
-  --color-brand-dark: #ea580c;
+  --color-brand: #0a84ff;        /* iOS system blue (dark) */
+  --color-brand-strong: #0071e3;
+
+  --color-canvas: #000000;       /* systemBackground */
+  --color-surface: #1c1c1e;      /* secondarySystemBackground / cards */
+  --color-surface-2: #2c2c2e;    /* tertiarySystemBackground */
+  --color-separator: rgba(84, 84, 88, 0.55);
+
+  --color-label: #f2f2f7;                       /* label */
+  --color-label-2: rgba(235, 235, 245, 0.6);    /* secondaryLabel */
+  --color-label-3: rgba(235, 235, 245, 0.32);   /* tertiaryLabel */
+
+  --color-positive: #30d158;     /* systemGreen */
+  --color-negative: #ff453a;     /* systemRed */
+  --color-warning: #ff9f0a;      /* systemOrange */
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    "Segoe UI", Roboto, sans-serif;
 }
 
 html {
-  /* Altura exacta del viewport, sin desbordes en móvil */
   height: 100%;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100dvh;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  /* Sin rebote elástico raro en iOS al no haber contenido que scrollear */
+  background: var(--color-canvas);
+  color: var(--color-label);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+  letter-spacing: -0.01em;
 }
 
-/* Utilidades de safe-area (notch) reutilizables por header y bottom-nav */
+/* Safe-areas del notch/gestos */
 .safe-top {
   padding-top: env(safe-area-inset-top);
 }
@@ -27,7 +48,32 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Ocultar scrollbars horizontales de tabs/nav en móvil */
+/* Título grande estilo iOS */
+.ios-large-title {
+  font-size: 1.9rem;
+  line-height: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Encabezado de sección (caption en mayúsculas) */
+.ios-section-caption {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-label-3);
+}
+
+/* Feedback táctil sutil */
+.tap {
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.tap:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -38,7 +38,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="bg-slate-950 text-slate-100 min-h-full">
+      <body className="bg-canvas text-label min-h-full">
         <ServiceWorkerRegister />
         {children}
       </body>

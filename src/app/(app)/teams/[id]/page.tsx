@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import AppHeader from "@/components/layout/AppHeader";
+import Screen from "@/components/ui/Screen";
+import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile, isStaff } from "@/lib/auth";
 import AddPlayerForm from "./AddPlayerForm";
@@ -49,27 +49,18 @@ export default async function TeamDetailPage({
       : [];
 
   return (
-    <>
-      <AppHeader
-        title={team.name}
-        subtitle={`${players?.length ?? 0} jugadores`}
-        action={
-          <Link
-            href="/teams"
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300"
-          >
-            ‹ Equipos
-          </Link>
-        }
-      />
-
+    <Screen
+      title={team.name}
+      subtitle={`${players?.length ?? 0} jugadores`}
+      back="/teams"
+    >
       {canEdit && (
-        <div className="mt-4">
+        <div className="mb-4">
           <AddPlayerForm teamId={team.id} />
         </div>
       )}
 
-      <ul className="mt-4 space-y-2">
+      <ul className="space-y-2">
         {players?.map((player) => (
           <PlayerRow
             key={player.id}
@@ -82,10 +73,8 @@ export default async function TeamDetailPage({
       </ul>
 
       {(!players || players.length === 0) && (
-        <div className="mt-4 rounded-2xl border border-dashed border-slate-800 p-8 text-center text-sm text-slate-400">
-          Aún no hay jugadores en la plantilla.
-        </div>
+        <EmptyState icon="👥">Aún no hay jugadores en la plantilla.</EmptyState>
       )}
-    </>
+    </Screen>
   );
 }

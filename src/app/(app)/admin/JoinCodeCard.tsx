@@ -16,14 +16,14 @@ export default function JoinCodeCard({ code }: { code: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 px-4 py-3">
+    <div className="flex items-center justify-between rounded-xl border border-separator bg-canvas px-4 py-3">
       <div>
-        <p className="text-xs text-slate-400">Código de invitación</p>
+        <p className="text-xs text-label-2">Código de invitación</p>
         <p className="font-mono text-lg tracking-widest text-brand">{code}</p>
       </div>
       <button
         onClick={copy}
-        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-brand"
+        className="rounded-lg border border-separator px-3 py-1.5 text-xs text-label hover:border-brand"
       >
         {copied ? "¡Copiado!" : "Copiar"}
       </button>

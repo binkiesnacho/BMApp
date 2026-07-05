@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
-import AppHeader from "@/components/layout/AppHeader";
+import Screen from "@/components/ui/Screen";
+import { SectionTitle } from "@/components/ui/List";
 import { createClient } from "@/lib/supabase/server";
 import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
 import RenameClubForm from "./RenameClubForm";
 import JoinCodeCard from "./JoinCodeCard";
+import LogoUploader from "./LogoUploader";
 import {
   assignCoachAction,
   assignMemberTeamAction,
@@ -52,27 +54,32 @@ export default async function AdminPage() {
     teams?.find((t) => t.id === id)?.name;
 
   return (
-    <>
-      <AppHeader
-        title={isAdmin ? "Administración" : "Gestión"}
-        subtitle={club?.name ?? "Tu club"}
-      />
-
+    <Screen
+      title={isAdmin ? "Administración" : "Gestión"}
+      subtitle={club?.name ?? "Tu club"}
+    >
       {/* ---- Club ---- */}
-      <section className="mt-4 space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <h2 className="text-sm font-semibold text-slate-300">Club</h2>
+      <SectionTitle>Club</SectionTitle>
+      <section className="space-y-3 rounded-2xl bg-surface p-4">
+        {isAdmin && club && (
+          <LogoUploader
+            clubId={club.id}
+            clubName={club.name}
+            logoUrl={club.logo_url}
+          />
+        )}
         {isAdmin && <RenameClubForm currentName={club?.name ?? ""} />}
         {club && <JoinCodeCard code={club.join_code} />}
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-label-3">
           Comparte este código con entrenadores, técnicos y jugadores para que se unan.
         </p>
       </section>
 
       {/* ---- Miembros ---- */}
-      <section className="mt-4 space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <h2 className="text-sm font-semibold text-slate-300">
-          Miembros ({members?.length ?? 0})
-        </h2>
+      <div className="mt-5">
+        <SectionTitle>Miembros ({members?.length ?? 0})</SectionTitle>
+      </div>
+      <section className="space-y-3 rounded-2xl bg-surface p-4">
         <ul className="space-y-3">
           {members?.map((m) => {
             const isSelf = m.id === profile.id;
@@ -83,14 +90,14 @@ export default async function AdminPage() {
             return (
               <li
                 key={m.id}
-                className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5"
+                className="space-y-2 rounded-xl border border-separator/60 bg-canvas px-3 py-2.5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-100">
+                    <p className="truncate text-sm font-medium text-label">
                       {m.name || "(sin nombre)"} {isSelf && "· tú"}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-label-3">
                       {roleLabel[m.role] ?? m.role}
                       {hasTeam && ` · ${teamName(m.team_id) ?? "sin equipo"}`}
                     </p>
@@ -100,7 +107,7 @@ export default async function AdminPage() {
                       <input type="hidden" name="memberId" value={m.id} />
                       <button
                         type="submit"
-                        className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:text-red-400"
+                        className="rounded-lg px-2 py-1 text-xs text-label-3 hover:text-red-400"
                         aria-label={`Expulsar ${m.name}`}
                       >
                         ✕
@@ -117,14 +124,14 @@ export default async function AdminPage() {
                       <select
                         name="role"
                         defaultValue={m.role}
-                        className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+                        className="rounded-lg border border-separator bg-surface px-2 py-1.5 text-xs text-label outline-none focus:border-brand"
                       >
                         {isAdmin && <option value="admin">Administrador</option>}
                         {isAdmin && <option value="coach">Entrenador</option>}
                         <option value="tecnico">Técnico</option>
                         <option value="player">Jugador</option>
                       </select>
-                      <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+                      <button className="rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand">
                         Rol
                       </button>
                     </form>
@@ -136,7 +143,7 @@ export default async function AdminPage() {
                         <select
                           name="teamId"
                           defaultValue={m.team_id ?? ""}
-                          className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+                          className="rounded-lg border border-separator bg-surface px-2 py-1.5 text-xs text-label outline-none focus:border-brand"
                         >
                           <option value="">Sin equipo</option>
                           {teams?.map((t) => (
@@ -145,7 +152,7 @@ export default async function AdminPage() {
                             </option>
                           ))}
                         </select>
-                        <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+                        <button className="rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand">
                           Equipo
                         </button>
                       </form>
@@ -160,15 +167,14 @@ export default async function AdminPage() {
 
       {/* ---- Equipos (solo admin) ---- */}
       {isAdmin && (
-      <section className="mt-4 space-y-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <h2 className="text-sm font-semibold text-slate-300">
-          Equipos ({teams?.length ?? 0})
-        </h2>
+      <div className="mt-5">
+        <SectionTitle>Equipos ({teams?.length ?? 0})</SectionTitle>
+      <section className="space-y-3 rounded-2xl bg-surface p-4">
         <ul className="space-y-3">
           {teams?.map((t) => (
             <li
               key={t.id}
-              className="space-y-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5"
+              className="space-y-2 rounded-xl border border-separator/60 bg-canvas px-3 py-2.5"
             >
               {/* Renombrar + eliminar */}
               <div className="flex gap-2">
@@ -177,15 +183,15 @@ export default async function AdminPage() {
                   <input
                     name="name"
                     defaultValue={t.name}
-                    className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-brand"
+                    className="flex-1 rounded-lg border border-separator bg-surface px-2 py-1.5 text-sm text-label outline-none focus:border-brand"
                   />
-                  <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+                  <button className="rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand">
                     Renombrar
                   </button>
                 </form>
                 <form action={deleteTeamAction}>
                   <input type="hidden" name="teamId" value={t.id} />
-                  <button className="rounded-lg px-2 py-1.5 text-xs text-slate-500 hover:text-red-400">
+                  <button className="rounded-lg px-2 py-1.5 text-xs text-label-3 hover:text-red-400">
                     Eliminar
                   </button>
                 </form>
@@ -197,7 +203,7 @@ export default async function AdminPage() {
                 <select
                   name="coachId"
                   defaultValue={t.coach_id ?? ""}
-                  className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+                  className="flex-1 rounded-lg border border-separator bg-surface px-2 py-1.5 text-xs text-label outline-none focus:border-brand"
                 >
                   <option value="">Sin entrenador</option>
                   {members
@@ -208,7 +214,7 @@ export default async function AdminPage() {
                       </option>
                     ))}
                 </select>
-                <button className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-brand">
+                <button className="rounded-lg border border-separator px-3 py-1.5 text-xs text-label hover:border-brand">
                   Entrenador
                 </button>
               </form>
@@ -216,12 +222,13 @@ export default async function AdminPage() {
           ))}
         </ul>
         {(!teams || teams.length === 0) && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-label-3">
             Crea equipos desde la pestaña “Equipos”.
           </p>
         )}
       </section>
+      </div>
       )}
-    </>
+    </Screen>
   );
 }

@@ -22,6 +22,7 @@ export interface Club {
   id: string;
   name: string;
   join_code: string;
+  logo_url: string | null;
   created_at: string;
 }
 

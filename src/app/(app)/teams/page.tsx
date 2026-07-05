@@ -1,9 +1,10 @@
-import Link from "next/link";
-import AppHeader from "@/components/layout/AppHeader";
+import Screen from "@/components/ui/Screen";
+import { ListGroup, ListRow } from "@/components/ui/List";
+import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import { canAdminister, getSessionProfile, isPlayer } from "@/lib/auth";
 import CreateTeamForm from "./CreateTeamForm";
-import type { Team } from "@/lib/types/database";
+import type { Player, Team } from "@/lib/types/database";
 
 export const metadata = { title: "Equipos" };
 
@@ -13,7 +14,6 @@ export default async function TeamsPage() {
   const player = isPlayer(profile);
 
   const supabase = await createClient();
-  // admin/superadmin → todos los del club; coach → los suyos; jugador → el suyo.
   let query = supabase
     .from("teams")
     .select("*")
@@ -30,40 +30,45 @@ export default async function TeamsPage() {
     teams = data ?? [];
   }
 
-  return (
-    <>
-      <AppHeader
-        title={player ? "Mi equipo" : "Equipos"}
-        subtitle={isAdmin ? "Gestión del club" : "Tus equipos"}
-      />
+  // Nº de jugadores por equipo.
+  const { data: players } = await supabase
+    .from("players")
+    .select("id, team_id")
+    .returns<Pick<Player, "id" | "team_id">[]>();
+  const count = (teamId: string) =>
+    (players ?? []).filter((p) => p.team_id === teamId).length;
 
+  return (
+    <Screen title={player ? "Mi equipo" : "Equipos"}>
       {isAdmin && (
-        <div className="mt-4">
+        <div className="mb-4">
           <CreateTeamForm />
         </div>
       )}
 
-      <ul className="mt-4 space-y-2">
-        {teams?.map((team) => (
-          <li key={team.id}>
-            <Link
-              href={`/teams/${team.id}`}
-              className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 transition-colors hover:border-brand/60"
-            >
-              <span className="font-medium text-slate-100">{team.name}</span>
-              <span className="text-slate-500">›</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-
-      {(!teams || teams.length === 0) && (
-        <div className="mt-4 rounded-2xl border border-dashed border-slate-800 p-8 text-center text-sm text-slate-400">
+      {teams.length === 0 ? (
+        <EmptyState icon="🛡️">
           {isAdmin
             ? "Aún no hay equipos. Crea el primero arriba."
             : "No tienes equipos asignados todavía."}
-        </div>
+        </EmptyState>
+      ) : (
+        <ListGroup>
+          {teams.map((team) => (
+            <ListRow
+              key={team.id}
+              href={`/teams/${team.id}`}
+              title={team.name}
+              subtitle={`${count(team.id)} jugadores`}
+              leading={
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/15 text-[15px]">
+                  🛡️
+                </span>
+              }
+            />
+          ))}
+        </ListGroup>
       )}
-    </>
+    </Screen>
   );
 }

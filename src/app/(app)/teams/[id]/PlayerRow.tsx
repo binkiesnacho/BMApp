@@ -47,7 +47,7 @@ export default function PlayerRow({
 
   if (editing) {
     return (
-      <li className="rounded-2xl border border-brand/50 bg-slate-900 p-3">
+      <li className="rounded-2xl border border-brand/50 bg-surface p-3">
         <form action={formAction} className="space-y-2">
           <input type="hidden" name="playerId" value={player.id} />
           <input type="hidden" name="teamId" value={teamId} />
@@ -58,19 +58,19 @@ export default function PlayerRow({
               min={0}
               defaultValue={player.number ?? ""}
               placeholder="Nº"
-              className="w-16 rounded-xl border border-slate-700 bg-slate-950 px-2 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+              className="w-16 rounded-xl border border-separator bg-canvas px-2 py-2 text-sm text-label outline-none focus:border-brand"
             />
             <input
               name="name"
               defaultValue={player.name}
               required
-              className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+              className="flex-1 rounded-xl border border-separator bg-canvas px-3 py-2 text-sm text-label outline-none focus:border-brand"
             />
           </div>
           <select
             name="position"
             defaultValue={player.position ?? ""}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+            className="w-full rounded-xl border border-separator bg-canvas px-3 py-2 text-sm text-label outline-none focus:border-brand"
           >
             <option value="">Posición (opcional)</option>
             {POSITIONS.map((p) => (
@@ -91,7 +91,7 @@ export default function PlayerRow({
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300"
+              className="rounded-xl border border-separator px-3 py-2 text-sm text-label"
             >
               Cancelar
             </button>
@@ -104,15 +104,15 @@ export default function PlayerRow({
   const linkedName = accounts.find((a) => a.id === player.profile_id)?.name;
 
   return (
-    <li className="rounded-2xl border border-slate-800 bg-slate-900 px-3 py-2.5">
+    <li className="rounded-2xl border border-separator/60 bg-surface px-3 py-2.5">
       <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-brand">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-brand">
           {player.number ?? "–"}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-slate-100">{player.name}</p>
+          <p className="truncate font-medium text-label">{player.name}</p>
           {player.position && (
-            <p className="truncate text-xs text-slate-400">{player.position}</p>
+            <p className="truncate text-xs text-label-2">{player.position}</p>
           )}
           {player.profile_id && (
             <p className="truncate text-xs text-emerald-400">
@@ -124,7 +124,7 @@ export default function PlayerRow({
           <>
             <button
               onClick={() => setEditing(true)}
-              className="rounded-lg px-2 py-1 text-xs text-slate-400 hover:text-brand"
+              className="rounded-lg px-2 py-1 text-xs text-label-2 hover:text-brand"
             >
               Editar
             </button>
@@ -133,7 +133,7 @@ export default function PlayerRow({
               <input type="hidden" name="teamId" value={teamId} />
               <button
                 type="submit"
-                className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:text-red-400"
+                className="rounded-lg px-2 py-1 text-xs text-label-3 hover:text-red-400"
                 aria-label={`Eliminar ${player.name}`}
               >
                 ✕
@@ -147,14 +147,14 @@ export default function PlayerRow({
       {canEdit && accounts.length > 0 && (
         <form
           action={linkPlayerAccountAction}
-          className="mt-2 flex gap-1.5 border-t border-slate-800 pt-2"
+          className="mt-2 flex gap-1.5 border-t border-separator/60 pt-2"
         >
           <input type="hidden" name="playerId" value={player.id} />
           <input type="hidden" name="teamId" value={teamId} />
           <select
             name="profileId"
             defaultValue={player.profile_id ?? ""}
-            className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+            className="flex-1 rounded-lg border border-separator bg-canvas px-2 py-1.5 text-xs text-label outline-none focus:border-brand"
           >
             <option value="">Sin cuenta vinculada</option>
             {accounts.map((a) => (
@@ -163,7 +163,7 @@ export default function PlayerRow({
               </option>
             ))}
           </select>
-          <button className="rounded-lg border border-slate-700 px-2 py-1.5 text-xs text-slate-300 hover:border-brand">
+          <button className="rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand">
             Vincular
           </button>
         </form>

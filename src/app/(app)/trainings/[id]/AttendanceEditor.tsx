@@ -46,7 +46,7 @@ export default function AttendanceEditor({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-slate-400">
+      <div className="flex items-center justify-between text-xs text-label-2">
         <span>Marca quién asistió</span>
         <span>
           {attended.size} presentes · {absent} faltas
@@ -62,18 +62,18 @@ export default function AttendanceEditor({
                 className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm ${
                   on
                     ? "border-emerald-600/60 bg-emerald-950/40"
-                    : "border-slate-800 bg-slate-950"
+                    : "border-separator/60 bg-canvas"
                 }`}
               >
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                    on ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-300"
+                    on ? "bg-emerald-600 text-white" : "bg-surface-2 text-label"
                   }`}
                 >
                   {on ? "✓" : ""}
                 </span>
                 <span className="font-bold text-brand">{p.number ?? "–"}</span>
-                <span className="flex-1 truncate text-slate-100">{p.name}</span>
+                <span className="flex-1 truncate text-label">{p.name}</span>
                 {!on && (
                   <span className="text-xs font-semibold text-red-400">Falta</span>
                 )}

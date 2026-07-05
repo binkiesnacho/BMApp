@@ -102,6 +102,16 @@ export async function assignCoachAction(formData: FormData): Promise<void> {
   revalidatePath("/admin");
 }
 
+/** Guarda la URL del logo del club (tras subir el archivo a Storage). */
+export async function setClubLogoAction(logoUrl: string): Promise<void> {
+  const { profile } = await requireAdmin();
+  if (!profile) return;
+  const supabase = await createClient();
+  await supabase.from("clubs").update({ logo_url: logoUrl }).eq("id", profile.club_id);
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
 /** Renombra un equipo del club. */
 export async function renameTeamAction(formData: FormData): Promise<void> {
   const teamId = String(formData.get("teamId") ?? "");
