@@ -4,6 +4,7 @@ import Card from "@/components/ui/Card";
 import { ListGroup, ListRow, SectionTitle } from "@/components/ui/List";
 import ClubBadge from "@/components/ui/ClubBadge";
 import SignOutButton from "@/components/auth/SignOutButton";
+import InstallPrompt from "@/components/pwa/InstallPrompt";
 import { createClient } from "@/lib/supabase/server";
 import {
   canAdminister,
@@ -73,6 +74,8 @@ export default async function HomePage() {
           <p className="text-[13px] text-label-2">Temporada 2025/2026</p>
         </div>
       </div>
+
+      <InstallPrompt />
 
       {/* Próximo partido */}
       <SectionTitle>Próximo partido</SectionTitle>

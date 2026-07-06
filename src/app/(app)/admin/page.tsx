@@ -48,18 +48,21 @@ export default async function AdminPage() {
         .eq("club_id", profile.club_id)
         .order("created_at", { ascending: true })
         .returns<Team[]>(),
-      isAdmin
-        ? supabase
-            .from("invites")
-            .select("*")
-            .eq("club_id", profile.club_id)
-            .order("created_at", { ascending: true })
-            .returns<Invite[]>()
-        : Promise.resolve({ data: [] as Invite[] }),
+      // RLS: el admin ve todas las del club; el entrenador, las de sus equipos.
+      supabase
+        .from("invites")
+        .select("*")
+        .order("created_at", { ascending: true })
+        .returns<Invite[]>(),
     ]);
 
   const teamName = (id: string | null) =>
     teams?.find((t) => t.id === id)?.name;
+
+  // Equipos para invitar: admin → todos; entrenador → los que gestiona.
+  const invitableTeams = isAdmin
+    ? teams ?? []
+    : (teams ?? []).filter((t) => t.coach_id === profile.id);
 
   return (
     <Screen
@@ -78,14 +81,24 @@ export default async function AdminPage() {
             />
             <RenameClubForm currentName={club.name} />
           </section>
-
-          <div className="mt-5">
-            <SectionTitle>Invitaciones</SectionTitle>
-          </div>
-          <section className="rounded-2xl bg-surface p-4">
-            <InvitesManager invites={invites ?? []} teams={teams ?? []} />
-          </section>
         </>
+      )}
+
+      {/* ---- Invitaciones (admin: cualquier rol; entrenador: player/tecnico de su equipo) ---- */}
+      <div className={isAdmin ? "mt-5" : ""}>
+        <SectionTitle>Invitaciones</SectionTitle>
+      </div>
+      <section className="rounded-2xl bg-surface p-4">
+        <InvitesManager
+          invites={invites ?? []}
+          teams={invitableTeams}
+          canInviteCoach={isAdmin}
+        />
+      </section>
+      {!isAdmin && (
+        <p className="mt-1.5 px-1 text-[12px] text-label-3">
+          Como entrenador puedes invitar a jugadores y técnicos a tus equipos.
+        </p>
       )}
 
       {/* ---- Miembros ---- */}

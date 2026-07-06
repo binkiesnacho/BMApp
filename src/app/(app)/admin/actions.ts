@@ -102,13 +102,14 @@ export async function assignCoachAction(formData: FormData): Promise<void> {
   revalidatePath("/admin");
 }
 
-/** Crea una invitación con rol (y equipo opcional). Solo admin. */
+/** Crea una invitación con rol (y equipo). RLS limita al entrenador a player/tecnico de su equipo. */
 export async function createInviteAction(formData: FormData): Promise<void> {
   const role = String(formData.get("role") ?? "");
   const teamId = String(formData.get("teamId") ?? "");
+  const label = String(formData.get("label") ?? "").trim() || null;
   if (!["player", "coach", "tecnico"].includes(role)) return;
 
-  const { profile } = await requireAdmin();
+  const { profile } = await requireStaff();
   if (!profile) return;
 
   const supabase = await createClient();
@@ -116,6 +117,7 @@ export async function createInviteAction(formData: FormData): Promise<void> {
     club_id: profile.club_id,
     role,
     team_id: teamId === "" ? null : teamId,
+    label,
   });
   revalidatePath("/admin");
 }
@@ -124,8 +126,6 @@ export async function createInviteAction(formData: FormData): Promise<void> {
 export async function deleteInviteAction(formData: FormData): Promise<void> {
   const inviteId = String(formData.get("inviteId") ?? "");
   if (!inviteId) return;
-  const { profile } = await requireAdmin();
-  if (!profile) return;
   const supabase = await createClient();
   await supabase.from("invites").delete().eq("id", inviteId);
   revalidatePath("/admin");

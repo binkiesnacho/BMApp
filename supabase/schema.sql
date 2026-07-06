@@ -297,11 +297,36 @@ alter table public.trainings           enable row level security;
 alter table public.training_attendance enable row level security;
 alter table public.invites             enable row level security;
 
-drop policy if exists invites_admin_all on public.invites;
-create policy invites_admin_all on public.invites
-  for all
-  using ((club_id = public.current_club_id() and public.is_admin()) or public.is_superadmin())
-  with check ((club_id = public.current_club_id() and public.is_admin()) or public.is_superadmin());
+-- Ver/borrar: admin todas las del club; entrenador las de sus equipos.
+-- Crear: admin cualquier rol; entrenador solo player/tecnico a un equipo suyo.
+drop policy if exists invites_select on public.invites;
+create policy invites_select on public.invites
+  for select using (
+    public.is_superadmin()
+    or (club_id = public.current_club_id() and public.is_admin())
+    or (team_id is not null and public.can_manage_team(team_id))
+  );
+
+drop policy if exists invites_insert on public.invites;
+create policy invites_insert on public.invites
+  for insert with check (
+    public.is_superadmin()
+    or (club_id = public.current_club_id() and public.is_admin())
+    or (
+      club_id = public.current_club_id()
+      and role::text in ('player', 'tecnico')
+      and team_id is not null
+      and public.can_manage_team(team_id)
+    )
+  );
+
+drop policy if exists invites_delete on public.invites;
+create policy invites_delete on public.invites
+  for delete using (
+    public.is_superadmin()
+    or (club_id = public.current_club_id() and public.is_admin())
+    or (team_id is not null and public.can_manage_team(team_id))
+  );
 
 -- ---- CLUBS ------------------------------------------------------------------
 -- Miembros ven su club; el super-admin ve todos. Escribe el admin del club o el super-admin.

@@ -10,7 +10,9 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "BMApp",
     description:
       "Gestión de plantillas, partidos y estadísticas in-game de balonmano.",
+    id: "/",
     start_url: "/",
+    scope: "/",
     display: "standalone",
     orientation: "portrait",
     background_color: "#000000",

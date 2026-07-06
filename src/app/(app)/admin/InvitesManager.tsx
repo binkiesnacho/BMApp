@@ -31,9 +31,11 @@ function InviteCode({ code }: { code: string }) {
 export default function InvitesManager({
   invites,
   teams,
+  canInviteCoach = false,
 }: {
   invites: Invite[];
   teams: Team[];
+  canInviteCoach?: boolean;
 }) {
   const teamName = (id: string | null) => teams.find((t) => t.id === id)?.name;
 
@@ -48,14 +50,21 @@ export default function InvitesManager({
         >
           <option value="player">Jugador</option>
           <option value="tecnico">Técnico</option>
-          <option value="coach">Entrenador</option>
+          {canInviteCoach && <option value="coach">Entrenador</option>}
         </select>
         <select
           name="teamId"
           defaultValue=""
+          required={!canInviteCoach}
           className="flex-1 rounded-lg border border-separator bg-canvas px-2 py-1.5 text-[13px] text-label outline-none focus:border-brand"
         >
-          <option value="">Sin equipo</option>
+          {canInviteCoach ? (
+            <option value="">Sin equipo</option>
+          ) : (
+            <option value="" disabled>
+              Equipo…
+            </option>
+          )}
           {teams.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
