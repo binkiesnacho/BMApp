@@ -3,6 +3,7 @@ import Screen from "@/components/ui/Screen";
 import Card from "@/components/ui/Card";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import ClubBadge from "@/components/ui/ClubBadge";
+import RoleTags from "@/components/ui/RoleTags";
 import SignOutButton from "@/components/auth/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -10,9 +11,8 @@ import {
   getMyClub,
   getMyTeams,
   getSessionProfile,
-  isPlayer,
   isStaff,
-  isTecnico,
+  rolesOf,
 } from "@/lib/auth";
 import type { Match, Training } from "@/lib/types/database";
 
@@ -35,16 +35,6 @@ export default async function HomePage() {
   const { profile } = await getSessionProfile();
   const [club, myTeams] = await Promise.all([getMyClub(), getMyTeams()]);
   const supabase = await createClient();
-
-  const roleLabel = profile?.is_superadmin
-    ? "Administrador global"
-    : canAdminister(profile)
-      ? "Administrador"
-      : isTecnico(profile)
-        ? "Técnico"
-        : isPlayer(profile)
-          ? "Jugador"
-          : "Entrenador";
 
   const myTeamIds = myTeams.map((t) => t.id);
   const hasTeam = myTeamIds.length > 0;
@@ -88,10 +78,11 @@ export default async function HomePage() {
         : null;
 
   return (
-    <Screen
-      title={profile?.name ? `Hola, ${profile.name.split(" ")[0]}` : "Inicio"}
-      subtitle={roleLabel}
-    >
+    <Screen title={profile?.name ? `Hola, ${profile.name.split(" ")[0]}` : "Inicio"}>
+      <div className="mb-3">
+        <RoleTags roles={rolesOf(profile)} superadmin={profile?.is_superadmin} />
+      </div>
+
       {/* Administración (staff) */}
       {isStaff(profile) && (
         <Link

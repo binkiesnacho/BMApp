@@ -34,20 +34,6 @@ export default async function TeamDetailPage({
     .order("number", { ascending: true, nullsFirst: false })
     .returns<Player[]>();
 
-  // Cualquier miembro del club puede vincularse a una ficha del roster (así un
-  // admin o entrenador también puede contar como jugador). RLS filtra lo visible.
-  const accounts =
-    canEdit && profile?.club_id
-      ? (
-          await supabase
-            .from("profiles")
-            .select("id, name")
-            .eq("club_id", profile.club_id)
-            .order("name", { ascending: true })
-            .returns<{ id: string; name: string }[]>()
-        ).data ?? []
-      : [];
-
   return (
     <Screen
       title={team.name}
@@ -67,7 +53,6 @@ export default async function TeamDetailPage({
             player={player}
             teamId={team.id}
             canEdit={canEdit}
-            accounts={accounts}
           />
         ))}
       </ul>

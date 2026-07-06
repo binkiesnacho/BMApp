@@ -57,7 +57,7 @@ export default async function MatchesPage({
   const list = active === "proximos" ? upcoming : results;
 
   return (
-    <Screen title="Partidos" subtitle={staff ? "Calendario y resultados" : undefined}>
+    <Screen title="Calendario" subtitle={staff ? "Partidos y resultados" : undefined}>
       {staff && manageable.length > 0 && (
         <div className="mb-4">
           <CreateMatchForm teams={manageable} />

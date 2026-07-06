@@ -1,18 +1,25 @@
 import { redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
+import RoleTags from "@/components/ui/RoleTags";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
 import {
+  canAdminister,
+  getSessionProfile,
+  isStaff,
+  rolesOf,
+} from "@/lib/auth";
+import {
+  addMemberRoleAction,
   assignMemberTeamAction,
   removeMemberAction,
-  setMemberRoleAction,
+  removeMemberRoleAction,
 } from "../actions";
-import type { Profile, Team } from "@/lib/types/database";
+import type { Profile, Team, UserRole } from "@/lib/types/database";
 
 export const metadata = { title: "Miembros" };
 
-const roleLabel: Record<string, string> = {
-  admin: "Administrador",
+const ROLE_LABEL: Record<UserRole, string> = {
+  admin: "Admin",
   coach: "Entrenador",
   tecnico: "Técnico",
   player: "Jugador",
@@ -40,30 +47,39 @@ export default async function MembersPage() {
   ]);
 
   const teamName = (id: string | null) => teams?.find((t) => t.id === id)?.name;
-  const selectCls =
-    "rounded-lg border border-separator bg-surface px-2 py-1.5 text-xs text-label outline-none focus:border-brand";
-  const btnCls =
-    "rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand";
+  // Roles que este staff puede asignar: admin todos; entrenador solo player/tecnico.
+  const assignable: UserRole[] = isAdmin
+    ? ["admin", "coach", "tecnico", "player"]
+    : ["tecnico", "player"];
 
   return (
     <Screen title="Miembros" subtitle={`${members?.length ?? 0} personas`} back="/admin">
       <ul className="space-y-2">
         {members?.map((m) => {
+          const memberRoles = rolesOf(m);
           const isSelf = m.id === profile.id;
-          const hasTeam = m.role === "player" || m.role === "tecnico";
+          const hasTeam =
+            memberRoles.includes("player") || memberRoles.includes("tecnico");
+          // El coach solo gestiona a quien NO sea admin/entrenador.
           const canManage =
-            !isSelf && (isAdmin || m.role === "player" || m.role === "tecnico");
+            isAdmin ||
+            (!memberRoles.includes("admin") && !memberRoles.includes("coach"));
+
           return (
             <li key={m.id} className="space-y-2 rounded-2xl bg-surface px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-[15px] font-medium text-label">
                     {m.name || "(sin nombre)"} {isSelf && "· tú"}
                   </p>
-                  <p className="text-[12px] text-label-3">
-                    {roleLabel[m.role] ?? m.role}
-                    {hasTeam && ` · ${teamName(m.team_id) ?? "sin equipo"}`}
-                  </p>
+                  <div className="mt-1">
+                    <RoleTags roles={memberRoles} superadmin={m.is_superadmin} />
+                  </div>
+                  {hasTeam && (
+                    <p className="mt-1 text-[12px] text-label-3">
+                      Equipo: {teamName(m.team_id) ?? "sin asignar"}
+                    </p>
+                  )}
                 </div>
                 {!isSelf && isAdmin && (
                   <form action={removeMemberAction}>
@@ -79,25 +95,43 @@ export default async function MembersPage() {
               </div>
 
               {canManage && (
-                <div className="flex flex-wrap gap-2">
-                  <form action={setMemberRoleAction} className="flex gap-1">
-                    <input type="hidden" name="memberId" value={m.id} />
-                    <select name="role" defaultValue={m.role} className={selectCls}>
-                      {isAdmin && <option value="admin">Administrador</option>}
-                      {isAdmin && <option value="coach">Entrenador</option>}
-                      <option value="tecnico">Técnico</option>
-                      <option value="player">Jugador</option>
-                    </select>
-                    <button className={btnCls}>Rol</button>
-                  </form>
+                <>
+                  {/* Toggles de rol */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {assignable.map((r) => {
+                      const active = memberRoles.includes(r);
+                      const disabledSelf = isSelf && r === "admin" && active;
+                      return (
+                        <form
+                          key={r}
+                          action={active ? removeMemberRoleAction : addMemberRoleAction}
+                        >
+                          <input type="hidden" name="memberId" value={m.id} />
+                          <input type="hidden" name="role" value={r} />
+                          <button
+                            disabled={disabledSelf}
+                            className={`rounded-full px-2.5 py-1 text-[12px] font-medium disabled:opacity-40 ${
+                              active
+                                ? "bg-brand text-white"
+                                : "bg-surface-2 text-label-2"
+                            }`}
+                          >
+                            {active ? "✓ " : "+ "}
+                            {ROLE_LABEL[r]}
+                          </button>
+                        </form>
+                      );
+                    })}
+                  </div>
 
+                  {/* Equipo (jugador/técnico) */}
                   {hasTeam && (
                     <form action={assignMemberTeamAction} className="flex gap-1">
                       <input type="hidden" name="memberId" value={m.id} />
                       <select
                         name="teamId"
                         defaultValue={m.team_id ?? ""}
-                        className={selectCls}
+                        className="rounded-lg border border-separator bg-surface px-2 py-1.5 text-xs text-label outline-none focus:border-brand"
                       >
                         <option value="">Sin equipo</option>
                         {teams?.map((t) => (
@@ -106,10 +140,12 @@ export default async function MembersPage() {
                           </option>
                         ))}
                       </select>
-                      <button className={btnCls}>Equipo</button>
+                      <button className="rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand">
+                        Equipo
+                      </button>
                     </form>
                   )}
-                </div>
+                </>
               )}
             </li>
           );

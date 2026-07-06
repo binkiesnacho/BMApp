@@ -36,9 +36,19 @@ const Icon = {
       <path d="M8.5 11h7M8.5 15h4" stroke={p.active ? "var(--color-canvas)" : "currentColor"} strokeWidth="1.6" strokeLinecap="round" />
     </>
   ),
-  stats: (p: IconProps) => (
+  equipo: (p: IconProps) => (
+    <path
+      d="M12 3 5 5.5V11c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V5.5L12 3z"
+      fill={p.active ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  ),
+  calendar: (p: IconProps) => (
     <>
-      <path d="M6 20V10M12 20V4M18 20v-6" stroke="currentColor" strokeWidth={p.active ? "3" : "2"} strokeLinecap="round" />
+      <rect x="4" y="5" width="16" height="15" rx="2.5" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" />
+      <path d="M4 9h16M8 3v3M16 3v3" stroke={p.active ? "var(--color-canvas)" : "currentColor"} strokeWidth="1.7" strokeLinecap="round" />
     </>
   ),
 };
@@ -46,9 +56,8 @@ const Icon = {
 const items = [
   { href: "/", label: "Inicio", icon: Icon.home },
   { href: "/teams", label: "Club", icon: Icon.teams },
-  { href: "/matches", label: "Partidos", icon: Icon.matches },
-  { href: "/trainings", label: "Entren.", icon: Icon.trainings },
-  { href: "/stats", label: "Stats", icon: Icon.stats },
+  { href: "/equipo", label: "Equipo", icon: Icon.equipo },
+  { href: "/matches", label: "Calendario", icon: Icon.calendar },
 ] as const;
 
 export default function BottomNav() {

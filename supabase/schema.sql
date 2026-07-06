@@ -66,7 +66,8 @@ create table if not exists public.profiles (
   id            uuid primary key references auth.users (id) on delete cascade,
   club_id       uuid references public.clubs (id) on delete set null,
   name          text not null default '',
-  role          user_role not null default 'coach',
+  role          user_role not null default 'coach',   -- rol principal (compat/orden)
+  roles         user_role[] not null default '{}',     -- multi-rol
   -- Equipo del jugador (solo para role='player').
   -- FK añadida tras crear la tabla teams (ver más abajo) para evitar ref circular.
   team_id       uuid,
@@ -205,7 +206,7 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
+    where id = auth.uid() and 'admin' = any(roles)
   );
 $$;
 
@@ -240,7 +241,7 @@ as $$
     join public.profiles p on p.id = auth.uid()
     where t.id = target_team
       and t.club_id = p.club_id
-      and (p.role = 'admin' or t.coach_id = p.id)
+      and ('admin' = any(p.roles) or t.coach_id = p.id)
   );
 $$;
 
@@ -254,7 +255,7 @@ set search_path = public
 as $$
   select public.is_superadmin() or exists (
     select 1 from public.profiles
-    where id = auth.uid() and role in ('admin', 'coach')
+    where id = auth.uid() and (roles && array['admin','coach']::user_role[])
   );
 $$;
 
@@ -267,7 +268,7 @@ language sql stable security definer set search_path = public
 as $$
   select public.can_manage_team(target_team) or exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role::text = 'tecnico' and p.team_id = target_team
+    where p.id = auth.uid() and 'tecnico' = any(p.roles) and p.team_id = target_team
   );
 $$;
 
@@ -350,9 +351,8 @@ create policy profiles_select on public.profiles
     id = auth.uid()
     or (club_id = public.current_club_id() and public.is_admin())
     or public.is_superadmin()
-    -- el staff del club ve todas las cuentas de jugador del club (para vincular
-    -- a cualquiera de sus equipos)
-    or (role::text = 'player' and club_id = public.current_club_id() and public.is_staff())
+    -- el staff del club ve las cuentas con rol jugador del club
+    or ('player' = any(roles) and club_id = public.current_club_id() and public.is_staff())
   );
 
 -- NOTA de seguridad: NO existe una política de auto-UPDATE amplia sobre profiles.
@@ -542,7 +542,7 @@ begin
     returning id into new_club_id;
 
   update public.profiles
-    set club_id = new_club_id, role = 'admin'
+    set club_id = new_club_id, role = 'admin', roles = array['admin']::user_role[]
     where id = auth.uid();
 
   return new_club_id;
@@ -736,6 +736,61 @@ $$;
 revoke all on function public.set_member_team(uuid, uuid) from public;
 grant execute on function public.set_member_team(uuid, uuid) to authenticated;
 
+-- Multi-rol: rol principal + añadir/quitar roles ------------------------------
+create or replace function public.primary_role(rs user_role[])
+returns user_role language sql immutable as $$
+  select case
+    when 'admin'   = any(rs) then 'admin'::user_role
+    when 'coach'   = any(rs) then 'coach'::user_role
+    when 'tecnico' = any(rs) then 'tecnico'::user_role
+    else 'player'::user_role
+  end;
+$$;
+
+create or replace function public.add_member_role(target uuid, new_role text)
+returns void language plpgsql security definer set search_path = public as $$
+declare caller_admin boolean; caller_club uuid; target_club uuid; target_roles user_role[];
+begin
+  if not public.is_staff() then raise exception 'Solo el cuerpo técnico'; end if;
+  if new_role not in ('admin','coach','tecnico','player') then raise exception 'Rol no válido'; end if;
+  select ('admin' = any(roles) or is_superadmin), club_id into caller_admin, caller_club
+    from public.profiles where id = auth.uid();
+  select club_id, roles into target_club, target_roles from public.profiles where id = target;
+  if target_club is distinct from caller_club then raise exception 'El usuario no pertenece a tu club'; end if;
+  if not caller_admin then
+    if new_role in ('admin','coach') then raise exception 'Un entrenador solo asigna jugador/técnico'; end if;
+    if target_roles && array['admin','coach']::user_role[] then raise exception 'No puedes modificar a un admin/entrenador'; end if;
+  end if;
+  update public.profiles
+    set roles = (case when new_role::user_role = any(roles) then roles else roles || new_role::user_role end)
+    where id = target;
+  update public.profiles set role = public.primary_role(roles) where id = target;
+end;
+$$;
+revoke all on function public.add_member_role(uuid, text) from public;
+grant execute on function public.add_member_role(uuid, text) to authenticated;
+
+create or replace function public.remove_member_role(target uuid, old_role text)
+returns void language plpgsql security definer set search_path = public as $$
+declare caller_admin boolean; caller_club uuid; target_club uuid; target_roles user_role[];
+begin
+  if not public.is_staff() then raise exception 'Solo el cuerpo técnico'; end if;
+  select ('admin' = any(roles) or is_superadmin), club_id into caller_admin, caller_club
+    from public.profiles where id = auth.uid();
+  select club_id, roles into target_club, target_roles from public.profiles where id = target;
+  if target_club is distinct from caller_club then raise exception 'El usuario no pertenece a tu club'; end if;
+  if target = auth.uid() and old_role = 'admin' then raise exception 'No puedes quitarte admin a ti mismo'; end if;
+  if not caller_admin then
+    if old_role in ('admin','coach') then raise exception 'Un entrenador solo gestiona jugador/técnico'; end if;
+    if target_roles && array['admin','coach']::user_role[] then raise exception 'No puedes modificar a un admin/entrenador'; end if;
+  end if;
+  update public.profiles set roles = array_remove(roles, old_role::user_role) where id = target;
+  update public.profiles set role = public.primary_role(roles) where id = target;
+end;
+$$;
+revoke all on function public.remove_member_role(uuid, text) from public;
+grant execute on function public.remove_member_role(uuid, text) to authenticated;
+
 -- Unirse con una invitación (asigna club + rol + equipo del invite).
 create or replace function public.join_with_invite(invite_code text)
 returns uuid
@@ -751,7 +806,8 @@ begin
   select * into inv from public.invites where code = upper(trim(invite_code));
   if inv.id is null then raise exception 'Invitación no válida'; end if;
   update public.profiles
-    set club_id = inv.club_id, role = inv.role, team_id = inv.team_id
+    set club_id = inv.club_id, role = inv.role, roles = array[inv.role],
+        team_id = inv.team_id
     where id = auth.uid();
   return inv.club_id;
 end;

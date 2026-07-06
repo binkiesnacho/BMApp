@@ -31,7 +31,10 @@ export interface Profile {
   id: string;
   club_id: string | null;
   name: string;
+  /** Rol principal (para orden/compatibilidad). Los roles reales están en `roles`. */
   role: UserRole;
+  /** Todos los roles del usuario (multi-rol). */
+  roles: UserRole[];
   /** Equipo del jugador (solo para role='player'). */
   team_id: string | null;
   /** Administrador global: acceso total a todos los clubs. */

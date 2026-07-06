@@ -5,15 +5,9 @@ import { useActionState, useState } from "react";
 import {
   editPlayerAction,
   deletePlayerAction,
-  linkPlayerAccountAction,
   type PlayerFormState,
 } from "./actions";
 import type { Player } from "@/lib/types/database";
-
-export interface AccountOption {
-  id: string;
-  name: string;
-}
 
 const POSITIONS = [
   "Portero",
@@ -29,12 +23,10 @@ export default function PlayerRow({
   player,
   teamId,
   canEdit,
-  accounts = [],
 }: {
   player: Player;
   teamId: string;
   canEdit: boolean;
-  accounts?: AccountOption[];
 }) {
   const [editing, setEditing] = useState(false);
   const [state, formAction, pending] = useActionState<PlayerFormState, FormData>(
@@ -102,8 +94,6 @@ export default function PlayerRow({
     );
   }
 
-  const linkedName = accounts.find((a) => a.id === player.profile_id)?.name;
-
   return (
     <li className="rounded-2xl border border-separator/60 bg-surface px-3 py-2.5">
       <div className="flex items-center gap-3">
@@ -120,9 +110,7 @@ export default function PlayerRow({
               <p className="truncate text-xs text-label-2">{player.position}</p>
             )}
             {player.profile_id && (
-              <p className="truncate text-xs text-emerald-400">
-                🔗 {linkedName ?? "cuenta vinculada"}
-              </p>
+              <p className="truncate text-xs text-emerald-400">🔗 con cuenta</p>
             )}
           </div>
         </Link>
@@ -148,32 +136,6 @@ export default function PlayerRow({
           </>
         )}
       </div>
-
-      {/* Vincular cuenta de jugador (staff) */}
-      {canEdit && accounts.length > 0 && (
-        <form
-          action={linkPlayerAccountAction}
-          className="mt-2 flex gap-1.5 border-t border-separator/60 pt-2"
-        >
-          <input type="hidden" name="playerId" value={player.id} />
-          <input type="hidden" name="teamId" value={teamId} />
-          <select
-            name="profileId"
-            defaultValue={player.profile_id ?? ""}
-            className="flex-1 rounded-lg border border-separator bg-canvas px-2 py-1.5 text-xs text-label outline-none focus:border-brand"
-          >
-            <option value="">Sin cuenta vinculada</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-          <button className="rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand">
-            Vincular
-          </button>
-        </form>
-      )}
     </li>
   );
 }

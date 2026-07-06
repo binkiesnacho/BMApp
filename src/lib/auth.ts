@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Club, Profile, Team } from "@/lib/types/database";
+import type { Club, Profile, Team, UserRole } from "@/lib/types/database";
 
 /**
  * Equipos "de la persona": donde es entrenador (coach_id), donde tiene ficha de
@@ -69,24 +69,29 @@ export async function getSessionProfile() {
   return { user, profile: profile ?? null };
 }
 
-/** ¿El perfil tiene permisos de administración (admin de club o admin global)? */
+/** Roles del perfil (array, con fallback al rol principal). */
+export function rolesOf(profile: Profile | null): UserRole[] {
+  if (!profile) return [];
+  if (profile.roles && profile.roles.length > 0) return profile.roles;
+  return profile.role ? [profile.role] : [];
+}
+
+/** ¿Tiene permisos de administración (rol admin o admin global)? */
 export function canAdminister(profile: Profile | null): boolean {
-  return !!profile && (profile.role === "admin" || profile.is_superadmin);
+  return (
+    !!profile && (rolesOf(profile).includes("admin") || profile.is_superadmin)
+  );
 }
 
 /** Staff con escritura completa sobre su equipo (admin/coach/superadmin). */
 export function isStaff(profile: Profile | null): boolean {
-  return (
-    !!profile &&
-    (profile.role === "admin" ||
-      profile.role === "coach" ||
-      profile.is_superadmin)
-  );
+  const r = rolesOf(profile);
+  return !!profile && (r.includes("admin") || r.includes("coach") || profile.is_superadmin);
 }
 
-/** ¿Es técnico? (ve como el entrenador; solo escribe stats en vivo y entrenamientos). */
+/** ¿Tiene rol técnico? */
 export function isTecnico(profile: Profile | null): boolean {
-  return profile?.role === "tecnico";
+  return rolesOf(profile).includes("tecnico");
 }
 
 /** ¿Puede capturar? = staff o técnico (stats en vivo + crear entrenamientos). */
@@ -94,7 +99,7 @@ export function canCapture(profile: Profile | null): boolean {
   return isStaff(profile) || isTecnico(profile);
 }
 
-/** ¿Es jugador (acceso de solo lectura)? */
+/** ¿Tiene rol jugador? */
 export function isPlayer(profile: Profile | null): boolean {
-  return profile?.role === "player";
+  return rolesOf(profile).includes("player");
 }
