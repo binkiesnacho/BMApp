@@ -38,6 +38,38 @@ export async function createMatchAction(
   return {};
 }
 
+/** Edita un partido programado (rival, fecha, lugar). */
+export async function editMatchAction(
+  _prev: MatchFormState,
+  formData: FormData
+): Promise<MatchFormState> {
+  const matchId = String(formData.get("matchId") ?? "");
+  const opponent = String(formData.get("opponent") ?? "").trim();
+  const date = String(formData.get("date") ?? "").trim();
+  const location = String(formData.get("location") ?? "").trim() || null;
+  if (!matchId) return { error: "Partido no válido." };
+  if (!opponent) return { error: "Escribe el rival." };
+  if (!date) return { error: "Indica la fecha." };
+
+  const { profile } = await getSessionProfile();
+  if (!isStaff(profile)) return { error: "Sin permisos." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("matches")
+    .update({
+      opponent,
+      date: new Date(date).toISOString(),
+      location,
+    })
+    .eq("id", matchId);
+
+  if (error) return { error: error.message };
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/matches");
+  return {};
+}
+
 /** Elimina un partido. */
 export async function deleteMatchAction(formData: FormData): Promise<void> {
   const matchId = String(formData.get("matchId") ?? "");

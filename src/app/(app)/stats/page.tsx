@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
@@ -139,11 +140,13 @@ export default async function StatsPage({
                           mine ? "bg-[#132a3f]" : "bg-surface"
                         }`}
                       >
-                        <span className="font-semibold text-brand">
-                          {player.number ?? "–"}
-                        </span>{" "}
-                        {player.name}
-                        {mine && " · tú"}
+                        <Link href={`/players/${player.id}`} className="tap">
+                          <span className="font-semibold text-brand">
+                            {player.number ?? "–"}
+                          </span>{" "}
+                          {player.name}
+                          {mine && " · tú"}
+                        </Link>
                       </td>
                       {COLS.map((col) => (
                         <td key={col} className="px-2 py-2.5 text-center text-label-2">

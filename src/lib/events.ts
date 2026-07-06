@@ -13,6 +13,7 @@ export const EVENT_LABELS: Record<
   exclusion_2min: { label: "Exclusión 2'", short: "2 min", icon: "🟧" },
   yellow_card: { label: "Amarilla", short: "Amar.", icon: "🟨" },
   red_card: { label: "Roja", short: "Roja", icon: "🟥" },
+  goal_conceded: { label: "Gol encajado", short: "Encaj.", icon: "🥅" },
 };
 
 /** Orden de los botones en la pantalla de captura en vivo. */
@@ -20,6 +21,7 @@ export const EVENT_ORDER: StatEventType[] = [
   "goal",
   "assist",
   "save",
+  "goal_conceded",
   "miss",
   "turnover",
   "exclusion_2min",

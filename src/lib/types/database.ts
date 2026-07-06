@@ -16,7 +16,8 @@ export type StatEventType =
   | "yellow_card"
   | "red_card"
   | "turnover"
-  | "assist";
+  | "assist"
+  | "goal_conceded";
 
 export interface Club {
   id: string;

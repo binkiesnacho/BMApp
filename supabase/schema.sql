@@ -42,9 +42,11 @@ do $$ begin
     'yellow_card',    -- tarjeta amarilla
     'red_card',       -- tarjeta roja
     'turnover',       -- pérdida de balón
-    'assist'          -- asistencia
+    'assist',         -- asistencia
+    'goal_conceded'   -- gol encajado (portero)
   );
 exception when duplicate_object then null; end $$;
+alter type stat_event_type add value if not exists 'goal_conceded';
 
 -- =============================================================================
 -- 2. TABLAS

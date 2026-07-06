@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import {
   editPlayerAction,
@@ -106,20 +107,25 @@ export default function PlayerRow({
   return (
     <li className="rounded-2xl border border-separator/60 bg-surface px-3 py-2.5">
       <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-brand">
-          {player.number ?? "–"}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-label">{player.name}</p>
-          {player.position && (
-            <p className="truncate text-xs text-label-2">{player.position}</p>
-          )}
-          {player.profile_id && (
-            <p className="truncate text-xs text-emerald-400">
-              🔗 {linkedName ?? "cuenta vinculada"}
-            </p>
-          )}
-        </div>
+        <Link
+          href={`/players/${player.id}`}
+          className="tap flex min-w-0 flex-1 items-center gap-3"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-brand">
+            {player.number ?? "–"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium text-label">{player.name}</p>
+            {player.position && (
+              <p className="truncate text-xs text-label-2">{player.position}</p>
+            )}
+            {player.profile_id && (
+              <p className="truncate text-xs text-emerald-400">
+                🔗 {linkedName ?? "cuenta vinculada"}
+              </p>
+            )}
+          </div>
+        </Link>
         {canEdit && (
           <>
             <button

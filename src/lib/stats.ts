@@ -22,3 +22,10 @@ export function shootingAccuracy(c: EventCounts): number | null {
   const shots = goals + (c.miss ?? 0);
   return shots > 0 ? Math.round((goals / shots) * 100) : null;
 }
+
+/** % de parada del portero = paradas / (paradas + goles encajados). */
+export function savePercentage(c: EventCounts): number | null {
+  const saves = c.save ?? 0;
+  const faced = saves + (c.goal_conceded ?? 0);
+  return faced > 0 ? Math.round((saves / faced) * 100) : null;
+}

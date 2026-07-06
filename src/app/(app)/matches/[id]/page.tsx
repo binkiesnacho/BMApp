@@ -4,6 +4,7 @@ import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
 import { deleteMatchAction } from "../actions";
+import EditMatchForm from "./EditMatchForm";
 import type { Match, Player, StatEvent, StatEventType } from "@/lib/types/database";
 import { EVENT_LABELS } from "@/lib/events";
 import { aggregateByPlayer, shootingAccuracy } from "@/lib/stats";
@@ -121,6 +122,13 @@ export default async function MatchDetailPage({
               </button>
             </form>
           )}
+        </div>
+      )}
+
+      {/* Editar datos del partido (staff) */}
+      {staff && (
+        <div className="mt-3">
+          <EditMatchForm match={match} />
         </div>
       )}
 
