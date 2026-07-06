@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { EmptyState } from "@/components/ui/Card";
@@ -57,7 +58,11 @@ export default async function MatchesPage({
   const list = active === "proximos" ? upcoming : results;
 
   return (
-    <Screen title="Calendario" subtitle={staff ? "Partidos y resultados" : undefined}>
+    <Screen
+      title="Calendario"
+      subtitle={staff ? "Partidos y resultados" : undefined}
+      trailing={<Link href="/standings">Clasificación</Link>}
+    >
       {staff && manageable.length > 0 && (
         <div className="mb-4">
           <CreateMatchForm teams={manageable} />

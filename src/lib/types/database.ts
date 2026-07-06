@@ -115,3 +115,17 @@ export interface StatEvent {
   game_second: number | null;
   created_at: string;
 }
+
+/** Fila de rival en la clasificación (nuestra fila se calcula desde matches). */
+export interface StandingsRow {
+  id: string;
+  team_id: string;
+  name: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  gf: number;
+  ga: number;
+  created_at: string;
+}

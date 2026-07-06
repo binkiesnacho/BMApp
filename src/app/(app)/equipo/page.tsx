@@ -59,6 +59,12 @@ export default async function EquipoPage() {
                 leading={<span className="text-xl">📊</span>}
               />
               <ListRow
+                href={`/standings?team=${team.id}`}
+                title="Clasificación"
+                subtitle="Tabla de la liga"
+                leading={<span className="text-xl">🏆</span>}
+              />
+              <ListRow
                 href="/trainings"
                 title="Entrenamientos"
                 subtitle="Sesiones y asistencia"
