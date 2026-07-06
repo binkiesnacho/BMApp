@@ -102,6 +102,35 @@ export async function assignCoachAction(formData: FormData): Promise<void> {
   revalidatePath("/admin");
 }
 
+/** Crea una invitación con rol (y equipo opcional). Solo admin. */
+export async function createInviteAction(formData: FormData): Promise<void> {
+  const role = String(formData.get("role") ?? "");
+  const teamId = String(formData.get("teamId") ?? "");
+  if (!["player", "coach", "tecnico"].includes(role)) return;
+
+  const { profile } = await requireAdmin();
+  if (!profile) return;
+
+  const supabase = await createClient();
+  await supabase.from("invites").insert({
+    club_id: profile.club_id,
+    role,
+    team_id: teamId === "" ? null : teamId,
+  });
+  revalidatePath("/admin");
+}
+
+/** Elimina una invitación. */
+export async function deleteInviteAction(formData: FormData): Promise<void> {
+  const inviteId = String(formData.get("inviteId") ?? "");
+  if (!inviteId) return;
+  const { profile } = await requireAdmin();
+  if (!profile) return;
+  const supabase = await createClient();
+  await supabase.from("invites").delete().eq("id", inviteId);
+  revalidatePath("/admin");
+}
+
 /** Guarda la URL del logo del club (tras subir el archivo a Storage). */
 export async function setClubLogoAction(logoUrl: string): Promise<void> {
   const { profile } = await requireAdmin();

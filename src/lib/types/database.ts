@@ -38,6 +38,16 @@ export interface Profile {
   created_at: string;
 }
 
+export interface Invite {
+  id: string;
+  club_id: string;
+  code: string;
+  role: Exclude<UserRole, "admin">;
+  team_id: string | null;
+  label: string | null;
+  created_at: string;
+}
+
 export interface Team {
   id: string;
   club_id: string;

@@ -2,7 +2,7 @@ import Screen from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile, isPlayer } from "@/lib/auth";
+import { canAdminister, getSessionProfile } from "@/lib/auth";
 import CreateTeamForm from "./CreateTeamForm";
 import type { Player, Team } from "@/lib/types/database";
 
@@ -11,24 +11,15 @@ export const metadata = { title: "Equipos" };
 export default async function TeamsPage() {
   const { profile } = await getSessionProfile();
   const isAdmin = canAdminister(profile);
-  const player = isPlayer(profile);
 
   const supabase = await createClient();
-  let query = supabase
+  // Cualquier miembro del club ve todos los equipos (lectura). RLS lo garantiza.
+  const { data } = await supabase
     .from("teams")
     .select("*")
-    .order("created_at", { ascending: true });
-  let teams: Team[] = [];
-  if (player) {
-    if (profile?.team_id) {
-      const { data } = await query.eq("id", profile.team_id).returns<Team[]>();
-      teams = data ?? [];
-    }
-  } else {
-    if (!isAdmin && profile) query = query.eq("coach_id", profile.id);
-    const { data } = await query.returns<Team[]>();
-    teams = data ?? [];
-  }
+    .order("created_at", { ascending: true })
+    .returns<Team[]>();
+  const teams: Team[] = data ?? [];
 
   // Nº de jugadores por equipo.
   const { data: players } = await supabase
@@ -39,7 +30,7 @@ export default async function TeamsPage() {
     (players ?? []).filter((p) => p.team_id === teamId).length;
 
   return (
-    <Screen title={player ? "Mi equipo" : "Equipos"}>
+    <Screen title="Equipos">
       {isAdmin && (
         <div className="mb-4">
           <CreateTeamForm />

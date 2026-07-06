@@ -4,7 +4,7 @@ import { SectionTitle } from "@/components/ui/List";
 import { createClient } from "@/lib/supabase/server";
 import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
 import RenameClubForm from "./RenameClubForm";
-import JoinCodeCard from "./JoinCodeCard";
+import InvitesManager from "./InvitesManager";
 import LogoUploader from "./LogoUploader";
 import {
   assignCoachAction,
@@ -14,7 +14,7 @@ import {
   renameTeamAction,
   setMemberRoleAction,
 } from "./actions";
-import type { Club, Profile, Team } from "@/lib/types/database";
+import type { Club, Invite, Profile, Team } from "@/lib/types/database";
 
 export const metadata = { title: "Administración" };
 
@@ -33,7 +33,7 @@ export default async function AdminPage() {
 
   const supabase = await createClient();
 
-  const [{ data: club }, { data: members }, { data: teams }] =
+  const [{ data: club }, { data: members }, { data: teams }, { data: invites }] =
     await Promise.all([
       supabase.from("clubs").select("*").eq("id", profile.club_id).single<Club>(),
       supabase
@@ -48,6 +48,14 @@ export default async function AdminPage() {
         .eq("club_id", profile.club_id)
         .order("created_at", { ascending: true })
         .returns<Team[]>(),
+      isAdmin
+        ? supabase
+            .from("invites")
+            .select("*")
+            .eq("club_id", profile.club_id)
+            .order("created_at", { ascending: true })
+            .returns<Invite[]>()
+        : Promise.resolve({ data: [] as Invite[] }),
     ]);
 
   const teamName = (id: string | null) =>
@@ -58,22 +66,27 @@ export default async function AdminPage() {
       title={isAdmin ? "Administración" : "Gestión"}
       subtitle={club?.name ?? "Tu club"}
     >
-      {/* ---- Club ---- */}
-      <SectionTitle>Club</SectionTitle>
-      <section className="space-y-3 rounded-2xl bg-surface p-4">
-        {isAdmin && club && (
-          <LogoUploader
-            clubId={club.id}
-            clubName={club.name}
-            logoUrl={club.logo_url}
-          />
-        )}
-        {isAdmin && <RenameClubForm currentName={club?.name ?? ""} />}
-        {club && <JoinCodeCard code={club.join_code} />}
-        <p className="text-xs text-label-3">
-          Comparte este código con entrenadores, técnicos y jugadores para que se unan.
-        </p>
-      </section>
+      {/* ---- Club (solo admin) ---- */}
+      {isAdmin && club && (
+        <>
+          <SectionTitle>Club</SectionTitle>
+          <section className="space-y-3 rounded-2xl bg-surface p-4">
+            <LogoUploader
+              clubId={club.id}
+              clubName={club.name}
+              logoUrl={club.logo_url}
+            />
+            <RenameClubForm currentName={club.name} />
+          </section>
+
+          <div className="mt-5">
+            <SectionTitle>Invitaciones</SectionTitle>
+          </div>
+          <section className="rounded-2xl bg-surface p-4">
+            <InvitesManager invites={invites ?? []} teams={teams ?? []} />
+          </section>
+        </>
+      )}
 
       {/* ---- Miembros ---- */}
       <div className="mt-5">

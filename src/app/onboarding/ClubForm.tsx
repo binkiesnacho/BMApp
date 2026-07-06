@@ -72,21 +72,9 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
             type="text"
             required
             autoCapitalize="characters"
-            placeholder="Código del club (ej. A1B2C3)"
+            placeholder="Código de invitación (ej. A1B2C3)"
             className="w-full rounded-xl border border-separator bg-surface px-4 py-3 uppercase tracking-widest text-label outline-none focus:border-brand"
           />
-          <div>
-            <label className="mb-1 block text-xs text-label-2">Te unes como</label>
-            <select
-              name="joinAs"
-              defaultValue="coach"
-              className="w-full rounded-xl border border-separator bg-surface px-4 py-3 text-label outline-none focus:border-brand"
-            >
-              <option value="coach">Entrenador (gestiona su equipo)</option>
-              <option value="tecnico">Técnico (stats en vivo y entrenamientos)</option>
-              <option value="player">Jugador (solo consulta)</option>
-            </select>
-          </div>
           {joinState.error && (
             <p className="text-sm text-red-400">{joinState.error}</p>
           )}
@@ -95,10 +83,10 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
             disabled={joining}
             className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-50"
           >
-            {joining ? "Uniéndome…" : "Unirme como entrenador"}
+            {joining ? "Uniéndome…" : "Unirme al club"}
           </button>
           <p className="text-center text-xs text-label-3">
-            Pídele el código a tu administrador del club.
+            Tu rol lo define la invitación que te dé tu administrador.
           </p>
         </form>
       )}
