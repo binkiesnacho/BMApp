@@ -67,16 +67,23 @@ const Icon = {
   ),
 };
 
-export default function BottomNav({ fichaHref }: { fichaHref: string }) {
+export default function BottomNav({
+  fichaHref,
+  statsHref,
+}: {
+  fichaHref: string;
+  statsHref: string;
+}) {
   const pathname = usePathname();
 
+  // `activePath` es el prefijo de pathname (sin query) que marca la pestaña activa.
   const items = [
-    { href: "/", label: "Inicio", icon: Icon.home, match: "exact" as const },
-    { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, match: "prefix" as const },
-    { href: "/teams", label: "Club", icon: Icon.teams, match: "prefix" as const },
-    { href: "/equipo", label: "Equipo", icon: Icon.equipo, match: "prefix" as const },
-    { href: "/matches", label: "Calendario", icon: Icon.calendar, match: "prefix" as const },
-    { href: "/stats", label: "Estadísticas", icon: Icon.stats, match: "prefix" as const },
+    { href: "/", label: "Inicio", icon: Icon.home, activePath: "/", exact: true },
+    { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, activePath: "/players" },
+    { href: "/teams", label: "Club", icon: Icon.teams, activePath: "/teams" },
+    { href: "/equipo", label: "Equipo", icon: Icon.equipo, activePath: "/equipo" },
+    { href: "/matches", label: "Calendario", icon: Icon.calendar, activePath: "/matches" },
+    { href: statsHref, label: "Estadísticas", icon: Icon.stats, activePath: "/stats" },
   ];
 
   return (
@@ -86,9 +93,9 @@ export default function BottomNav({ fichaHref }: { fichaHref: string }) {
       <ul className="mx-auto flex max-w-md items-stretch">
         {items.map((item, i) => {
           const active =
-            item.match === "exact"
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
+            "exact" in item && item.exact
+              ? pathname === item.activePath
+              : pathname.startsWith(item.activePath);
           return (
             <li key={i} className="min-w-0 flex-1">
               <Link

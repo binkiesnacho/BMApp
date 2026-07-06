@@ -1,11 +1,13 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Club, Profile, Team, UserRole } from "@/lib/types/database";
 
 /**
  * Equipos "de la persona": donde es entrenador (coach_id), donde tiene ficha de
  * roster vinculada, o el que tiene asignado (profiles.team_id). Ordenados.
+ * Memoizado por petición (cache) para no repetir queries entre layout y página.
  */
-export async function getMyTeams(): Promise<Team[]> {
+export const getMyTeams = cache(async function getMyTeams(): Promise<Team[]> {
   const { profile } = await getSessionProfile();
   if (!profile?.club_id) return [];
   const supabase = await createClient();
@@ -32,13 +34,15 @@ export async function getMyTeams(): Promise<Team[]> {
     .order("name", { ascending: true })
     .returns<Team[]>();
   return teams ?? [];
-}
+});
 
 /**
  * Id de "mi ficha" de jugador (players.profile_id = yo). Si tengo ficha en
  * varios equipos, devuelve la primera. null si no tengo ficha vinculada.
  */
-export async function getMyFichaId(): Promise<string | null> {
+export const getMyFichaId = cache(async function getMyFichaId(): Promise<
+  string | null
+> {
   const { profile } = await getSessionProfile();
   if (!profile?.id) return null;
   const supabase = await createClient();
@@ -49,10 +53,10 @@ export async function getMyFichaId(): Promise<string | null> {
     .limit(1)
     .maybeSingle<{ id: string }>();
   return data?.id ?? null;
-}
+});
 
 /** Club del usuario actual (o null). */
-export async function getMyClub(): Promise<Club | null> {
+export const getMyClub = cache(async function getMyClub(): Promise<Club | null> {
   const { profile } = await getSessionProfile();
   if (!profile?.club_id) return null;
   const supabase = await createClient();
@@ -62,29 +66,31 @@ export async function getMyClub(): Promise<Club | null> {
     .eq("id", profile.club_id)
     .maybeSingle<Club>();
   return data ?? null;
-}
+});
 
 /**
  * Devuelve el usuario autenticado y su perfil (o null si no hay sesión).
- * Uso en Server Components / Server Actions.
+ * Uso en Server Components / Server Actions. Memoizado por petición (cache):
+ * evita repetir auth.getUser() + la query de perfil en cada llamada.
  */
-export async function getSessionProfile() {
+export const getSessionProfile = cache(async function getSessionProfile() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims valida el JWT (localmente si hay claves asimétricas) sin una ida y
+  // vuelta de red por cada render. El proxy ya refresca/verifica la sesión.
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub as string | undefined;
 
-  if (!user) return { user: null, profile: null };
+  if (!userId) return { user: null, profile: null };
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single<Profile>();
 
-  return { user, profile: profile ?? null };
-}
+  return { user: { id: userId }, profile: profile ?? null };
+});
 
 /** Roles del perfil (array, con fallback al rol principal). */
 export function rolesOf(profile: Profile | null): UserRole[] {

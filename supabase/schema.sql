@@ -731,10 +731,51 @@ begin
   end if;
 
   update public.profiles set team_id = new_team where id = target;
+  perform public.sync_player_ficha(target);
 end;
 $$;
 revoke all on function public.set_member_team(uuid, uuid) from public;
 grant execute on function public.set_member_team(uuid, uuid) to authenticated;
+
+-- Sincroniza la ficha de roster (players) de un perfil según su rol/equipo.
+--  - Jugador con equipo: crea/mueve su ficha vinculada en ese equipo.
+--  - Sin rol jugador o sin equipo: desvincula la ficha (conserva stats).
+create or replace function public.sync_player_ficha(target uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  t_roles user_role[];
+  t_team  uuid;
+  t_name  text;
+  existing uuid;
+begin
+  select roles, team_id, coalesce(nullif(trim(name), ''), 'Jugador')
+    into t_roles, t_team, t_name
+    from public.profiles where id = target;
+
+  select id into existing from public.players where profile_id = target limit 1;
+
+  if not ('player' = any(coalesce(t_roles, '{}'::user_role[]))) then
+    if existing is not null then
+      update public.players set profile_id = null where id = existing;
+    end if;
+    return;
+  end if;
+
+  -- Jugador sin equipo: no tocar su ficha (puede estar vinculada manualmente).
+  if t_team is null then
+    return;
+  end if;
+
+  if existing is not null then
+    update public.players set team_id = t_team where id = existing;
+  else
+    insert into public.players (team_id, name, profile_id)
+      values (t_team, t_name, target)
+      on conflict (team_id, profile_id) where profile_id is not null do nothing;
+  end if;
+end;
+$$;
+revoke all on function public.sync_player_ficha(uuid) from public;
 
 -- Multi-rol: rol principal + añadir/quitar roles ------------------------------
 create or replace function public.primary_role(rs user_role[])
@@ -765,6 +806,7 @@ begin
     set roles = (case when new_role::user_role = any(roles) then roles else roles || new_role::user_role end)
     where id = target;
   update public.profiles set role = public.primary_role(roles) where id = target;
+  perform public.sync_player_ficha(target);
 end;
 $$;
 revoke all on function public.add_member_role(uuid, text) from public;
@@ -786,6 +828,7 @@ begin
   end if;
   update public.profiles set roles = array_remove(roles, old_role::user_role) where id = target;
   update public.profiles set role = public.primary_role(roles) where id = target;
+  perform public.sync_player_ficha(target);
 end;
 $$;
 revoke all on function public.remove_member_role(uuid, text) from public;

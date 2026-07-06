@@ -6,6 +6,14 @@ import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
 
 export type AdminFormState = { error?: string; ok?: boolean };
 
+/** Revalida las vistas afectadas por un cambio de rol/equipo de un miembro. */
+function revalidateMemberViews() {
+  revalidatePath("/admin/members");
+  revalidatePath("/equipo");
+  revalidatePath("/teams", "layout");
+  revalidatePath("/", "layout");
+}
+
 async function requireAdmin() {
   const { profile } = await getSessionProfile();
   if (!profile?.club_id || !canAdminister(profile)) {
@@ -53,7 +61,7 @@ export async function addMemberRoleAction(formData: FormData): Promise<void> {
   if (!profile) return;
   const supabase = await createClient();
   await supabase.rpc("add_member_role", { target: memberId, new_role: role });
-  revalidatePath("/admin/members");
+  revalidateMemberViews();
 }
 
 /** Quita un rol a un miembro. */
@@ -65,7 +73,7 @@ export async function removeMemberRoleAction(formData: FormData): Promise<void> 
   if (!profile) return;
   const supabase = await createClient();
   await supabase.rpc("remove_member_role", { target: memberId, old_role: role });
-  revalidatePath("/admin/members");
+  revalidateMemberViews();
 }
 
 /** Asigna (o quita) el equipo de un jugador/técnico (RPC segura). */
@@ -82,7 +90,7 @@ export async function assignMemberTeamAction(formData: FormData): Promise<void> 
     target: memberId,
     new_team: teamId === "" ? null : teamId,
   });
-  revalidatePath("/admin", "layout");
+  revalidateMemberViews();
 }
 
 /** Expulsa a un miembro del club (RPC segura). */
