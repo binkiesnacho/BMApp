@@ -53,7 +53,8 @@ export default function InstallPrompt() {
   if (!show) return null;
 
   return (
-    <div className="mt-4 flex items-center gap-3 rounded-2xl bg-surface p-4">
+    <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 px-3">
+      <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-surface/95 p-3 shadow-xl ring-1 ring-separator/60 backdrop-blur-xl">
       <span className="text-2xl">📲</span>
       <div className="min-w-0 flex-1">
         <p className="text-[15px] font-semibold text-label">Instala la app</p>
@@ -83,6 +84,7 @@ export default function InstallPrompt() {
           Ocultar
         </button>
       )}
+      </div>
     </div>
   );
 }

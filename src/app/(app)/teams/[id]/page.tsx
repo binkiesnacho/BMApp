@@ -34,8 +34,8 @@ export default async function TeamDetailPage({
     .order("number", { ascending: true, nullsFirst: false })
     .returns<Player[]>();
 
-  // Cuentas de jugador del CLUB (para vincular con la ficha del roster; un jugador
-  // puede estar en varios equipos, así que no se limita a este equipo).
+  // Cualquier miembro del club puede vincularse a una ficha del roster (así un
+  // admin o entrenador también puede contar como jugador). RLS filtra lo visible.
   const accounts =
     canEdit && profile?.club_id
       ? (
@@ -43,7 +43,7 @@ export default async function TeamDetailPage({
             .from("profiles")
             .select("id, name")
             .eq("club_id", profile.club_id)
-            .eq("role", "player")
+            .order("name", { ascending: true })
             .returns<{ id: string; name: string }[]>()
         ).data ?? []
       : [];
