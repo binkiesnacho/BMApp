@@ -5,7 +5,7 @@
  *  - Cache-first para assets estáticos.
  * NOTA: no cachear respuestas de la API de Supabase (datos con RLS).
  */
-const CACHE = "bmapp-v1";
+const CACHE = "bmapp-v2";
 const APP_SHELL = ["/", "/offline"];
 
 self.addEventListener("install", (event) => {

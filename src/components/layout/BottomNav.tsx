@@ -45,44 +45,62 @@ const Icon = {
       strokeLinejoin="round"
     />
   ),
+  ficha: (p: IconProps) => (
+    <>
+      <circle cx="12" cy="8.5" r="3.2" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" />
+      <path d="M5 20a7 7 0 0 1 14 0" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </>
+  ),
   calendar: (p: IconProps) => (
     <>
       <rect x="4" y="5" width="16" height="15" rx="2.5" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" />
       <path d="M4 9h16M8 3v3M16 3v3" stroke={p.active ? "var(--color-canvas)" : "currentColor"} strokeWidth="1.7" strokeLinecap="round" />
     </>
   ),
+  stats: (p: IconProps) => (
+    <>
+      <path d="M4 20h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="6" y="11" width="3" height="6" rx="1" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" />
+      <rect x="11" y="7" width="3" height="10" rx="1" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" />
+      <rect x="16" y="13" width="3" height="4" rx="1" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" />
+    </>
+  ),
 };
 
-const items = [
-  { href: "/", label: "Inicio", icon: Icon.home },
-  { href: "/teams", label: "Club", icon: Icon.teams },
-  { href: "/equipo", label: "Equipo", icon: Icon.equipo },
-  { href: "/matches", label: "Calendario", icon: Icon.calendar },
-] as const;
-
-export default function BottomNav() {
+export default function BottomNav({ fichaHref }: { fichaHref: string }) {
   const pathname = usePathname();
+
+  const items = [
+    { href: "/", label: "Inicio", icon: Icon.home, match: "exact" as const },
+    { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, match: "prefix" as const },
+    { href: "/teams", label: "Club", icon: Icon.teams, match: "prefix" as const },
+    { href: "/equipo", label: "Equipo", icon: Icon.equipo, match: "prefix" as const },
+    { href: "/matches", label: "Calendario", icon: Icon.calendar, match: "prefix" as const },
+    { href: "/stats", label: "Estadísticas", icon: Icon.stats, match: "prefix" as const },
+  ];
 
   return (
     <nav
       className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-separator/50 bg-canvas/80 backdrop-blur-xl"
     >
       <ul className="mx-auto flex max-w-md items-stretch">
-        {items.map((item) => {
+        {items.map((item, i) => {
           const active =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            item.match === "exact"
+              ? pathname === item.href
+              : pathname.startsWith(item.href);
           return (
-            <li key={item.href} className="flex-1">
+            <li key={i} className="min-w-0 flex-1">
               <Link
                 href={item.href}
-                className={`flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] font-medium ${
+                className={`flex flex-col items-center gap-0.5 px-0.5 pt-2 pb-1.5 text-[9px] font-medium ${
                   active ? "text-brand" : "text-label-3"
                 }`}
               >
-                <svg width="26" height="26" viewBox="0 0 24 24">
+                <svg width="24" height="24" viewBox="0 0 24 24">
                   {item.icon({ active })}
                 </svg>
-                {item.label}
+                <span className="max-w-full truncate">{item.label}</span>
               </Link>
             </li>
           );

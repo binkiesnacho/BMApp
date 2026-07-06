@@ -34,6 +34,23 @@ export async function getMyTeams(): Promise<Team[]> {
   return teams ?? [];
 }
 
+/**
+ * Id de "mi ficha" de jugador (players.profile_id = yo). Si tengo ficha en
+ * varios equipos, devuelve la primera. null si no tengo ficha vinculada.
+ */
+export async function getMyFichaId(): Promise<string | null> {
+  const { profile } = await getSessionProfile();
+  if (!profile?.id) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("players")
+    .select("id")
+    .eq("profile_id", profile.id)
+    .limit(1)
+    .maybeSingle<{ id: string }>();
+  return data?.id ?? null;
+}
+
 /** Club del usuario actual (o null). */
 export async function getMyClub(): Promise<Club | null> {
   const { profile } = await getSessionProfile();
