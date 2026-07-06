@@ -113,6 +113,9 @@ create index if not exists players_team_id_idx on public.players (team_id);
 -- por equipo. Los NULL no cuentan.
 create unique index if not exists players_team_profile_uidx
   on public.players (team_id, profile_id) where profile_id is not null;
+-- Búsqueda de fichas por cuenta (getMyFichaId / getMyTeams, en cada navegación).
+create index if not exists players_profile_id_idx
+  on public.players (profile_id) where profile_id is not null;
 
 -- Matches ---------------------------------------------------------------------
 create table if not exists public.matches (

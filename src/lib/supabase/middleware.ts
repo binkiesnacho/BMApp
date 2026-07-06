@@ -29,10 +29,12 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANTE: no ejecutar código entre createServerClient y getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANTE: no ejecutar código entre createServerClient y la validación.
+  // getClaims valida el JWT en local (clave asimétrica ES256) y refresca la
+  // sesión si hace falta (vía getSession interno), sin ida y vuelta de red por
+  // cada request/prefetch. La autorización real la aplica RLS en la BD.
+  const { data: claims } = await supabase.auth.getClaims();
+  const hasSession = Boolean(claims?.claims?.sub);
 
   // Rutas públicas (no requieren sesión)
   const publicPaths = ["/login", "/auth"];
@@ -40,7 +42,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(p)
   );
 
-  if (!user && !isPublic) {
+  if (!hasSession && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
