@@ -1,11 +1,11 @@
 import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionProfile } from "@/lib/auth";
+import { getMyTeams, getSessionProfile } from "@/lib/auth";
 import { EVENT_LABELS } from "@/lib/events";
 import { aggregateByPlayer, shootingAccuracy } from "@/lib/stats";
-import MatchFilter from "./MatchFilter";
-import type { Match, Player, StatEvent, StatEventType } from "@/lib/types/database";
+import StatsFilters from "./StatsFilters";
+import type { Match, Player, StatEvent, StatEventType, Team } from "@/lib/types/database";
 
 export const metadata = { title: "Estadísticas" };
 
@@ -21,19 +21,23 @@ const COLS: StatEventType[] = [
 export default async function StatsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ match?: string }>;
+  searchParams: Promise<{ team?: string; match?: string }>;
 }) {
-  const { match: matchId } = await searchParams;
+  const { team: teamParam, match: matchId } = await searchParams;
   const supabase = await createClient();
-  const { profile } = await getSessionProfile();
+  const [{ profile }, myTeams] = await Promise.all([
+    getSessionProfile(),
+    getMyTeams(),
+  ]);
 
-  const eventsQuery = supabase.from("stats_events").select("*");
-  if (matchId) eventsQuery.eq("match_id", matchId);
-
-  const [{ data: players }, { data: events }, { data: matches }] =
+  const [{ data: players }, { data: allTeams }, { data: matches }] =
     await Promise.all([
       supabase.from("players").select("*").returns<Player[]>(),
-      eventsQuery.returns<StatEvent[]>(),
+      supabase
+        .from("teams")
+        .select("*")
+        .order("name", { ascending: true })
+        .returns<Team[]>(),
       supabase
         .from("matches")
         .select("*")
@@ -42,19 +46,56 @@ export default async function StatsPage({
         .returns<Match[]>(),
     ]);
 
+  // Equipo seleccionado: por defecto el del usuario; 'all' = todo el club.
+  const defaultTeam = myTeams[0]?.id ?? "all";
+  const teamValue = teamParam ?? defaultTeam;
+  // Opciones del selector: mis equipos primero, luego el resto del club.
+  const teamOptions: Team[] = [
+    ...myTeams,
+    ...(allTeams ?? []).filter((t) => !myTeams.some((mt) => mt.id === t.id)),
+  ];
+
+  // Partidos del equipo seleccionado (para el filtro y para acotar eventos).
+  const teamMatches =
+    teamValue === "all"
+      ? matches ?? []
+      : (matches ?? []).filter((m) => m.team_id === teamValue);
+  const matchIds = new Set(teamMatches.map((m) => m.id));
+
+  // Eventos: por partido concreto, o por equipo, o todo el club.
+  const { data: allEvents } = await supabase
+    .from("stats_events")
+    .select("*")
+    .returns<StatEvent[]>();
+  const events = (allEvents ?? []).filter((e) => {
+    if (matchId) return e.match_id === matchId;
+    if (teamValue !== "all") return matchIds.has(e.match_id);
+    return true;
+  });
+
   const myPlayerIds = new Set(
     (players ?? []).filter((p) => p.profile_id === profile?.id).map((p) => p.id)
   );
 
-  const counts = aggregateByPlayer(events ?? []);
+  const counts = aggregateByPlayer(events);
   const rows = (players ?? [])
     .map((p) => ({ player: p, c: counts.get(p.id) ?? {} }))
     .filter((r) => Object.keys(r.c).length > 0)
     .sort((a, b) => (b.c.goal ?? 0) - (a.c.goal ?? 0));
 
+  const teamSubtitle =
+    teamValue === "all"
+      ? "Todo el club"
+      : teamOptions.find((t) => t.id === teamValue)?.name;
+
   return (
-    <Screen title="Estadísticas" subtitle="Acumulado por jugador">
-      <MatchFilter matches={matches ?? []} current={matchId ?? ""} />
+    <Screen title="Estadísticas" subtitle={teamSubtitle}>
+      <StatsFilters
+        teams={teamOptions}
+        teamValue={teamValue}
+        matches={teamMatches}
+        matchValue={matchId ?? ""}
+      />
 
       <div className="mt-4">
         {rows.length === 0 ? (

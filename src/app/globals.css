@@ -65,13 +65,51 @@ body {
   color: var(--color-label-3);
 }
 
-/* Feedback táctil sutil */
-.tap {
-  transition: transform 0.12s ease, opacity 0.12s ease;
+/* Cursor y feedback en TODO lo interactivo (Tailwind v4 no lo pone por defecto) */
+button:not(:disabled),
+[role="button"],
+a[href],
+label:has(input),
+summary,
+select {
+  cursor: pointer;
 }
-.tap:active {
-  transform: scale(0.97);
-  opacity: 0.85;
+button:disabled {
+  cursor: not-allowed;
+}
+button,
+a,
+[role="button"],
+select,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Feedback al pulsar: escala/opacidad. Se aplica a .tap y a botones/links. */
+.tap,
+button:not(:disabled),
+a[href],
+[role="button"] {
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+.tap:active,
+button:not(:disabled):active,
+a[href]:active,
+[role="button"]:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+/* Hover sutil en dispositivos con puntero */
+@media (hover: hover) {
+  a[href]:hover,
+  button:not(:disabled):hover {
+    opacity: 0.92;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {

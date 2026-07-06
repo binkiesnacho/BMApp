@@ -45,7 +45,7 @@ const Icon = {
 
 const items = [
   { href: "/", label: "Inicio", icon: Icon.home },
-  { href: "/teams", label: "Equipos", icon: Icon.teams },
+  { href: "/teams", label: "Club", icon: Icon.teams },
   { href: "/matches", label: "Partidos", icon: Icon.matches },
   { href: "/trainings", label: "Entren.", icon: Icon.trainings },
   { href: "/stats", label: "Stats", icon: Icon.stats },

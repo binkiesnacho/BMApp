@@ -1,5 +1,38 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Club, Profile } from "@/lib/types/database";
+import type { Club, Profile, Team } from "@/lib/types/database";
+
+/**
+ * Equipos "de la persona": donde es entrenador (coach_id), donde tiene ficha de
+ * roster vinculada, o el que tiene asignado (profiles.team_id). Ordenados.
+ */
+export async function getMyTeams(): Promise<Team[]> {
+  const { profile } = await getSessionProfile();
+  if (!profile?.club_id) return [];
+  const supabase = await createClient();
+
+  const [{ data: coached }, { data: rosterRows }] = await Promise.all([
+    supabase.from("teams").select("*").eq("coach_id", profile.id).returns<Team[]>(),
+    supabase
+      .from("players")
+      .select("team_id")
+      .eq("profile_id", profile.id)
+      .returns<{ team_id: string }[]>(),
+  ]);
+
+  const ids = new Set<string>();
+  (coached ?? []).forEach((t) => ids.add(t.id));
+  (rosterRows ?? []).forEach((r) => ids.add(r.team_id));
+  if (profile.team_id) ids.add(profile.team_id);
+
+  if (ids.size === 0) return [];
+  const { data: teams } = await supabase
+    .from("teams")
+    .select("*")
+    .in("id", [...ids])
+    .order("name", { ascending: true })
+    .returns<Team[]>();
+  return teams ?? [];
+}
 
 /** Club del usuario actual (o null). */
 export async function getMyClub(): Promise<Club | null> {

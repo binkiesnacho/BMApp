@@ -2,16 +2,11 @@ import Screen from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile } from "@/lib/auth";
-import CreateTeamForm from "./CreateTeamForm";
 import type { Player, Team } from "@/lib/types/database";
 
-export const metadata = { title: "Equipos" };
+export const metadata = { title: "Club" };
 
 export default async function TeamsPage() {
-  const { profile } = await getSessionProfile();
-  const isAdmin = canAdminister(profile);
-
   const supabase = await createClient();
   // Cualquier miembro del club ve todos los equipos (lectura). RLS lo garantiza.
   const { data } = await supabase
@@ -21,7 +16,6 @@ export default async function TeamsPage() {
     .returns<Team[]>();
   const teams: Team[] = data ?? [];
 
-  // Nº de jugadores por equipo.
   const { data: players } = await supabase
     .from("players")
     .select("id, team_id")
@@ -30,19 +24,9 @@ export default async function TeamsPage() {
     (players ?? []).filter((p) => p.team_id === teamId).length;
 
   return (
-    <Screen title="Equipos">
-      {isAdmin && (
-        <div className="mb-4">
-          <CreateTeamForm />
-        </div>
-      )}
-
+    <Screen title="Club" subtitle="Equipos del club">
       {teams.length === 0 ? (
-        <EmptyState icon="🛡️">
-          {isAdmin
-            ? "Aún no hay equipos. Crea el primero arriba."
-            : "No tienes equipos asignados todavía."}
-        </EmptyState>
+        <EmptyState icon="🛡️">Todavía no hay equipos.</EmptyState>
       ) : (
         <ListGroup>
           {teams.map((team) => (
