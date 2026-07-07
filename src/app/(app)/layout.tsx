@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import BottomNav from "@/components/layout/BottomNav";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
+import PerfBadge from "@/components/dev/PerfBadge";
 import { getSessionProfile } from "@/lib/auth";
 
 /** Shell principal (móvil-first, estilo iOS). Exige sesión y club configurado. */
@@ -19,6 +20,7 @@ export default async function AppLayout({
       {children}
       <InstallPrompt />
       <BottomNav fichaHref="/mi-ficha" statsHref="/stats" />
+      <PerfBadge />
     </div>
   );
 }
