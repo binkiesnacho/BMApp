@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
     // ir atrás) es instantáneo, sin re-render en el servidor. Las mutaciones
     // siguen refrescando al momento vía revalidatePath.
     staleTimes: {
-      dynamic: 30,
-      static: 180,
+      dynamic: 90,
+      static: 300,
     },
   },
 };
