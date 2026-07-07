@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
-import type { StatEventType } from "@/lib/types/database";
+import type { MatchStatus, StatEventType } from "@/lib/types/database";
 
 export type MatchFormState = { error?: string };
 
@@ -39,7 +39,7 @@ export async function createMatchAction(
   redirect("/matches");
 }
 
-/** Edita un partido programado (rival, fecha, lugar). */
+/** Edita un partido: rival, fecha, lugar, marcador y estado (próximos y disputados). */
 export async function editMatchAction(
   _prev: MatchFormState,
   formData: FormData
@@ -48,27 +48,67 @@ export async function editMatchAction(
   const opponent = String(formData.get("opponent") ?? "").trim();
   const date = String(formData.get("date") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim() || null;
+  const statusRaw = String(formData.get("status") ?? "").trim();
   if (!matchId) return { error: "Partido no válido." };
   if (!opponent) return { error: "Escribe el rival." };
   if (!date) return { error: "Indica la fecha." };
+
+  const toScore = (v: FormDataEntryValue | null) => {
+    const n = Number.parseInt(String(v ?? "").trim(), 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  };
+  const status: MatchStatus = ["scheduled", "live", "finished"].includes(statusRaw)
+    ? (statusRaw as MatchStatus)
+    : "scheduled";
 
   const { profile } = await getSessionProfile();
   if (!isStaff(profile)) return { error: "Sin permisos." };
 
   const supabase = await createClient();
+  // RLS (can_capture_team) limita al admin, al entrenador del equipo o al técnico.
   const { error } = await supabase
     .from("matches")
     .update({
       opponent,
       date: new Date(date).toISOString(),
       location,
+      our_score: toScore(formData.get("our_score")),
+      opp_score: toScore(formData.get("opp_score")),
+      status,
     })
     .eq("id", matchId);
 
   if (error) return { error: error.message };
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath(`/matches/${matchId}/edit`);
   revalidatePath("/matches");
   redirect(`/matches/${matchId}`);
+}
+
+/** Añade una observación (comentario) a un partido. RLS: gestor del equipo. */
+export async function addMatchCommentAction(formData: FormData): Promise<void> {
+  const matchId = String(formData.get("matchId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!matchId || !body) return;
+
+  const { profile } = await getSessionProfile();
+  if (!profile) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("match_comments")
+    .insert({ match_id: matchId, author_id: profile.id, body });
+  revalidatePath(`/matches/${matchId}`);
+}
+
+/** Elimina una observación (autor o gestor del equipo). */
+export async function deleteMatchCommentAction(formData: FormData): Promise<void> {
+  const commentId = String(formData.get("commentId") ?? "");
+  const matchId = String(formData.get("matchId") ?? "");
+  if (!commentId) return;
+  const supabase = await createClient();
+  await supabase.from("match_comments").delete().eq("id", commentId);
+  revalidatePath(`/matches/${matchId}`);
 }
 
 /** Elimina un partido. Vuelve al calendario. */

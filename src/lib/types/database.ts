@@ -116,6 +116,15 @@ export interface StatEvent {
   created_at: string;
 }
 
+/** Observación/comentario en un partido. */
+export interface MatchComment {
+  id: string;
+  match_id: string;
+  author_id: string | null;
+  body: string;
+  created_at: string;
+}
+
 /** Fila de rival en la clasificación (nuestra fila se calcula desde matches). */
 export interface StandingsRow {
   id: string;

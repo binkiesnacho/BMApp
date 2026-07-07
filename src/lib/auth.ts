@@ -106,6 +106,19 @@ export function canAdminister(profile: Profile | null): boolean {
   );
 }
 
+/**
+ * ¿Puede gestionar ESTE equipo? (espejo de can_manage_team en la BD)
+ * admin/superadmin → cualquier equipo; entrenador → solo si es su coach_id.
+ */
+export function canManageTeam(
+  profile: Profile | null,
+  team: { coach_id: string | null } | null
+): boolean {
+  if (!profile || !team) return false;
+  if (rolesOf(profile).includes("admin") || profile.is_superadmin) return true;
+  return rolesOf(profile).includes("coach") && team.coach_id === profile.id;
+}
+
 /** Staff con escritura completa sobre su equipo (admin/coach/superadmin). */
 export function isStaff(profile: Profile | null): boolean {
   const r = rolesOf(profile);

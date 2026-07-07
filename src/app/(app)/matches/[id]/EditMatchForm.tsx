@@ -56,6 +56,40 @@ export default function EditMatchForm({
         placeholder="Lugar (opcional)"
         className={inputCls}
       />
+
+      {/* Marcador y estado (para corregir partidos ya disputados) */}
+      <div className="flex items-end gap-2">
+        <label className="flex-1">
+          <span className="mb-1 block text-xs text-label-2">Nosotros</span>
+          <input
+            name="our_score"
+            type="number"
+            min={0}
+            defaultValue={match.our_score}
+            className={inputCls}
+          />
+        </label>
+        <span className="pb-2.5 text-label-3">–</span>
+        <label className="flex-1">
+          <span className="mb-1 block text-xs text-label-2">Rival</span>
+          <input
+            name="opp_score"
+            type="number"
+            min={0}
+            defaultValue={match.opp_score}
+            className={inputCls}
+          />
+        </label>
+      </div>
+      <label className="block">
+        <span className="mb-1 block text-xs text-label-2">Estado</span>
+        <select name="status" defaultValue={match.status} className={inputCls}>
+          <option value="scheduled">Programado</option>
+          <option value="live">En vivo</option>
+          <option value="finished">Finalizado</option>
+        </select>
+      </label>
+
       {state.error && <p className="text-sm text-negative">{state.error}</p>}
       <div className="flex gap-2">
         <button
