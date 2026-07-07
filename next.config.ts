@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Cachea en el cliente los segmentos ya visitados: volver a una sección (o
+    // ir atrás) es instantáneo, sin re-render en el servidor. Las mutaciones
+    // siguen refrescando al momento vía revalidatePath.
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
 };
 
 export default nextConfig;
