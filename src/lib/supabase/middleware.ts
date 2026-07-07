@@ -33,17 +33,11 @@ export async function updateSession(request: NextRequest) {
   // getClaims valida el JWT en local (clave asimétrica ES256) y refresca la
   // sesión si hace falta (vía getSession interno), sin ida y vuelta de red por
   // cada request/prefetch. La autorización real la aplica RLS en la BD.
-  const t0 = performance.now();
   const { data: claims } = await supabase.auth.getClaims();
   const hasSession = Boolean(claims?.claims?.sub);
-  // Server-Timing: coste de validar la sesión en el proxy (visible en DevTools).
-  supabaseResponse.headers.set(
-    "Server-Timing",
-    `proxy;dur=${(performance.now() - t0).toFixed(1)}`
-  );
 
-  // Rutas públicas (no requieren sesión)
-  const publicPaths = ["/login", "/auth"];
+  // Rutas públicas (no requieren sesión). /api incluye el health-check keep-warm.
+  const publicPaths = ["/login", "/auth", "/api"];
   const isPublic = publicPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p)
   );
