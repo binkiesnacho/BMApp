@@ -36,8 +36,8 @@ export async function updateSession(request: NextRequest) {
   const { data: claims } = await supabase.auth.getClaims();
   const hasSession = Boolean(claims?.claims?.sub);
 
-  // Rutas públicas (no requieren sesión). /api incluye el health-check keep-warm.
-  const publicPaths = ["/login", "/auth", "/api"];
+  // Rutas públicas (no requieren sesión)
+  const publicPaths = ["/login", "/auth"];
   const isPublic = publicPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p)
   );
