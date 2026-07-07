@@ -3,12 +3,12 @@ import Screen from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
-import CreateMatchForm from "./CreateMatchForm";
+import { getMyTeams, getSessionProfile, isStaff } from "@/lib/auth";
 import MatchesTabs from "./MatchesTabs";
+import MatchTeamFilter from "./MatchTeamFilter";
 import type { Match, Team } from "@/lib/types/database";
 
-export const metadata = { title: "Partidos" };
+export const metadata = { title: "Calendario" };
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("es-ES", {
@@ -21,34 +21,39 @@ function fmtDate(iso: string) {
 export default async function MatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; team?: string }>;
 }) {
-  const { profile } = await getSessionProfile();
+  const { tab, team: teamParam } = await searchParams;
+  const [{ profile }, myTeams] = await Promise.all([
+    getSessionProfile(),
+    getMyTeams(),
+  ]);
   const staff = isStaff(profile);
   const supabase = await createClient();
 
-  let manageable: Team[] = [];
-  if (staff && profile?.club_id) {
-    const q = supabase.from("teams").select("*").eq("club_id", profile.club_id);
-    const { data } = canAdminister(profile)
-      ? await q.returns<Team[]>()
-      : await q.eq("coach_id", profile.id).returns<Team[]>();
-    manageable = data ?? [];
-  }
+  const [{ data: allTeams }, { data: matches }] = await Promise.all([
+    supabase.from("teams").select("id, name").returns<Pick<Team, "id" | "name">[]>(),
+    supabase.from("matches").select("*").returns<Match[]>(),
+  ]);
 
-  const { data: matches } = await supabase
-    .from("matches")
-    .select("*")
-    .returns<Match[]>();
+  const teamName = (tid: string) =>
+    (allTeams ?? []).find((t) => t.id === tid)?.name ?? "Equipo";
 
-  const upcoming = (matches ?? [])
+  // Equipo seleccionado: por defecto mi primer equipo; "all" = todo el club.
+  const teamValue = teamParam ?? myTeams[0]?.id ?? "all";
+
+  const scoped =
+    teamValue === "all"
+      ? matches ?? []
+      : (matches ?? []).filter((m) => m.team_id === teamValue);
+
+  const upcoming = scoped
     .filter((m) => m.status !== "finished")
     .sort((a, b) => +new Date(a.date) - +new Date(b.date));
-  const results = (matches ?? [])
+  const results = scoped
     .filter((m) => m.status === "finished")
     .sort((a, b) => +new Date(b.date) - +new Date(a.date));
 
-  const { tab } = await searchParams;
   const active: "proximos" | "resultados" =
     tab === "resultados" || tab === "proximos"
       ? tab
@@ -56,20 +61,19 @@ export default async function MatchesPage({
         ? "proximos"
         : "resultados";
   const list = active === "proximos" ? upcoming : results;
+  const showTeamLabel = teamValue === "all";
 
   return (
     <Screen
       title="Calendario"
-      subtitle={staff ? "Partidos y resultados" : undefined}
-      trailing={<Link href="/standings">Clasificación</Link>}
+      subtitle={
+        teamValue === "all" ? "Todos los equipos" : teamName(teamValue)
+      }
+      trailing={staff ? <Link href="/matches/new">Nuevo</Link> : undefined}
     >
-      {staff && manageable.length > 0 && (
-        <div className="mb-4">
-          <CreateMatchForm teams={manageable} />
-        </div>
-      )}
+      <MatchTeamFilter teams={myTeams} value={teamValue} tab={active} showAll />
 
-      <MatchesTabs value={active} />
+      <MatchesTabs value={active} team={teamValue} />
 
       <div className="mt-4">
         {list.length === 0 ? (
@@ -89,7 +93,11 @@ export default async function MatchesPage({
                   key={m.id}
                   href={`/matches/${m.id}`}
                   title={`vs ${m.opponent}`}
-                  subtitle={fmtDate(m.date)}
+                  subtitle={
+                    showTeamLabel
+                      ? `${teamName(m.team_id)} · ${fmtDate(m.date)}`
+                      : fmtDate(m.date)
+                  }
                   value={
                     active === "proximos" ? (
                       live ? (

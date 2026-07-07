@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 
 export type PlayerFormState = { error?: string };
 
+/** Refresca tanto la vista de plantilla como la pantalla de edición. */
+function revalidateRoster(teamId: string) {
+  revalidatePath(`/teams/${teamId}`);
+  revalidatePath(`/teams/${teamId}/edit`);
+}
+
 /**
  * Añade un jugador a un equipo. La RLS (can_manage_team) garantiza que solo
  * el admin del club o el coach asignado a ESE equipo pueda insertar.
@@ -36,7 +42,7 @@ export async function addPlayerAction(
 
   if (error) return { error: error.message };
 
-  revalidatePath(`/teams/${teamId}`);
+  revalidateRoster(teamId);
   return {};
 }
 
@@ -67,7 +73,7 @@ export async function editPlayerAction(
 
   if (error) return { error: error.message };
 
-  revalidatePath(`/teams/${teamId}`);
+  revalidateRoster(teamId);
   return {};
 }
 
@@ -103,7 +109,7 @@ export async function linkPlayerAccountAction(
       .eq("id", playerId);
   }
 
-  revalidatePath(`/teams/${teamId}`);
+  revalidateRoster(teamId);
 }
 
 /** Elimina un jugador (RLS: solo quien gestiona el equipo). */
@@ -114,5 +120,5 @@ export async function deletePlayerAction(formData: FormData): Promise<void> {
 
   const supabase = await createClient();
   await supabase.from("players").delete().eq("id", playerId);
-  revalidatePath(`/teams/${teamId}`);
+  revalidateRoster(teamId);
 }

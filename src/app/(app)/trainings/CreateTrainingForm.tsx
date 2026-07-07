@@ -11,9 +11,15 @@ const DEFAULT_PHASES: TrainingPhase[] = [
   { name: "Vuelta a la calma", minutes: 10 },
 ];
 
-export default function CreateTrainingForm({ teams }: { teams: Team[] }) {
+export default function CreateTrainingForm({
+  teams,
+  defaultOpen = false,
+}: {
+  teams: Team[];
+  defaultOpen?: boolean;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [teamId, setTeamId] = useState(teams.length === 1 ? teams[0].id : "");
   const [date, setDate] = useState("");
   const [title, setTitle] = useState("");

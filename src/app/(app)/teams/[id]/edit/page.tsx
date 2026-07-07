@@ -1,30 +1,29 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile, isStaff } from "@/lib/auth";
-import PlayerRow from "./PlayerRow";
+import AddPlayerForm from "../AddPlayerForm";
+import PlayerRow from "../PlayerRow";
 import type { Player, Team } from "@/lib/types/database";
 
-export default async function TeamDetailPage({
+export const metadata = { title: "Editar plantilla" };
+
+export default async function EditRosterPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
   const { profile } = await getSessionProfile();
-  const canEdit = isStaff(profile);
+  if (!isStaff(profile)) redirect(`/teams/${id}`);
 
   const supabase = await createClient();
-
-  // RLS: solo devuelve el equipo si el usuario puede verlo/gestionarlo.
   const { data: team } = await supabase
     .from("teams")
     .select("*")
     .eq("id", id)
     .maybeSingle<Team>();
-
   if (!team) notFound();
 
   const { data: players } = await supabase
@@ -36,22 +35,22 @@ export default async function TeamDetailPage({
 
   return (
     <Screen
-      title={team.name}
-      subtitle={`${players?.length ?? 0} jugadores`}
-      back="/teams"
-      trailing={
-        canEdit ? <Link href={`/teams/${team.id}/edit`}>Editar</Link> : undefined
-      }
+      title="Editar plantilla"
+      subtitle={team.name}
+      back={`/teams/${team.id}`}
     >
-      {/* Vista de solo lectura: la edición de la plantilla vive en /teams/[id]/edit */}
+      <div className="mb-4">
+        <AddPlayerForm teamId={team.id} />
+      </div>
+
       <ul className="space-y-2">
         {players?.map((player) => (
-          <PlayerRow key={player.id} player={player} teamId={team.id} canEdit={false} />
+          <PlayerRow key={player.id} player={player} teamId={team.id} canEdit />
         ))}
       </ul>
 
       {(!players || players.length === 0) && (
-        <EmptyState icon="👥">Aún no hay jugadores en la plantilla.</EmptyState>
+        <EmptyState icon="👥">Añade el primer jugador arriba.</EmptyState>
       )}
     </Screen>
   );

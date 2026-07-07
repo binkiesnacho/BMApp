@@ -1,17 +1,11 @@
+import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import Card, { EmptyState } from "@/components/ui/Card";
 import { ListGroup, ListRow, SectionTitle } from "@/components/ui/List";
 import { createClient } from "@/lib/supabase/server";
-import {
-  canAdminister,
-  canCapture,
-  getSessionProfile,
-  isTecnico,
-} from "@/lib/auth";
-import CreateTrainingForm from "./CreateTrainingForm";
+import { canCapture, getSessionProfile } from "@/lib/auth";
 import type {
   Player,
-  Team,
   Training,
   TrainingAttendance,
 } from "@/lib/types/database";
@@ -30,17 +24,6 @@ export default async function TrainingsPage() {
   const { profile } = await getSessionProfile();
   const capture = canCapture(profile);
   const supabase = await createClient();
-
-  let manageable: Team[] = [];
-  if (capture && profile?.club_id) {
-    let q = supabase.from("teams").select("*").eq("club_id", profile.club_id);
-    if (isTecnico(profile)) q = q.eq("id", profile.team_id ?? "");
-    else if (!canAdminister(profile)) q = q.eq("coach_id", profile.id);
-    manageable =
-      isTecnico(profile) && !profile.team_id
-        ? []
-        : (await q.returns<Team[]>()).data ?? [];
-  }
 
   const [{ data: trainings }, { data: attendance }, { data: players }] =
     await Promise.all([
@@ -72,13 +55,10 @@ export default async function TrainingsPage() {
     t.phases.reduce((s, ph) => s + (Number(ph.minutes) || 0), 0);
 
   return (
-    <Screen title="Entrenamientos">
-      {capture && manageable.length > 0 && (
-        <div className="mb-4">
-          <CreateTrainingForm teams={manageable} />
-        </div>
-      )}
-
+    <Screen
+      title="Entrenamientos"
+      trailing={capture ? <Link href="/trainings/new">Nuevo</Link> : undefined}
+    >
       {faltasRows.length > 0 && (
         <div className="mb-5">
           <SectionTitle>Faltas acumuladas</SectionTitle>

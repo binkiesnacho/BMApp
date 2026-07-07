@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
 import type { StatEventType } from "@/lib/types/database";
@@ -35,7 +36,7 @@ export async function createMatchAction(
 
   if (error) return { error: error.message };
   revalidatePath("/matches");
-  return {};
+  redirect("/matches");
 }
 
 /** Edita un partido programado (rival, fecha, lugar). */
@@ -67,16 +68,17 @@ export async function editMatchAction(
   if (error) return { error: error.message };
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/matches");
-  return {};
+  redirect(`/matches/${matchId}`);
 }
 
-/** Elimina un partido. */
+/** Elimina un partido. Vuelve al calendario. */
 export async function deleteMatchAction(formData: FormData): Promise<void> {
   const matchId = String(formData.get("matchId") ?? "");
   if (!matchId) return;
   const supabase = await createClient();
   await supabase.from("matches").delete().eq("id", matchId);
   revalidatePath("/matches");
+  redirect("/matches");
 }
 
 export interface LiveEventInput {

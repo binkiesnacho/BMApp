@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
-import { deleteMatchAction } from "../actions";
-import EditMatchForm from "./EditMatchForm";
 import type { Match, Player, StatEvent, StatEventType } from "@/lib/types/database";
 import { EVENT_LABELS } from "@/lib/events";
 import { aggregateByPlayer, shootingAccuracy } from "@/lib/stats";
@@ -74,7 +72,14 @@ export default async function MatchDetailPage({
     .sort((a, b) => (b.c.goal ?? 0) - (a.c.goal ?? 0));
 
   return (
-    <Screen title={`vs ${match.opponent}`} subtitle={fmtDate(match.date)} back="/matches">
+    <Screen
+      title={`vs ${match.opponent}`}
+      subtitle={fmtDate(match.date)}
+      back="/matches"
+      trailing={
+        staff ? <Link href={`/matches/${match.id}/edit`}>Editar</Link> : undefined
+      }
+    >
       {/* Marcador */}
       <div className="rounded-2xl bg-surface p-5 text-center">
         {match.status === "scheduled" ? (
@@ -101,12 +106,12 @@ export default async function MatchDetailPage({
         )}
       </div>
 
-      {/* Acciones: capturar en vivo (staff+técnico), eliminar (solo staff) */}
+      {/* Captura en vivo (staff + técnico). Editar datos y eliminar viven en /edit. */}
       {capture && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3">
           <Link
             href={`/matches/${match.id}/live`}
-            className="flex-1 rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
+            className="block rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
           >
             {finished
               ? "Revisar / editar en vivo"
@@ -114,21 +119,6 @@ export default async function MatchDetailPage({
                 ? "▶ Continuar en vivo"
                 : "▶ Iniciar en vivo"}
           </Link>
-          {staff && (
-            <form action={deleteMatchAction}>
-              <input type="hidden" name="matchId" value={match.id} />
-              <button className="rounded-xl border border-separator px-4 py-3 text-sm text-label-2 hover:text-red-400">
-                Eliminar
-              </button>
-            </form>
-          )}
-        </div>
-      )}
-
-      {/* Editar datos del partido (staff) */}
-      {staff && (
-        <div className="mt-3">
-          <EditMatchForm match={match} />
         </div>
       )}
 

@@ -44,6 +44,7 @@ export async function addStandingsRowAction(
   });
   if (error) return { error: error.message };
   revalidatePath("/standings");
+  revalidatePath("/standings/edit");
   return {};
 }
 
@@ -67,6 +68,7 @@ export async function editStandingsRowAction(
     .eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/standings");
+  revalidatePath("/standings/edit");
   return {};
 }
 
@@ -79,4 +81,5 @@ export async function deleteStandingsRowAction(formData: FormData): Promise<void
   const supabase = await createClient();
   await supabase.from("standings_rows").delete().eq("id", id);
   revalidatePath("/standings");
+  revalidatePath("/standings/edit");
 }

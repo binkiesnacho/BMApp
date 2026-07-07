@@ -12,8 +12,14 @@ function toLocalInput(iso: string) {
   )}:${pad(d.getMinutes())}`;
 }
 
-export default function EditMatchForm({ match }: { match: Match }) {
-  const [open, setOpen] = useState(false);
+export default function EditMatchForm({
+  match,
+  defaultOpen = false,
+}: {
+  match: Match;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const [state, formAction, pending] = useActionState<MatchFormState, FormData>(
     editMatchAction,
     {}

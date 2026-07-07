@@ -4,8 +4,14 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createMatchAction, type MatchFormState } from "./actions";
 import type { Team } from "@/lib/types/database";
 
-export default function CreateMatchForm({ teams }: { teams: Team[] }) {
-  const [open, setOpen] = useState(false);
+export default function CreateMatchForm({
+  teams,
+  defaultOpen = false,
+}: {
+  teams: Team[];
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const [state, formAction, pending] = useActionState<MatchFormState, FormData>(
     createMatchAction,
     {}
@@ -13,11 +19,11 @@ export default function CreateMatchForm({ teams }: { teams: Team[] }) {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (!pending && !state.error && formRef.current) {
+    if (!pending && !state.error && !defaultOpen && formRef.current) {
       formRef.current.reset();
       setOpen(false);
     }
-  }, [pending, state]);
+  }, [pending, state, defaultOpen]);
 
   if (!open) {
     return (

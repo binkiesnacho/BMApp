@@ -1,10 +1,10 @@
+import Link from "next/link";
 import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import { getMyTeams, getSessionProfile, isStaff } from "@/lib/auth";
 import { buildStandings } from "@/lib/standings";
 import TeamSelect from "./TeamSelect";
-import StandingsManager from "./StandingsManager";
 import type { Match, StandingsRow, Team } from "@/lib/types/database";
 
 export const metadata = { title: "Clasificación" };
@@ -63,7 +63,15 @@ export default async function StandingsPage({
   const canEdit = isStaff(profile);
 
   return (
-    <Screen title="Clasificación" subtitle={team.name}>
+    <Screen
+      title="Clasificación"
+      subtitle={team.name}
+      trailing={
+        canEdit ? (
+          <Link href={`/standings/edit?team=${team.id}`}>Editar</Link>
+        ) : undefined
+      }
+    >
       {teamOptions.length > 1 && (
         <div className="mb-4">
           <TeamSelect teams={teamOptions} value={teamValue} />
@@ -121,7 +129,6 @@ export default async function StandingsPage({
         partidos finalizados. GF:GC {"->"} goles a favor y en contra.
       </p>
 
-      {canEdit && <StandingsManager teamId={team.id} rows={rivals ?? []} />}
     </Screen>
   );
 }
