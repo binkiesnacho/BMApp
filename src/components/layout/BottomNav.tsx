@@ -77,11 +77,9 @@ export default function BottomNav({
   const pathname = usePathname();
 
   // `activePath` es el prefijo de pathname (sin query) que marca la pestaña activa.
-  // "Mi ficha" (/mi-ficha) redirige a la ficha real: sin prefetch para no lanzar
-  // esa consulta desde cada página.
   const items = [
     { href: "/", label: "Inicio", icon: Icon.home, activePath: "/", exact: true },
-    { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, activePath: "/players", prefetch: false },
+    { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, activePath: "/mi-ficha" },
     { href: "/teams", label: "Club", icon: Icon.teams, activePath: "/teams" },
     { href: "/equipo", label: "Equipo", icon: Icon.equipo, activePath: "/equipo" },
     { href: "/matches", label: "Calendario", icon: Icon.calendar, activePath: "/matches" },
@@ -103,7 +101,6 @@ export default function BottomNav({
             <li key={i} className="min-w-0 flex-1">
               <Link
                 href={item.href}
-                prefetch={"prefetch" in item ? item.prefetch : undefined}
                 className={`flex flex-col items-center gap-0.5 px-0.5 pt-2 pb-1.5 text-[9px] font-medium ${
                   active ? "text-brand" : "text-label-3"
                 }`}
