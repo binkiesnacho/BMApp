@@ -24,7 +24,14 @@ export async function createTrainingAction(
   if (!input.date) return { error: "Indica la fecha." };
 
   const phases = input.phases
-    .map((p) => ({ name: String(p.name).trim(), minutes: Number(p.minutes) || 0 }))
+    .map((p) => ({
+      name: String(p.name).trim(),
+      minutes: Number(p.minutes) || 0,
+      // Conserva la pizarra del ejercicio si tiene trazos.
+      ...(p.drawing && p.drawing.strokes.length > 0
+        ? { drawing: p.drawing }
+        : {}),
+    }))
     .filter((p) => p.name);
   const objectives = input.objectives.map((o) => o.trim()).filter(Boolean);
 

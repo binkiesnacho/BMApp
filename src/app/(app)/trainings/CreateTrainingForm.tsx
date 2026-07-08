@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTrainingAction } from "./actions";
+import CourtDrawer from "@/components/court/CourtDrawer";
 import type { Team, TrainingPhase } from "@/lib/types/database";
 
 const DEFAULT_PHASES: TrainingPhase[] = [
@@ -26,6 +27,7 @@ export default function CreateTrainingForm({
   const [description, setDescription] = useState("");
   const [phases, setPhases] = useState<TrainingPhase[]>(DEFAULT_PHASES);
   const [objectives, setObjectives] = useState<string[]>([""]);
+  const [openDrawer, setOpenDrawer] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -146,30 +148,52 @@ export default function CreateTrainingForm({
           Fases · {total}&apos; total
         </p>
         <div className="space-y-2">
-          {phases.map((p, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                value={p.name}
-                onChange={(e) => setPhase(i, { name: e.target.value })}
-                placeholder="Fase"
-                className={inputCls + " flex-1"}
-              />
-              <input
-                type="number"
-                min={0}
-                value={p.minutes}
-                onChange={(e) => setPhase(i, { minutes: Number(e.target.value) })}
-                className="w-16 rounded-xl border border-separator bg-canvas px-2 py-2.5 text-sm text-label outline-none focus:border-brand"
-              />
-              <button
-                onClick={() => setPhases((ps) => ps.filter((_, j) => j !== i))}
-                className="px-2 text-label-3 hover:text-red-400"
-                aria-label="Quitar fase"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          {phases.map((p, i) => {
+            const hasDrawing = (p.drawing?.strokes.length ?? 0) > 0;
+            return (
+              <div key={i} className="space-y-2 rounded-xl border border-separator/60 p-2">
+                <div className="flex gap-2">
+                  <input
+                    value={p.name}
+                    onChange={(e) => setPhase(i, { name: e.target.value })}
+                    placeholder="Ejercicio / fase"
+                    className={inputCls + " flex-1"}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    value={p.minutes}
+                    onChange={(e) => setPhase(i, { minutes: Number(e.target.value) })}
+                    className="w-16 rounded-xl border border-separator bg-canvas px-2 py-2.5 text-sm text-label outline-none focus:border-brand"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPhases((ps) => ps.filter((_, j) => j !== i))}
+                    className="px-2 text-label-3 hover:text-red-400"
+                    aria-label="Quitar fase"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpenDrawer(openDrawer === i ? null : i)}
+                  className="text-xs text-brand"
+                >
+                  🎨 {hasDrawing ? "Editar pizarra" : "Añadir pizarra"}
+                  {hasDrawing && (
+                    <span className="ml-1 text-label-3">· con esquema</span>
+                  )}
+                </button>
+                {openDrawer === i && (
+                  <CourtDrawer
+                    value={p.drawing ?? null}
+                    onChange={(d) => setPhase(i, { drawing: d })}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
         <button
           onClick={() => setPhases((ps) => [...ps, { name: "", minutes: 0 }])}

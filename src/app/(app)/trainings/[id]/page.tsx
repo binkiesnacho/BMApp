@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { canCapture, canManageTeam, getSessionProfile } from "@/lib/auth";
 import { loadObservations } from "@/lib/observations";
 import ObservationsSection from "../../observations/ObservationsSection";
+import CourtView from "@/components/court/CourtView";
 import { deleteTrainingAction } from "../actions";
 import AttendanceEditor from "./AttendanceEditor";
 import type { Player, Team, Training, TrainingAttendance } from "@/lib/types/database";
@@ -111,14 +112,18 @@ export default async function TrainingDetailPage({
         ) : (
           <ol className="space-y-1.5">
             {training.phases.map((p, i) => (
-              <li
-                key={i}
-                className="flex items-center justify-between rounded-xl bg-canvas px-3 py-2 text-sm"
-              >
-                <span className="text-label">
-                  {i + 1}. {p.name}
-                </span>
-                <span className="font-mono text-brand">{p.minutes}&apos;</span>
+              <li key={i} className="rounded-xl bg-canvas px-3 py-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-label">
+                    {i + 1}. {p.name}
+                  </span>
+                  <span className="font-mono text-brand">{p.minutes}&apos;</span>
+                </div>
+                {p.drawing && p.drawing.strokes.length > 0 && (
+                  <div className="mt-2">
+                    <CourtView drawing={p.drawing} />
+                  </div>
+                )}
               </li>
             ))}
           </ol>

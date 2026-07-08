@@ -83,9 +83,24 @@ export interface Match {
   created_at: string;
 }
 
+/** Trazo de pizarra: color, grosor y puntos planos [x0,y0,x1,y1,…] en
+ *  coordenadas de pista (0..400 en x, 0..200 en y). */
+export interface DrawStroke {
+  color: string;
+  width: number;
+  points: number[];
+}
+
+/** Pizarra táctica (vector) de un ejercicio, sobre una pista de balonmano. */
+export interface TrainingDrawing {
+  strokes: DrawStroke[];
+}
+
 export interface TrainingPhase {
   name: string;
   minutes: number;
+  /** Dibujo/esquema del ejercicio sobre la pista (opcional). */
+  drawing?: TrainingDrawing | null;
 }
 
 export interface Training {
