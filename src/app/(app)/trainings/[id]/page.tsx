@@ -66,6 +66,21 @@ export default async function TrainingDetailPage({
       subtitle={fmtDate(training.date)}
       back="/trainings"
     >
+      {/* Objetivos (justo debajo del título, encima de la descripción) */}
+      {training.objectives.length > 0 && (
+        <section className="mb-4 rounded-2xl border border-separator/60 bg-surface p-4">
+          <h2 className="mb-2 text-sm font-semibold text-label">Objetivos</h2>
+          <ul className="space-y-1">
+            {training.objectives.map((o, i) => (
+              <li key={i} className="flex gap-2 text-sm text-label">
+                <span>🎯</span>
+                {o}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {training.description && (
         <p className="rounded-2xl bg-surface p-4 text-sm text-label">
           {training.description}
@@ -96,21 +111,6 @@ export default async function TrainingDetailPage({
           </ol>
         )}
       </section>
-
-      {/* Objetivos */}
-      {training.objectives.length > 0 && (
-        <section className="mt-4 rounded-2xl border border-separator/60 bg-surface p-4">
-          <h2 className="mb-2 text-sm font-semibold text-label">Objetivos</h2>
-          <ul className="space-y-1">
-            {training.objectives.map((o, i) => (
-              <li key={i} className="flex gap-2 text-sm text-label">
-                <span>🎯</span>
-                {o}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {/* Asistencia */}
       <section className="mt-4 rounded-2xl border border-separator/60 bg-surface p-4">

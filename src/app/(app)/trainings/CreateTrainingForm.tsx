@@ -95,6 +95,43 @@ export default function CreateTrainingForm({
         onChange={(e) => setTitle(e.target.value)}
         className={inputCls}
       />
+
+      {/* Objetivos (debajo del título, encima de la descripción) */}
+      <div>
+        <p className="mb-1 text-xs font-semibold text-label-2">Objetivos</p>
+        <div className="space-y-2">
+          {objectives.map((o, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                value={o}
+                onChange={(e) =>
+                  setObjectives((os) =>
+                    os.map((x, j) => (j === i ? e.target.value : x))
+                  )
+                }
+                placeholder={`Objetivo ${i + 1}`}
+                className={inputCls + " flex-1"}
+              />
+              <button
+                onClick={() =>
+                  setObjectives((os) => os.filter((_, j) => j !== i))
+                }
+                className="px-2 text-label-3 hover:text-red-400"
+                aria-label="Quitar objetivo"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => setObjectives((os) => [...os, ""])}
+          className="mt-2 text-xs text-brand"
+        >
+          + Añadir objetivo
+        </button>
+      </div>
+
       <textarea
         placeholder="Descripción (opcional)"
         value={description}
@@ -139,42 +176,6 @@ export default function CreateTrainingForm({
           className="mt-2 text-xs text-brand"
         >
           + Añadir fase
-        </button>
-      </div>
-
-      {/* Objetivos */}
-      <div>
-        <p className="mb-1 text-xs font-semibold text-label-2">Objetivos</p>
-        <div className="space-y-2">
-          {objectives.map((o, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                value={o}
-                onChange={(e) =>
-                  setObjectives((os) =>
-                    os.map((x, j) => (j === i ? e.target.value : x))
-                  )
-                }
-                placeholder={`Objetivo ${i + 1}`}
-                className={inputCls + " flex-1"}
-              />
-              <button
-                onClick={() =>
-                  setObjectives((os) => os.filter((_, j) => j !== i))
-                }
-                className="px-2 text-label-3 hover:text-red-400"
-                aria-label="Quitar objetivo"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={() => setObjectives((os) => [...os, ""])}
-          className="mt-2 text-xs text-brand"
-        >
-          + Añadir objetivo
         </button>
       </div>
 

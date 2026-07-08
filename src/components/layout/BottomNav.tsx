@@ -85,6 +85,7 @@ export default function BottomNav({
     { href: "/teams", label: "Club", icon: Icon.teams, activePath: "/teams" },
     { href: "/equipo", label: "Equipo", icon: Icon.equipo, activePath: "/equipo" },
     { href: "/matches", label: "Calendario", icon: Icon.calendar, activePath: "/matches" },
+    { href: "/trainings", label: "Entrenos", icon: Icon.trainings, activePath: "/trainings" },
     { href: statsHref, label: "Estadísticas", icon: Icon.stats, activePath: "/stats" },
   ];
 

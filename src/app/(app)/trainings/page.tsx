@@ -55,10 +55,16 @@ export default async function TrainingsPage() {
     t.phases.reduce((s, ph) => s + (Number(ph.minutes) || 0), 0);
 
   return (
-    <Screen
-      title="Entrenamientos"
-      trailing={capture ? <Link href="/trainings/new">Nuevo</Link> : undefined}
-    >
+    <Screen title="Entrenamientos">
+      {capture && (
+        <Link
+          href="/trainings/new"
+          className="tap mb-4 flex items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-[15px] font-semibold text-white"
+        >
+          <span className="text-lg leading-none">＋</span> Nuevo entrenamiento
+        </Link>
+      )}
+
       {faltasRows.length > 0 && (
         <div className="mb-5">
           <SectionTitle>Faltas acumuladas</SectionTitle>
