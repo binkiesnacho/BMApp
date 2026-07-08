@@ -889,40 +889,41 @@ create policy standings_write on public.standings_rows
   using (public.can_manage_team(team_id))
   with check (public.can_manage_team(team_id));
 
--- Observaciones de partido (comentarios del cuerpo técnico) ------------------
-create table if not exists public.match_comments (
-  id         uuid primary key default gen_random_uuid(),
-  match_id   uuid not null references public.matches (id) on delete cascade,
-  author_id  uuid references public.profiles (id) on delete set null,
-  body       text not null,
-  created_at timestamptz not null default now()
+-- Observaciones unificadas (entreno/partido/perfil), ligables a un jugador -----
+-- Visibles SOLO para el cuerpo técnico del equipo (can_manage_team).
+create table if not exists public.observations (
+  id          uuid primary key default gen_random_uuid(),
+  team_id     uuid not null references public.teams (id) on delete cascade,
+  author_id   uuid references public.profiles (id) on delete set null,
+  player_id   uuid references public.players (id) on delete cascade,
+  source_type text not null check (source_type in ('training', 'match', 'player')),
+  training_id uuid references public.trainings (id) on delete set null,
+  match_id    uuid references public.matches (id) on delete set null,
+  body        text not null,
+  occurred_at timestamptz not null default now(),
+  created_at  timestamptz not null default now()
 );
-create index if not exists match_comments_match_id_idx
-  on public.match_comments (match_id);
+create index if not exists observations_player_idx on public.observations (player_id);
+create index if not exists observations_training_idx on public.observations (training_id);
+create index if not exists observations_match_idx on public.observations (match_id);
+create index if not exists observations_team_idx on public.observations (team_id);
 
-alter table public.match_comments enable row level security;
+alter table public.observations enable row level security;
 
-drop policy if exists match_comments_select on public.match_comments;
-create policy match_comments_select on public.match_comments
-  for select using (
-    exists (select 1 from public.matches m
-      where m.id = match_id and public.can_view_team(m.team_id))
-  );
+drop policy if exists observations_select on public.observations;
+create policy observations_select on public.observations
+  for select using (public.can_manage_team(team_id));
 
-drop policy if exists match_comments_insert on public.match_comments;
-create policy match_comments_insert on public.match_comments
+drop policy if exists observations_insert on public.observations;
+create policy observations_insert on public.observations
   for insert with check (
-    author_id = auth.uid()
-    and exists (select 1 from public.matches m
-      where m.id = match_id and public.can_manage_team(m.team_id))
+    author_id = auth.uid() and public.can_manage_team(team_id)
   );
 
-drop policy if exists match_comments_delete on public.match_comments;
-create policy match_comments_delete on public.match_comments
+drop policy if exists observations_delete on public.observations;
+create policy observations_delete on public.observations
   for delete using (
-    author_id = auth.uid()
-    or exists (select 1 from public.matches m
-      where m.id = match_id and public.can_manage_team(m.team_id))
+    author_id = auth.uid() or public.can_manage_team(team_id)
   );
 
 -- =============================================================================

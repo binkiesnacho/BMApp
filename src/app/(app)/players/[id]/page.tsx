@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { createClient } from "@/lib/supabase/server";
+import { canManageTeam, getSessionProfile } from "@/lib/auth";
+import { loadObservations } from "@/lib/observations";
+import ObservationsSection from "../../observations/ObservationsSection";
 import { EVENT_LABELS } from "@/lib/events";
 import { shootingAccuracy, savePercentage, type EventCounts } from "@/lib/stats";
 import type {
@@ -41,6 +44,7 @@ export default async function PlayerPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { profile } = await getSessionProfile();
   const supabase = await createClient();
 
   const { data: player } = await supabase
@@ -68,6 +72,11 @@ export default async function PlayerPage({
         .eq("player_id", id)
         .returns<TrainingAttendance[]>(),
     ]);
+
+  const canManage = canManageTeam(profile, team ?? null);
+  const observations = canManage
+    ? await loadObservations(supabase, { playerId: id })
+    : [];
 
   const c: EventCounts = {};
   for (const e of events ?? []) c[e.event_type] = (c[e.event_type] ?? 0) + 1;
@@ -142,6 +151,19 @@ export default async function PlayerPage({
           }
         />
       </ListGroup>
+
+      {/* Observaciones del cuerpo técnico sobre el jugador (con su origen) */}
+      <ObservationsSection
+        observations={observations}
+        canManage={canManage}
+        ctx={{
+          teamId: player.team_id,
+          sourceType: "player",
+          occurredAt: new Date().toISOString(),
+        }}
+        fixedPlayerId={player.id}
+        showSource
+      />
     </Screen>
   );
 }

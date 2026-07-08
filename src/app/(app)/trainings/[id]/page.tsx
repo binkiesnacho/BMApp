@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
-import { canCapture, getSessionProfile } from "@/lib/auth";
+import { canCapture, canManageTeam, getSessionProfile } from "@/lib/auth";
+import { loadObservations } from "@/lib/observations";
+import ObservationsSection from "../../observations/ObservationsSection";
 import { deleteTrainingAction } from "../actions";
 import AttendanceEditor from "./AttendanceEditor";
-import type { Player, Training, TrainingAttendance } from "@/lib/types/database";
+import type { Player, Team, Training, TrainingAttendance } from "@/lib/types/database";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("es-ES", {
@@ -34,19 +36,30 @@ export default async function TrainingDetailPage({
     .maybeSingle<Training>();
   if (!training) notFound();
 
-  const [{ data: players }, { data: attendance }] = await Promise.all([
-    supabase
-      .from("players")
-      .select("*")
-      .eq("team_id", training.team_id)
-      .order("number", { ascending: true, nullsFirst: false })
-      .returns<Player[]>(),
-    supabase
-      .from("training_attendance")
-      .select("*")
-      .eq("training_id", id)
-      .returns<TrainingAttendance[]>(),
-  ]);
+  const [{ data: team }, { data: players }, { data: attendance }] =
+    await Promise.all([
+      supabase
+        .from("teams")
+        .select("id, coach_id")
+        .eq("id", training.team_id)
+        .maybeSingle<Pick<Team, "id" | "coach_id">>(),
+      supabase
+        .from("players")
+        .select("*")
+        .eq("team_id", training.team_id)
+        .order("number", { ascending: true, nullsFirst: false })
+        .returns<Player[]>(),
+      supabase
+        .from("training_attendance")
+        .select("*")
+        .eq("training_id", id)
+        .returns<TrainingAttendance[]>(),
+    ]);
+
+  const canManage = canManageTeam(profile, team ?? null);
+  const observations = canManage
+    ? await loadObservations(supabase, { trainingId: id })
+    : [];
 
   const attendedIds = (attendance ?? [])
     .filter((a) => a.attended)
@@ -153,6 +166,25 @@ export default async function TrainingDetailPage({
           </ul>
         )}
       </section>
+
+      {/* Observaciones (privadas del cuerpo técnico; ligables a un jugador) */}
+      <ObservationsSection
+        observations={observations}
+        canManage={canManage}
+        ctx={{
+          teamId: training.team_id,
+          sourceType: "training",
+          trainingId: training.id,
+          occurredAt: training.date,
+        }}
+        players={(players ?? []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          number: p.number,
+        }))}
+        showPlayer
+        linkPlayer
+      />
 
       {/* Eliminar (staff) */}
       {staff && (

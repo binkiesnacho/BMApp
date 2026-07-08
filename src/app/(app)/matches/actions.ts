@@ -85,32 +85,6 @@ export async function editMatchAction(
   redirect(`/matches/${matchId}`);
 }
 
-/** Añade una observación (comentario) a un partido. RLS: gestor del equipo. */
-export async function addMatchCommentAction(formData: FormData): Promise<void> {
-  const matchId = String(formData.get("matchId") ?? "");
-  const body = String(formData.get("body") ?? "").trim();
-  if (!matchId || !body) return;
-
-  const { profile } = await getSessionProfile();
-  if (!profile) return;
-
-  const supabase = await createClient();
-  await supabase
-    .from("match_comments")
-    .insert({ match_id: matchId, author_id: profile.id, body });
-  revalidatePath(`/matches/${matchId}`);
-}
-
-/** Elimina una observación (autor o gestor del equipo). */
-export async function deleteMatchCommentAction(formData: FormData): Promise<void> {
-  const commentId = String(formData.get("commentId") ?? "");
-  const matchId = String(formData.get("matchId") ?? "");
-  if (!commentId) return;
-  const supabase = await createClient();
-  await supabase.from("match_comments").delete().eq("id", commentId);
-  revalidatePath(`/matches/${matchId}`);
-}
-
 /** Elimina un partido. Vuelve al calendario. */
 export async function deleteMatchAction(formData: FormData): Promise<void> {
   const matchId = String(formData.get("matchId") ?? "");

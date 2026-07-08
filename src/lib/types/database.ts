@@ -116,12 +116,19 @@ export interface StatEvent {
   created_at: string;
 }
 
-/** Observación/comentario en un partido. */
-export interface MatchComment {
+export type ObservationSource = "training" | "match" | "player";
+
+/** Observación del cuerpo técnico, ligable a un jugador. */
+export interface Observation {
   id: string;
-  match_id: string;
+  team_id: string;
   author_id: string | null;
+  player_id: string | null;
+  source_type: ObservationSource;
+  training_id: string | null;
+  match_id: string | null;
   body: string;
+  occurred_at: string;
   created_at: string;
 }
 

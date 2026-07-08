@@ -3,27 +3,17 @@ import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, canManageTeam, getSessionProfile } from "@/lib/auth";
-import { addMatchCommentAction, deleteMatchCommentAction } from "../actions";
+import { loadObservations } from "@/lib/observations";
+import ObservationsSection from "../../observations/ObservationsSection";
 import type {
   Match,
-  MatchComment,
   Player,
-  Profile,
   StatEvent,
   StatEventType,
   Team,
 } from "@/lib/types/database";
 import { EVENT_LABELS } from "@/lib/events";
 import { aggregateByPlayer, shootingAccuracy } from "@/lib/stats";
-
-function fmtWhen(iso: string) {
-  return new Date(iso).toLocaleString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 const STAT_COLS: StatEventType[] = [
   "goal",
@@ -62,45 +52,29 @@ export default async function MatchDetailPage({
     .maybeSingle<Match>();
   if (!match) notFound();
 
-  const [{ data: team }, { data: players }, { data: events }, { data: comments }] =
-    await Promise.all([
-      supabase
-        .from("teams")
-        .select("id, coach_id")
-        .eq("id", match.team_id)
-        .maybeSingle<Pick<Team, "id" | "coach_id">>(),
-      supabase
-        .from("players")
-        .select("*")
-        .eq("team_id", match.team_id)
-        .returns<Player[]>(),
-      supabase
-        .from("stats_events")
-        .select("*")
-        .eq("match_id", id)
-        .order("game_second", { ascending: true })
-        .returns<StatEvent[]>(),
-      supabase
-        .from("match_comments")
-        .select("*")
-        .eq("match_id", id)
-        .order("created_at", { ascending: false })
-        .returns<MatchComment[]>(),
-    ]);
-
-  // Nombres de autores de las observaciones.
-  const authorIds = [...new Set((comments ?? []).map((c) => c.author_id).filter(Boolean))];
-  const { data: authors } = authorIds.length
-    ? await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("id", authorIds as string[])
-        .returns<Pick<Profile, "id" | "name">[]>()
-    : { data: [] as Pick<Profile, "id" | "name">[] };
-  const authorName = (pid: string | null) =>
-    authors?.find((a) => a.id === pid)?.name ?? "Cuerpo técnico";
+  const [{ data: team }, { data: players }, { data: events }] = await Promise.all([
+    supabase
+      .from("teams")
+      .select("id, coach_id")
+      .eq("id", match.team_id)
+      .maybeSingle<Pick<Team, "id" | "coach_id">>(),
+    supabase
+      .from("players")
+      .select("*")
+      .eq("team_id", match.team_id)
+      .returns<Player[]>(),
+    supabase
+      .from("stats_events")
+      .select("*")
+      .eq("match_id", id)
+      .order("game_second", { ascending: true })
+      .returns<StatEvent[]>(),
+  ]);
 
   const canManage = canManageTeam(profile, team ?? null);
+  const observations = canManage
+    ? await loadObservations(supabase, { matchId: id })
+    : [];
 
   const playerName = (pid: string | null) =>
     players?.find((p) => p.id === pid)?.name ?? "Equipo";
@@ -167,56 +141,24 @@ export default async function MatchDetailPage({
         </div>
       )}
 
-      {/* Observaciones */}
-      <h2 className="mt-6 mb-2 text-sm font-semibold text-label">Observaciones</h2>
-      {canManage && (
-        <form
-          action={addMatchCommentAction}
-          className="mb-3 space-y-2 rounded-2xl bg-surface p-3"
-        >
-          <input type="hidden" name="matchId" value={match.id} />
-          <textarea
-            name="body"
-            required
-            rows={2}
-            placeholder="Añade una observación…"
-            className="w-full rounded-xl border border-separator bg-canvas px-3 py-2 text-sm text-label outline-none focus:border-brand"
-          />
-          <button className="tap w-full rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white">
-            Añadir observación
-          </button>
-        </form>
-      )}
-      {comments && comments.length > 0 ? (
-        <ul className="space-y-2">
-          {comments.map((c) => (
-            <li key={c.id} className="rounded-2xl bg-surface px-3 py-2.5">
-              <p className="whitespace-pre-wrap text-[14px] text-label">{c.body}</p>
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <span className="text-[12px] text-label-3">
-                  {authorName(c.author_id)} · {fmtWhen(c.created_at)}
-                </span>
-                {canManage && (
-                  <form action={deleteMatchCommentAction}>
-                    <input type="hidden" name="commentId" value={c.id} />
-                    <input type="hidden" name="matchId" value={match.id} />
-                    <button
-                      className="rounded-lg px-2 py-0.5 text-[12px] text-label-3 hover:text-negative"
-                      aria-label="Eliminar observación"
-                    >
-                      ✕
-                    </button>
-                  </form>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="rounded-xl border border-dashed border-separator/70 p-4 text-center text-[13px] text-label-3">
-          {canManage ? "Sin observaciones todavía." : "Sin observaciones."}
-        </p>
-      )}
+      {/* Observaciones (privadas del cuerpo técnico; ligables a un jugador) */}
+      <ObservationsSection
+        observations={observations}
+        canManage={canManage}
+        ctx={{
+          teamId: match.team_id,
+          sourceType: "match",
+          matchId: match.id,
+          occurredAt: match.date,
+        }}
+        players={(players ?? []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          number: p.number,
+        }))}
+        showPlayer
+        linkPlayer
+      />
 
       {/* Estadísticas por jugador del partido */}
       {statRows.length > 0 && (
