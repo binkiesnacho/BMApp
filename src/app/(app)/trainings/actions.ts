@@ -24,14 +24,25 @@ export async function createTrainingAction(
   if (!input.date) return { error: "Indica la fecha." };
 
   const phases = input.phases
-    .map((p) => ({
-      name: String(p.name).trim(),
-      minutes: Number(p.minutes) || 0,
-      // Conserva la pizarra del ejercicio si tiene trazos.
-      ...(p.drawing && p.drawing.strokes.length > 0
-        ? { drawing: p.drawing }
-        : {}),
-    }))
+    .map((p) => {
+      // Conserva solo las pizarras con contenido (trazos o fichas).
+      const boards = (p.boards ?? [])
+        .filter(
+          (b) =>
+            b.drawing &&
+            ((b.drawing.strokes?.length ?? 0) > 0 ||
+              (b.drawing.tokens?.length ?? 0) > 0)
+        )
+        .map((b) => ({
+          drawing: b.drawing,
+          description: b.description?.trim() || null,
+        }));
+      return {
+        name: String(p.name).trim(),
+        minutes: Number(p.minutes) || 0,
+        ...(boards.length > 0 ? { boards } : {}),
+      };
+    })
     .filter((p) => p.name);
   const objectives = input.objectives.map((o) => o.trim()).filter(Boolean);
 

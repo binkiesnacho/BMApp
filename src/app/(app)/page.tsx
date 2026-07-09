@@ -8,6 +8,7 @@ import SignOutButton from "@/components/auth/SignOutButton";
 import { createClient } from "@/lib/supabase/server";
 import {
   canAdminister,
+  canCapture,
   getMyClub,
   getMyTeams,
   getSessionProfile,
@@ -112,6 +113,37 @@ export default async function HomePage() {
               {canAdminister(profile) ? "Administración" : "Gestión"}
             </p>
             <p className="text-[13px] text-label-2">Miembros, roles y club</p>
+          </div>
+          <Chevron />
+        </Link>
+      )}
+
+      {/* Modo pizarra (cuerpo técnico): explicar en directo */}
+      {canCapture(profile) && (
+        <Link
+          href="/pizarra"
+          className="tap mt-3 flex items-center gap-3 rounded-2xl bg-surface p-4"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/15 text-sky-200">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 16 19 9a1.9 1.9 0 0 0-2.7-2.7L9.5 13.2 8.7 16z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M4 20c1.6 0 1.6-2 3.2-2s1.6 2 3.2 2 1.6-2 3.2-2 1.6 2 3.2 2"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-semibold text-label">Modo pizarra</p>
+            <p className="text-[13px] text-label-2">Explica en directo sobre la pista</p>
           </div>
           <Chevron />
         </Link>

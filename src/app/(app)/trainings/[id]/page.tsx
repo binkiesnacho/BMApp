@@ -124,6 +124,14 @@ export default async function TrainingDetailPage({
                     <CourtView drawing={p.drawing} />
                   </div>
                 )}
+                {p.boards?.map((b, k) => (
+                  <div key={k} className="mt-2">
+                    <CourtView drawing={b.drawing} />
+                    {b.description && (
+                      <p className="mt-1 text-xs text-label-2">{b.description}</p>
+                    )}
+                  </div>
+                ))}
               </li>
             ))}
           </ol>

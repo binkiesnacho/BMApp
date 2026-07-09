@@ -107,11 +107,19 @@ export interface TrainingDrawing {
   tokens?: DrawToken[];
 }
 
+/** Una pizarra de una fase: dibujo sobre la pista + descripción opcional. */
+export interface TrainingBoard {
+  drawing: TrainingDrawing;
+  description?: string | null;
+}
+
 export interface TrainingPhase {
   name: string;
   minutes: number;
-  /** Dibujo/esquema del ejercicio sobre la pista (opcional). */
+  /** Dibujo único (formato antiguo, solo lectura para datos existentes). */
   drawing?: TrainingDrawing | null;
+  /** Varias pizarras del ejercicio, cada una con su descripción. */
+  boards?: TrainingBoard[];
 }
 
 export interface Training {

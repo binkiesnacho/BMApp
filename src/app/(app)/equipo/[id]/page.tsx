@@ -2,7 +2,12 @@ import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { TileGrid, Tile } from "@/components/ui/Tile";
 import { createClient } from "@/lib/supabase/server";
-import { getMyTeams, getSessionProfile } from "@/lib/auth";
+import {
+  canCapture,
+  canManageTeam,
+  getMyTeams,
+  getSessionProfile,
+} from "@/lib/auth";
 import type { Player, Team } from "@/lib/types/database";
 
 export const metadata = { title: "Equipo" };
@@ -32,6 +37,8 @@ export default async function TeamHubPage({
 
   // Solo mostramos "Atrás → Equipos" si el usuario tiene varios equipos.
   const back = myTeams.length > 1 ? "/equipo" : undefined;
+  // El recuento de faltas es cosa del cuerpo técnico (entrenador o staff).
+  const canSeeFaltas = canManageTeam(profile, team) || canCapture(profile);
 
   return (
     <Screen title={team.name} subtitle="Secciones del equipo" back={back}>
@@ -66,6 +73,14 @@ export default async function TeamHubPage({
           subtitle="Sesiones y asistencia"
           icon="🏋️"
         />
+        {canSeeFaltas && (
+          <Tile
+            href={`/equipo/${team.id}/faltas`}
+            title="Faltas"
+            subtitle="Ausencias por jugador"
+            icon="🚫"
+          />
+        )}
         {ficha && (
           <Tile
             href={`/players/${ficha.id}`}
