@@ -57,6 +57,13 @@ const Icon = {
       <path d="M4 9h16M8 3v3M16 3v3" stroke={p.active ? "var(--color-canvas)" : "currentColor"} strokeWidth="1.7" strokeLinecap="round" />
     </>
   ),
+  pizarra: (p: IconProps) => (
+    <>
+      <rect x="3" y="4" width="18" height="13" rx="2" fill={p.active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 20h8M12 17v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M8.5 10.5c1.2 0 1.2-2 2.4-2s1.2 2 2.4 2 1.2-2 2.4-2" stroke={p.active ? "var(--color-canvas)" : "currentColor"} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </>
+  ),
   stats: (p: IconProps) => (
     <>
       <path d="M4 20h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -70,9 +77,11 @@ const Icon = {
 export default function BottomNav({
   fichaHref,
   statsHref,
+  pizarra = false,
 }: {
   fichaHref: string;
   statsHref: string;
+  pizarra?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -83,12 +92,25 @@ export default function BottomNav({
     { href: "/equipo", label: "Equipo", icon: Icon.equipo, activePath: "/equipo" },
     { href: "/matches", label: "Calendario", icon: Icon.calendar, activePath: "/matches" },
     { href: "/trainings", label: "Entrenos", icon: Icon.trainings, activePath: "/trainings" },
+    ...(pizarra
+      ? [{ href: "/pizarra", label: "Pizarra", icon: Icon.pizarra, activePath: "/pizarra" }]
+      : []),
     { href: statsHref, label: "Estadísticas", icon: Icon.stats, activePath: "/stats" },
   ];
 
+  // Con 7 ítems (cuerpo técnico ve la pizarra) reducimos el tamaño para que la
+  // píldora quepa en pantallas estrechas.
+  const big = items.length <= 6;
+  const cell = big ? "h-[52px] w-[52px]" : "h-11 w-11";
+  const svg = big ? 27 : 23;
+
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)]">
-      <ul className="pointer-events-auto flex items-center gap-1 rounded-full border border-separator/70 bg-[rgba(15,26,56,0.82)] px-2 py-2 shadow-[0_12px_40px_rgba(4,10,28,0.6)] backdrop-blur-xl">
+      <ul
+        className={`pointer-events-auto flex items-center rounded-full border border-separator/70 bg-[rgba(15,26,56,0.82)] py-2 shadow-[0_12px_40px_rgba(4,10,28,0.6)] backdrop-blur-xl ${
+          big ? "gap-1 px-2" : "gap-0.5 px-1.5"
+        }`}
+      >
         {items.map((item, i) => {
           const active =
             "exact" in item && item.exact
@@ -100,13 +122,13 @@ export default function BottomNav({
                 href={item.href}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-[52px] w-[52px] items-center justify-center rounded-full transition-colors ${
+                className={`flex ${cell} items-center justify-center rounded-full transition-colors ${
                   active
                     ? "bg-gradient-to-b from-sky to-brand text-white shadow-[0_6px_16px_-4px_rgba(46,109,224,0.7),inset_0_1px_0_rgba(255,255,255,0.25)]"
                     : "text-label-3 hover:text-label-2"
                 }`}
               >
-                <svg width="27" height="27" viewBox="0 0 24 24">
+                <svg width={svg} height={svg} viewBox="0 0 24 24">
                   {item.icon({ active })}
                 </svg>
               </Link>
