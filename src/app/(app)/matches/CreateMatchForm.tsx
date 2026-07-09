@@ -84,7 +84,7 @@ export default function CreateMatchForm({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-xl border border-separator px-3 py-2.5 text-sm text-label"
+          className="btn btn-ghost"
         >
           Cancelar
         </button>

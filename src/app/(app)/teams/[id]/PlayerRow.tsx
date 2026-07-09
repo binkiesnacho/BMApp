@@ -84,7 +84,7 @@ export default function PlayerRow({
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-xl border border-separator px-3 py-2 text-sm text-label"
+              className="btn btn-ghost"
             >
               Cancelar
             </button>

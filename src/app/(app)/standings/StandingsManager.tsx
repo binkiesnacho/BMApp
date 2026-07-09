@@ -81,7 +81,7 @@ function AddForm({ teamId }: { teamId: string }) {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-xl border border-separator px-3 py-2 text-sm text-label"
+          className="btn btn-ghost"
         >
           Cancelar
         </button>
@@ -124,7 +124,7 @@ function RivalRow({ row }: { row: StandingsRow }) {
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="rounded-xl border border-separator px-3 py-2 text-sm text-label"
+            className="btn btn-ghost"
           >
             Cancelar
           </button>

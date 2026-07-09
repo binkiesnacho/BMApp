@@ -32,7 +32,7 @@ export default function EditMatchForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="tap rounded-xl border border-separator px-4 py-3 text-sm text-label"
+        className="btn btn-ghost w-full py-3.5"
       >
         Editar
       </button>
@@ -102,7 +102,7 @@ export default function EditMatchForm({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-xl border border-separator px-3 py-2.5 text-sm text-label"
+          className="btn btn-ghost"
         >
           Cerrar
         </button>
