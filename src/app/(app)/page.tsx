@@ -82,7 +82,7 @@ export default async function HomePage() {
       {/* Marca de agua de la mascota (lobo CBM Quart), silueta tintada vía máscara. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-5 top-6 -z-10 h-56 w-56 opacity-[0.06]"
+        className="pointer-events-none absolute right-0 top-6 -z-10 h-56 w-56 max-w-full opacity-[0.06]"
         style={{
           WebkitMaskImage: "url(/brand/lobo.svg)",
           maskImage: "url(/brand/lobo.svg)",
