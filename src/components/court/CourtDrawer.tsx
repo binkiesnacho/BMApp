@@ -43,6 +43,7 @@ export default function CourtDrawer({
   ]);
 
   const svgRef = useRef<SVGSVGElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef<DrawStroke | null>(null);
   const drawingRef = useRef(false);
   const moveRef = useRef<number | null>(null);
@@ -55,6 +56,17 @@ export default function CourtDrawer({
     onChange(strokes.length || tokens.length ? { court, strokes, tokens } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [strokes, tokens, court]);
+
+  // iOS Safari ignora `touch-action` en el <svg> y desplaza la página al hacer
+  // un trazo largo (cancelando el puntero). Un listener táctil NO pasivo sobre
+  // el contenedor bloquea ese scroll y permite trazos largos.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const prevent = (e: TouchEvent) => e.preventDefault();
+    el.addEventListener("touchmove", prevent, { passive: false });
+    return () => el.removeEventListener("touchmove", prevent);
+  }, []);
 
   function toCourt(clientX: number, clientY: number) {
     const r = svgRef.current!.getBoundingClientRect();
@@ -180,6 +192,12 @@ export default function CourtDrawer({
         ]}
       />
 
+      {/* El contenedor HTML (no el <svg>) es quien iOS respeta para touch-action. */}
+      <div
+        ref={wrapRef}
+        className="touch-none select-none"
+        style={{ touchAction: "none", WebkitUserSelect: "none" }}
+      >
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
@@ -197,7 +215,6 @@ export default function CourtDrawer({
         onPointerUp={svgUp}
         onPointerCancel={svgUp}
         onLostPointerCapture={svgUp}
-        onPointerLeave={svgUp}
       >
         <CourtLines half={court === "half"} />
         {allStrokes.map((s, i) => (
@@ -221,6 +238,7 @@ export default function CourtDrawer({
           <CourtToken shape={preview.shape} x={preview.x} y={preview.y} opacity={0.5} />
         )}
       </svg>
+      </div>
 
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-label-3">Arrastra:</span>
