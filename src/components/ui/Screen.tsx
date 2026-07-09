@@ -26,10 +26,11 @@ export default function Screen({
       <header className="sticky top-0 z-30 border-b border-separator/40 bg-canvas/70 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)] backdrop-blur-xl">
         {(back || trailing) && (
           <div className="flex h-8 items-center justify-between">
+            <div className="text-[15px] font-medium text-brand">{trailing}</div>
             {back ? (
               <Link
                 href={back}
-                className="tap inline-flex items-center gap-1 rounded-full border border-separator bg-surface px-3 py-1.5 text-[13px] font-semibold text-brand shadow-[0_4px_14px_rgba(6,12,30,0.3)] hover:bg-surface-2"
+                className="tap ml-auto inline-flex items-center gap-1 rounded-full border border-separator bg-surface px-3 py-1.5 text-[13px] font-semibold text-white shadow-[0_4px_14px_rgba(6,12,30,0.3)] hover:bg-surface-2"
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" className="-ml-0.5">
                   <path
@@ -42,10 +43,7 @@ export default function Screen({
                 </svg>
                 Atrás
               </Link>
-            ) : (
-              <span />
-            )}
-            <div className="text-[15px] font-medium text-brand">{trailing}</div>
+            ) : null}
           </div>
         )}
         <div className="pt-0.5">
