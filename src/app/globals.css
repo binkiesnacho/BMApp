@@ -33,14 +33,15 @@ html {
   /* Evita el fondo blanco al hacer overscroll/rebote en móvil. */
   background-color: #06090f;
   overscroll-behavior: none;
-  /* Solo scroll vertical: nada debe desbordar horizontalmente. */
-  overflow-x: hidden;
+  /* Solo scroll vertical: recorta el desbordamiento horizontal SIN crear un
+     contenedor de scroll (clip, no hidden) para no romper el scroll vertical. */
+  overflow-x: clip;
 }
 
 body {
   min-height: 100dvh;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   color: var(--color-label);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
