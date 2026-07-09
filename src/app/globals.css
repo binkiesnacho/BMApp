@@ -211,3 +211,12 @@ input[type="month"]::-webkit-calendar-picker-indicator {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Ocultar las barras de scroll en toda la app (el scroll sigue funcionando). */
+html {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge antiguo */
+}
+*::-webkit-scrollbar {
+  display: none; /* WebKit: Safari/Chrome (móvil incluido) */
+}
