@@ -79,6 +79,21 @@ export default async function HomePage() {
 
   return (
     <Screen title={profile?.name ? `Hola, ${profile.name.split(" ")[0]}` : "Inicio"}>
+      {/* Marca de agua de la mascota (lobo CBM Quart), silueta tintada vía máscara. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-5 top-6 -z-10 h-56 w-56 opacity-[0.06]"
+        style={{
+          WebkitMaskImage: "url(/brand/lobo.svg)",
+          maskImage: "url(/brand/lobo.svg)",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+          backgroundColor: "var(--color-sky-200)",
+        }}
+      />
+
       <div className="mb-3">
         <RoleTags roles={rolesOf(profile)} superadmin={profile?.is_superadmin} />
       </div>
