@@ -61,7 +61,7 @@ export default async function TeamHubPage({
           icon="🤾"
         />
         <Tile
-          href="/trainings"
+          href={`/trainings?team=${team.id}`}
           title="Entrenamientos"
           subtitle="Sesiones y asistencia"
           icon="🏋️"
