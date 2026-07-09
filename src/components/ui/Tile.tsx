@@ -13,10 +13,13 @@ export function Tile({
   href,
   title,
   subtitle,
+  icon,
 }: {
   href: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  /** Icono/emoji opcional mostrado como badge en la esquina superior. */
+  icon?: React.ReactNode;
 }) {
   return (
     <Link
@@ -26,22 +29,31 @@ export function Tile({
       {/* Punto de luz de marca en la esquina */}
       <div className="pointer-events-none absolute -right-7 -top-7 h-20 w-20 rounded-full bg-brand/25 blur-2xl transition-opacity group-hover:opacity-80" />
 
-      {/* Flecha de navegación */}
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        className="absolute right-3 top-3 text-label-3 transition-colors group-hover:text-sky-200"
-      >
-        <path
-          d="M7 17 17 7M9 7h8v8"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      {/* Icono (badge) + flecha de navegación */}
+      <div className="absolute inset-x-3 top-3 flex items-start justify-between">
+        {icon ? (
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/15 text-[17px] leading-none">
+            {icon}
+          </span>
+        ) : (
+          <span />
+        )}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          className="mt-0.5 text-label-3 transition-colors group-hover:text-sky-200"
+        >
+          <path
+            d="M7 17 17 7M9 7h8v8"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
 
       <div className="relative">
         <div className="text-[15px] font-extrabold leading-tight text-label">

@@ -40,32 +40,38 @@ export default async function TeamHubPage({
           href={`/teams/${team.id}`}
           title="Plantilla"
           subtitle="Jugadores del equipo"
+          icon="👥"
         />
         <Tile
           href={`/stats?team=${team.id}`}
           title="Estadísticas"
           subtitle="Por jugador"
+          icon="📊"
         />
         <Tile
           href={`/standings?team=${team.id}`}
           title="Clasificación"
           subtitle="Tabla de la liga"
+          icon="🏆"
         />
         <Tile
           href={`/matches?team=${team.id}`}
           title="Partidos"
           subtitle="Calendario y resultados"
+          icon="🤾"
         />
         <Tile
           href="/trainings"
           title="Entrenamientos"
           subtitle="Sesiones y asistencia"
+          icon="🏋️"
         />
         {ficha && (
           <Tile
             href={`/players/${ficha.id}`}
             title="Mi ficha"
             subtitle="Tus estadísticas y faltas"
+            icon="⭐"
           />
         )}
       </TileGrid>

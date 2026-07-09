@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
-import { ListGroup, ListRow } from "@/components/ui/List";
+import { TileGrid, Tile } from "@/components/ui/Tile";
 import { canAdminister, getMyClub, getSessionProfile, isStaff } from "@/lib/auth";
 
 export const metadata = { title: "Administración" };
@@ -17,36 +17,36 @@ export default async function AdminPage() {
       title={isAdmin ? "Administración" : "Gestión"}
       subtitle={club?.name ?? "Tu club"}
     >
-      <ListGroup>
-        <ListRow
+      <TileGrid>
+        <Tile
           href="/admin/members"
           title="Miembros"
           subtitle="Roles y equipos"
-          leading={<span className="text-xl">👥</span>}
+          icon="👥"
         />
-        <ListRow
+        <Tile
           href="/admin/invites"
           title="Invitaciones"
           subtitle="Códigos por rol y equipo"
-          leading={<span className="text-xl">✉️</span>}
+          icon="✉️"
         />
         {isAdmin && (
-          <ListRow
+          <Tile
             href="/admin/teams"
             title="Equipos"
             subtitle="Crear, renombrar y entrenadores"
-            leading={<span className="text-xl">🛡️</span>}
+            icon="🛡️"
           />
         )}
         {isAdmin && (
-          <ListRow
+          <Tile
             href="/admin/club"
             title="Club"
             subtitle="Nombre y logo"
-            leading={<span className="text-xl">🏟️</span>}
+            icon="🏟️"
           />
         )}
-      </ListGroup>
+      </TileGrid>
     </Screen>
   );
 }
