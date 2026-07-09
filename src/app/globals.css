@@ -30,6 +30,9 @@
 html {
   height: 100%;
   -webkit-text-size-adjust: 100%;
+  /* Evita el fondo blanco al hacer overscroll/rebote en móvil. */
+  background-color: #0a1024;
+  overscroll-behavior: none;
 }
 
 body {
@@ -37,7 +40,7 @@ body {
   color: var(--color-label);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
   /* Base luminosa: azul profundo con un punto de luz. */
   background:
     radial-gradient(1000px 520px at 82% -6%, rgba(76, 155, 238, 0.2), transparent 62%),

@@ -70,11 +70,22 @@ export default function CourtDrawer({
     currentRef.current = c;
     setCurrent(c);
   }
+  // La captura de puntero puede fallar en algunos navegadores móviles (iOS);
+  // la envolvemos para que no rompa el dibujo si lanza.
+  function capture(el: Element | null, pointerId: number) {
+    try {
+      (el as Element & { setPointerCapture(id: number): void })?.setPointerCapture(
+        pointerId
+      );
+    } catch {
+      /* noop */
+    }
+  }
 
   /* -------- Dibujo y movimiento de fichas (sobre el SVG) -------- */
   function svgDown(e: React.PointerEvent) {
     e.preventDefault();
-    svgRef.current?.setPointerCapture(e.pointerId);
+    capture(svgRef.current, e.pointerId);
     drawingRef.current = true;
     const [x, y] = toCourt(e.clientX, e.clientY);
     setCur({ color: STROKE, width: WIDTH, points: [x, y] });
@@ -104,14 +115,14 @@ export default function CourtDrawer({
   function tokenDown(e: React.PointerEvent, i: number) {
     e.stopPropagation();
     e.preventDefault();
-    svgRef.current?.setPointerCapture(e.pointerId);
+    capture(svgRef.current, e.pointerId);
     moveRef.current = i;
   }
 
   /* -------- Arrastre de una ficha nueva desde la paleta -------- */
   function paletteDown(e: React.PointerEvent, shape: TokenShape) {
     e.preventDefault();
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    capture(e.currentTarget as Element, e.pointerId);
     newShapeRef.current = shape;
     setPreview(null);
   }
@@ -172,11 +183,20 @@ export default function CourtDrawer({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full touch-none rounded-xl"
-        style={{ display: "block", cursor: "crosshair" }}
+        className="w-full touch-none select-none rounded-xl"
+        style={{
+          display: "block",
+          cursor: "crosshair",
+          touchAction: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          WebkitTouchCallout: "none",
+        }}
         onPointerDown={svgDown}
         onPointerMove={svgMove}
         onPointerUp={svgUp}
+        onPointerCancel={svgUp}
+        onLostPointerCapture={svgUp}
         onPointerLeave={svgUp}
       >
         <CourtLines half={court === "half"} />
