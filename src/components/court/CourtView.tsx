@@ -1,4 +1,5 @@
 import CourtLines from "./CourtLines";
+import CourtToken from "./CourtToken";
 import type { TrainingDrawing } from "@/lib/types/database";
 
 function toPoints(p: number[]) {
@@ -9,16 +10,17 @@ function toPoints(p: number[]) {
 
 /** Vista de solo lectura de una pizarra táctica sobre la pista. */
 export default function CourtView({ drawing }: { drawing: TrainingDrawing }) {
+  const half = drawing.court === "half";
   return (
     <svg
-      viewBox="0 0 400 200"
+      viewBox={half ? "0 0 200 200" : "0 0 400 200"}
       className="w-full rounded-xl"
-      style={{ display: "block", touchAction: "none" }}
+      style={{ display: "block" }}
     >
-      <CourtLines />
+      <CourtLines half={half} />
       {drawing.strokes.map((s, i) => (
         <polyline
-          key={i}
+          key={`s${i}`}
           points={toPoints(s.points)}
           fill="none"
           stroke={s.color}
@@ -26,6 +28,9 @@ export default function CourtView({ drawing }: { drawing: TrainingDrawing }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+      ))}
+      {(drawing.tokens ?? []).map((t, i) => (
+        <CourtToken key={`t${i}`} shape={t.shape} x={t.x} y={t.y} />
       ))}
     </svg>
   );

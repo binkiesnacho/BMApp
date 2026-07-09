@@ -91,9 +91,20 @@ export interface DrawStroke {
   points: number[];
 }
 
+/** Ficha arrastrable: atacante (círculo) o defensor (triángulo). */
+export type TokenShape = "attacker" | "defender";
+export interface DrawToken {
+  shape: TokenShape;
+  x: number;
+  y: number;
+}
+
 /** Pizarra táctica (vector) de un ejercicio, sobre una pista de balonmano. */
 export interface TrainingDrawing {
+  /** Pista completa (400×200) o media pista (200×200). Por defecto completa. */
+  court?: "full" | "half";
   strokes: DrawStroke[];
+  tokens?: DrawToken[];
 }
 
 export interface TrainingPhase {
