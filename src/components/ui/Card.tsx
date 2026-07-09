@@ -8,7 +8,7 @@ export default function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-separator bg-[linear-gradient(180deg,var(--color-surface),#0f1a38)] p-4 shadow-[0_14px_40px_rgba(6,12,30,0.45)] ${className}`}
+      className={`rounded-2xl border border-separator bg-surface p-4 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_10px_30px_-18px_rgba(0,0,0,0.7)] ${className}`}
     >
       {children}
     </div>

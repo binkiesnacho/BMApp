@@ -24,7 +24,7 @@ export function Tile({
   return (
     <Link
       href={href}
-      className="tap group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl border border-separator bg-surface p-3 shadow-[0_14px_40px_rgba(6,12,30,0.35)] hover:border-brand/50"
+      className="tap group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl border border-separator bg-surface p-3 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_10px_30px_-18px_rgba(0,0,0,0.7)] hover:border-brand/50 hover:bg-surface-2/60"
     >
       {/* Punto de luz de marca en la esquina */}
       <div className="pointer-events-none absolute -right-7 -top-7 h-20 w-20 rounded-full bg-brand/25 blur-2xl transition-opacity group-hover:opacity-80" />

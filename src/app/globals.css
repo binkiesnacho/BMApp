@@ -10,14 +10,14 @@
   --color-sky: #4c9bee;          /* interactivo / luz */
   --color-sky-200: #a9d2f7;      /* acento suave */
 
-  --color-canvas: #0b1226;       /* fondo app (azul profundo) */
-  --color-surface: #152449;      /* tarjetas */
-  --color-surface-2: #1c2f5e;    /* realzado / hover */
-  --color-separator: rgba(255, 255, 255, 0.09); /* borde-reflejo (hair) */
+  --color-canvas: #080b16;       /* fondo app (casi negro, sesgo azul) */
+  --color-surface: #0f1626;      /* tarjetas (sutil, cerca del fondo) */
+  --color-surface-2: #17203a;    /* realzado / hover */
+  --color-separator: rgba(255, 255, 255, 0.10); /* hairline 1px (Linear) */
 
-  --color-label: #eaf0fa;                 /* texto principal */
-  --color-label-2: #a7b4ce;               /* texto secundario */
-  --color-label-3: #6a7799;               /* texto atenuado */
+  --color-label: #edf1fa;                 /* texto principal */
+  --color-label-2: #99a4bd;               /* texto secundario */
+  --color-label-3: #616c88;               /* texto atenuado */
 
   --color-positive: #2fbf71;     /* victoria */
   --color-negative: #f0453f;     /* en directo / derrota */
@@ -31,7 +31,7 @@ html {
   height: 100%;
   -webkit-text-size-adjust: 100%;
   /* Evita el fondo blanco al hacer overscroll/rebote en móvil. */
-  background-color: #0a1024;
+  background-color: #06090f;
   overscroll-behavior: none;
   /* Solo scroll vertical: nada debe desbordar horizontalmente. */
   overflow-x: hidden;
@@ -45,12 +45,11 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
-  /* Base luminosa: azul profundo con un punto de luz. */
+  /* Base Linear: casi negro con un único punto de luz sutil arriba a la derecha. */
   background:
-    radial-gradient(1000px 520px at 82% -6%, rgba(76, 155, 238, 0.2), transparent 62%),
-    radial-gradient(760px 460px at 8% 12%, rgba(30, 95, 168, 0.2), transparent 60%),
-    radial-gradient(900px 700px at 50% 108%, rgba(46, 109, 224, 0.14), transparent 60%),
-    linear-gradient(180deg, #0a1024, var(--color-canvas) 45%, #0a1330);
+    radial-gradient(680px 380px at 88% -8%, rgba(76, 155, 238, 0.13), transparent 60%),
+    radial-gradient(560px 480px at 4% 108%, rgba(46, 109, 224, 0.07), transparent 58%),
+    linear-gradient(180deg, #070a14, var(--color-canvas) 42%, #06090f);
   background-attachment: fixed;
 }
 
@@ -68,7 +67,7 @@ body {
   font-weight: 400;
   font-size: 2rem;
   line-height: 1;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 

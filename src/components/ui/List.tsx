@@ -8,7 +8,7 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
 /** Contenedor de lista agrupada (inset, esquinas redondeadas). */
 export function ListGroup({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-separator bg-surface shadow-[0_14px_40px_rgba(6,12,30,0.35)]">
+    <div className="overflow-hidden rounded-2xl border border-separator bg-surface shadow-[0_1px_0_rgba(255,255,255,0.03)_inset,0_10px_30px_-18px_rgba(0,0,0,0.7)]">
       <ul className="divide-y divide-separator">{children}</ul>
     </div>
   );

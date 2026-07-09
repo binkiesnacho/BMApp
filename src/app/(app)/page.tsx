@@ -145,13 +145,18 @@ export default async function HomePage() {
       {/* Próximo partido */}
       {next ? (
         <Link href={`/matches/${next.id}`} className="tap block">
-          <Card>
-            <p className="text-[13px] text-brand">{fmt(next.date)}</p>
-            <p className="mt-0.5 text-[17px] font-semibold text-label">
+          <Card className="relative overflow-hidden border-transparent shadow-[0_0_0_1px_rgba(76,155,238,0.35),0_20px_50px_-26px_rgba(46,109,224,0.65)]">
+            <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-sky/25 blur-2xl" />
+            <p className="relative text-[11px] font-bold uppercase tracking-[0.16em] text-sky-200">
+              {fmt(next.date)}
+            </p>
+            <p className="relative mt-1.5 text-[19px] font-bold text-label">
               vs {next.opponent}
             </p>
             {next.location && (
-              <p className="mt-0.5 text-[13px] text-label-2">📍 {next.location}</p>
+              <p className="relative mt-1 text-[13px] text-label-2">
+                📍 {next.location}
+              </p>
             )}
           </Card>
         </Link>
