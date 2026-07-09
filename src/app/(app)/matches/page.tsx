@@ -69,7 +69,13 @@ export default async function MatchesPage({
       subtitle={
         teamValue === "all" ? "Todos los equipos" : teamName(teamValue)
       }
-      trailing={staff ? <Link href="/matches/new">Nuevo</Link> : undefined}
+      action={
+        staff ? (
+          <Link href="/matches/new" className="btn btn-primary w-full py-3.5">
+            <span className="text-lg leading-none">＋</span> Nuevo partido
+          </Link>
+        ) : undefined
+      }
     >
       <MatchTeamFilter teams={myTeams} value={teamValue} tab={active} showAll />
 

@@ -55,13 +55,16 @@ export default async function TrainingsPage() {
     t.phases.reduce((s, ph) => s + (Number(ph.minutes) || 0), 0);
 
   return (
-    <Screen title="Entrenamientos">
-      {capture && (
-        <Link href="/trainings/new" className="btn btn-primary mb-4 w-full py-3.5">
-          <span className="text-lg leading-none">＋</span> Nuevo entrenamiento
-        </Link>
-      )}
-
+    <Screen
+      title="Entrenamientos"
+      action={
+        capture ? (
+          <Link href="/trainings/new" className="btn btn-primary w-full py-3.5">
+            <span className="text-lg leading-none">＋</span> Nuevo entrenamiento
+          </Link>
+        ) : undefined
+      }
+    >
       {faltasRows.length > 0 && (
         <div className="mb-5">
           <SectionTitle>Faltas acumuladas</SectionTitle>

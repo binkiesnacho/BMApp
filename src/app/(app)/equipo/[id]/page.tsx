@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
-import { ListGroup, ListRow } from "@/components/ui/List";
+import { TileGrid, Tile } from "@/components/ui/Tile";
 import { createClient } from "@/lib/supabase/server";
 import { getMyTeams, getSessionProfile } from "@/lib/auth";
 import type { Player, Team } from "@/lib/types/database";
@@ -35,46 +35,40 @@ export default async function TeamHubPage({
 
   return (
     <Screen title={team.name} subtitle="Secciones del equipo" back={back}>
-      <ListGroup>
-        <ListRow
+      <TileGrid>
+        <Tile
           href={`/teams/${team.id}`}
           title="Plantilla"
           subtitle="Jugadores del equipo"
-          leading={<span className="text-xl">👥</span>}
         />
-        <ListRow
+        <Tile
           href={`/stats?team=${team.id}`}
           title="Estadísticas"
           subtitle="Por jugador"
-          leading={<span className="text-xl">📊</span>}
         />
-        <ListRow
+        <Tile
           href={`/standings?team=${team.id}`}
           title="Clasificación"
           subtitle="Tabla de la liga"
-          leading={<span className="text-xl">🏆</span>}
         />
-        <ListRow
+        <Tile
           href={`/matches?team=${team.id}`}
           title="Partidos"
           subtitle="Calendario y resultados"
-          leading={<span className="text-xl">🤾</span>}
         />
-        <ListRow
+        <Tile
           href="/trainings"
           title="Entrenamientos"
           subtitle="Sesiones y asistencia"
-          leading={<span className="text-xl">🏋️</span>}
         />
         {ficha && (
-          <ListRow
+          <Tile
             href={`/players/${ficha.id}`}
             title="Mi ficha"
             subtitle="Tus estadísticas y faltas"
-            leading={<span className="text-xl">⭐</span>}
           />
         )}
-      </ListGroup>
+      </TileGrid>
     </Screen>
   );
 }

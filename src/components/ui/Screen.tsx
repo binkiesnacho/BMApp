@@ -10,17 +10,20 @@ export default function Screen({
   subtitle,
   back,
   trailing,
+  action,
   children,
 }: {
   title: string;
   subtitle?: string;
   back?: string;
   trailing?: React.ReactNode;
+  /** Botón de acción flotante anclado abajo; la lista hace scroll por debajo. */
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <>
-      <header className="safe-top sticky top-0 z-30 border-b border-separator/40 bg-canvas/70 px-4 pb-2 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-separator/40 bg-canvas/70 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)] backdrop-blur-xl">
         {(back || trailing) && (
           <div className="flex h-8 items-center justify-between">
             {back ? (
@@ -51,9 +54,25 @@ export default function Screen({
         </div>
       </header>
 
-      <main className="px-4 pt-3 pb-[calc(5.75rem+env(safe-area-inset-bottom))]">
+      <main
+        className={`px-4 pt-3 ${
+          action
+            ? "pb-[calc(9.5rem+env(safe-area-inset-bottom))]"
+            : "pb-[calc(5.75rem+env(safe-area-inset-bottom))]"
+        }`}
+      >
         {children}
       </main>
+
+      {action && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md pb-[calc(env(safe-area-inset-bottom)+4.9rem)]">
+          {/* Degradado para que la lista se desvanezca al pasar bajo el botón */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-canvas via-canvas/85 to-transparent" />
+          <div className="relative px-4">
+            <div className="pointer-events-auto">{action}</div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

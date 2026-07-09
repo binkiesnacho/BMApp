@@ -88,27 +88,28 @@ export default function BottomNav({
   ];
 
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-separator bg-[rgba(9,15,34,0.78)] backdrop-blur-xl">
-      <ul className="mx-auto flex max-w-md items-stretch px-1 pt-1">
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)]">
+      <ul className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-separator/70 bg-[rgba(15,26,56,0.82)] px-1.5 py-1.5 shadow-[0_12px_40px_rgba(4,10,28,0.6)] backdrop-blur-xl">
         {items.map((item, i) => {
           const active =
             "exact" in item && item.exact
               ? pathname === item.activePath
               : pathname.startsWith(item.activePath);
           return (
-            <li key={i} className="min-w-0 flex-1">
+            <li key={i}>
               <Link
                 href={item.href}
-                className={`flex flex-col items-center gap-0.5 rounded-lg px-0.5 pt-1.5 pb-1 text-[8px] font-extrabold uppercase tracking-wide ${
+                aria-label={item.label}
+                aria-current={active ? "page" : undefined}
+                className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
                   active
-                    ? "bg-surface-2/70 text-sky-200 shadow-[inset_0_0_0_1px_var(--color-separator)]"
-                    : "text-label-3"
+                    ? "bg-gradient-to-b from-sky to-brand text-white shadow-[0_6px_16px_-4px_rgba(46,109,224,0.7),inset_0_1px_0_rgba(255,255,255,0.25)]"
+                    : "text-label-3 hover:text-label-2"
                 }`}
               >
                 <svg width="23" height="23" viewBox="0 0 24 24">
                   {item.icon({ active })}
                 </svg>
-                <span className="max-w-full truncate">{item.label}</span>
               </Link>
             </li>
           );

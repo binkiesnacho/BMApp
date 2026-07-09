@@ -1,5 +1,5 @@
 import Screen from "@/components/ui/Screen";
-import { ListGroup, ListRow } from "@/components/ui/List";
+import { TileGrid, Tile } from "@/components/ui/Tile";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import type { Player, Team } from "@/lib/types/database";
@@ -28,21 +28,16 @@ export default async function TeamsPage() {
       {teams.length === 0 ? (
         <EmptyState icon="🛡️">Todavía no hay equipos.</EmptyState>
       ) : (
-        <ListGroup>
+        <TileGrid>
           {teams.map((team) => (
-            <ListRow
+            <Tile
               key={team.id}
               href={`/teams/${team.id}`}
               title={team.name}
               subtitle={`${count(team.id)} jugadores`}
-              leading={
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/15 text-[15px]">
-                  🛡️
-                </span>
-              }
             />
           ))}
-        </ListGroup>
+        </TileGrid>
       )}
     </Screen>
   );

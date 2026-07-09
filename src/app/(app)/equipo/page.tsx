@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
-import { ListGroup, ListRow } from "@/components/ui/List";
+import { TileGrid, Tile } from "@/components/ui/Tile";
 import { EmptyState } from "@/components/ui/Card";
 import { getMyTeams } from "@/lib/auth";
 
@@ -25,20 +25,15 @@ export default async function EquipoPage() {
 
   return (
     <Screen title="Equipos" subtitle="Elige un equipo">
-      <ListGroup>
+      <TileGrid>
         {myTeams.map((team) => (
-          <ListRow
+          <Tile
             key={team.id}
             href={`/equipo/${team.id}`}
             title={team.name}
-            leading={
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/15 text-[15px]">
-                🛡️
-              </span>
-            }
           />
         ))}
-      </ListGroup>
+      </TileGrid>
     </Screen>
   );
 }
