@@ -80,7 +80,6 @@ export default function BottomNav({
   const items = [
     { href: "/", label: "Inicio", icon: Icon.home, activePath: "/", exact: true },
     { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, activePath: "/mi-ficha" },
-    { href: "/teams", label: "Club", img: "/brand/escudo-blanco.svg", activePath: "/teams" },
     { href: "/equipo", label: "Equipo", icon: Icon.equipo, activePath: "/equipo" },
     { href: "/matches", label: "Calendario", icon: Icon.calendar, activePath: "/matches" },
     { href: "/trainings", label: "Entrenos", icon: Icon.trainings, activePath: "/trainings" },
@@ -89,7 +88,7 @@ export default function BottomNav({
 
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)]">
-      <ul className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-separator/70 bg-[rgba(15,26,56,0.82)] px-1.5 py-1.5 shadow-[0_12px_40px_rgba(4,10,28,0.6)] backdrop-blur-xl">
+      <ul className="pointer-events-auto flex items-center gap-1 rounded-full border border-separator/70 bg-[rgba(15,26,56,0.82)] px-2 py-2 shadow-[0_12px_40px_rgba(4,10,28,0.6)] backdrop-blur-xl">
         {items.map((item, i) => {
           const active =
             "exact" in item && item.exact
@@ -101,28 +100,15 @@ export default function BottomNav({
                 href={item.href}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
+                className={`flex h-[52px] w-[52px] items-center justify-center rounded-full transition-colors ${
                   active
                     ? "bg-gradient-to-b from-sky to-brand text-white shadow-[0_6px_16px_-4px_rgba(46,109,224,0.7),inset_0_1px_0_rgba(255,255,255,0.25)]"
                     : "text-label-3 hover:text-label-2"
                 }`}
               >
-                {"img" in item ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.img}
-                    alt=""
-                    width={24}
-                    height={24}
-                    className={`h-6 w-6 object-contain transition-opacity ${
-                      active ? "opacity-100" : "opacity-45"
-                    }`}
-                  />
-                ) : (
-                  <svg width="23" height="23" viewBox="0 0 24 24">
-                    {item.icon({ active })}
-                  </svg>
-                )}
+                <svg width="27" height="27" viewBox="0 0 24 24">
+                  {item.icon({ active })}
+                </svg>
               </Link>
             </li>
           );
