@@ -10,7 +10,6 @@ import {
 } from "@/lib/auth";
 import {
   addMemberRoleAction,
-  assignMemberTeamAction,
   removeMemberAction,
   removeMemberRoleAction,
 } from "../actions";
@@ -124,27 +123,10 @@ export default async function MembersPage() {
                     })}
                   </div>
 
-                  {/* Equipo (jugador/técnico) */}
-                  {hasTeam && (
-                    <form action={assignMemberTeamAction} className="flex gap-1">
-                      <input type="hidden" name="memberId" value={m.id} />
-                      <select
-                        name="teamId"
-                        defaultValue={m.team_id ?? ""}
-                        className="rounded-lg border border-separator bg-surface px-2 py-1.5 text-xs text-label outline-none focus:border-brand"
-                      >
-                        <option value="">Sin equipo</option>
-                        {teams?.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                          </option>
-                        ))}
-                      </select>
-                      <button className="rounded-lg border border-separator px-2 py-1.5 text-xs text-label hover:border-brand">
-                        Equipo
-                      </button>
-                    </form>
-                  )}
+                  <p className="text-[11px] text-label-3">
+                    La pertenencia a equipos se gestiona desde el equipo o la
+                    ficha del jugador.
+                  </p>
                 </>
               )}
             </li>

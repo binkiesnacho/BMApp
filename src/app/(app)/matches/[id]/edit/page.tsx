@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
-import { canManageTeam, getSessionProfile } from "@/lib/auth";
+import { canManageTeam, getMyCoachTeamIds, getSessionProfile } from "@/lib/auth";
 import EditMatchForm from "../EditMatchForm";
 import { deleteMatchAction } from "../../actions";
 import type { Match, Team } from "@/lib/types/database";
@@ -30,7 +30,8 @@ export default async function EditMatchPage({
     .select("id, coach_id")
     .eq("id", match.team_id)
     .maybeSingle<Pick<Team, "id" | "coach_id">>();
-  if (!canManageTeam(profile, team ?? null)) redirect(`/matches/${id}`);
+  if (!canManageTeam(profile, team ?? null, await getMyCoachTeamIds()))
+    redirect(`/matches/${id}`);
 
   return (
     <Screen title="Editar partido" subtitle={`vs ${match.opponent}`} back={`/matches/${match.id}`}>

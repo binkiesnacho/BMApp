@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   canCapture,
   canManageTeam,
+  getMyCoachTeamIds,
   getMyTeams,
   getSessionProfile,
 } from "@/lib/auth";
@@ -38,7 +39,9 @@ export default async function TeamHubPage({
   // Solo mostramos "Atrás → Equipos" si el usuario tiene varios equipos.
   const back = myTeams.length > 1 ? "/equipo" : undefined;
   // El recuento de faltas es cosa del cuerpo técnico (entrenador o staff).
-  const canSeeFaltas = canManageTeam(profile, team) || canCapture(profile);
+  const canSeeFaltas =
+    canManageTeam(profile, team, await getMyCoachTeamIds()) ||
+    canCapture(profile);
 
   return (
     <Screen title={team.name} subtitle="Secciones del equipo" back={back}>

@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
-import { canCapture, canManageTeam, getSessionProfile } from "@/lib/auth";
+import {
+  canCapture,
+  canManageTeam,
+  getMyCoachTeamIds,
+  getSessionProfile,
+} from "@/lib/auth";
 import { loadObservations } from "@/lib/observations";
 import ObservationsSection from "../../observations/ObservationsSection";
 import type {
@@ -72,7 +77,7 @@ export default async function MatchDetailPage({
       .returns<StatEvent[]>(),
   ]);
 
-  const canManage = canManageTeam(profile, team ?? null);
+  const canManage = canManageTeam(profile, team ?? null, await getMyCoachTeamIds());
   const observations = canManage
     ? await loadObservations(supabase, { matchId: id })
     : [];

@@ -12,18 +12,25 @@ export const getMyTeams = cache(async function getMyTeams(): Promise<Team[]> {
   if (!profile?.club_id) return [];
   const supabase = await createClient();
 
-  const [{ data: coached }, { data: rosterRows }] = await Promise.all([
-    supabase.from("teams").select("*").eq("coach_id", profile.id).returns<Team[]>(),
-    supabase
-      .from("players")
-      .select("team_id")
-      .eq("profile_id", profile.id)
-      .returns<{ team_id: string }[]>(),
-  ]);
+  const [{ data: coached }, { data: rosterRows }, { data: coachRows }] =
+    await Promise.all([
+      supabase.from("teams").select("*").eq("coach_id", profile.id).returns<Team[]>(),
+      supabase
+        .from("players")
+        .select("team_id")
+        .eq("profile_id", profile.id)
+        .returns<{ team_id: string }[]>(),
+      supabase
+        .from("team_coaches")
+        .select("team_id")
+        .eq("profile_id", profile.id)
+        .returns<{ team_id: string }[]>(),
+    ]);
 
   const ids = new Set<string>();
   (coached ?? []).forEach((t) => ids.add(t.id));
   (rosterRows ?? []).forEach((r) => ids.add(r.team_id));
+  (coachRows ?? []).forEach((r) => ids.add(r.team_id));
   if (profile.team_id) ids.add(profile.team_id);
 
   if (ids.size === 0) return [];
@@ -34,6 +41,31 @@ export const getMyTeams = cache(async function getMyTeams(): Promise<Team[]> {
     .order("name", { ascending: true })
     .returns<Team[]>();
   return teams ?? [];
+});
+
+/** Ids de los equipos que ENTRENO (team_coaches + coach_id legado). Memoizado. */
+export const getMyCoachTeamIds = cache(async function getMyCoachTeamIds(): Promise<
+  Set<string>
+> {
+  const { profile } = await getSessionProfile();
+  const s = new Set<string>();
+  if (!profile?.id) return s;
+  const supabase = await createClient();
+  const [{ data: tc }, { data: legacy }] = await Promise.all([
+    supabase
+      .from("team_coaches")
+      .select("team_id")
+      .eq("profile_id", profile.id)
+      .returns<{ team_id: string }[]>(),
+    supabase
+      .from("teams")
+      .select("id")
+      .eq("coach_id", profile.id)
+      .returns<{ id: string }[]>(),
+  ]);
+  (tc ?? []).forEach((r) => s.add(r.team_id));
+  (legacy ?? []).forEach((r) => s.add(r.id));
+  return s;
 });
 
 /**
@@ -112,10 +144,13 @@ export function canAdminister(profile: Profile | null): boolean {
  */
 export function canManageTeam(
   profile: Profile | null,
-  team: { coach_id: string | null } | null
+  team: { id?: string; coach_id: string | null } | null,
+  coachTeamIds?: Set<string>
 ): boolean {
   if (!profile || !team) return false;
   if (rolesOf(profile).includes("admin") || profile.is_superadmin) return true;
+  // Entrenador de este equipo: por team_coaches (set) o coach_id legado.
+  if (coachTeamIds && team.id && coachTeamIds.has(team.id)) return true;
   return rolesOf(profile).includes("coach") && team.coach_id === profile.id;
 }
 

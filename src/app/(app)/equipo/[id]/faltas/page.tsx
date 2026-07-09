@@ -3,7 +3,12 @@ import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { ListGroup, ListRow, SectionTitle } from "@/components/ui/List";
 import { createClient } from "@/lib/supabase/server";
-import { canCapture, canManageTeam, getSessionProfile } from "@/lib/auth";
+import {
+  canCapture,
+  canManageTeam,
+  getMyCoachTeamIds,
+  getSessionProfile,
+} from "@/lib/auth";
 import FaltasFilters from "./FaltasFilters";
 import type {
   Player,
@@ -42,7 +47,10 @@ export default async function FaltasPage({
     .maybeSingle<Pick<Team, "id" | "name" | "coach_id">>();
   if (!team) notFound();
   // Solo el cuerpo técnico (entrenador del equipo o staff) consulta faltas.
-  if (!canManageTeam(profile, team) && !canCapture(profile)) {
+  if (
+    !canManageTeam(profile, team, await getMyCoachTeamIds()) &&
+    !canCapture(profile)
+  ) {
     redirect(`/equipo/${id}`);
   }
 

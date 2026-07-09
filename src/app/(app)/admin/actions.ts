@@ -93,6 +93,46 @@ export async function assignMemberTeamAction(formData: FormData): Promise<void> 
   revalidateMemberViews();
 }
 
+/** Asigna/quita a una persona como ENTRENADOR de un equipo (admin). */
+export async function setTeamCoachAction(
+  teamId: string,
+  profileId: string,
+  present: boolean
+): Promise<{ error?: string }> {
+  const { profile, error } = await requireAdmin();
+  if (!profile) return { error: error ?? "Solo administradores." };
+  const supabase = await createClient();
+  const { error: rpcErr } = await supabase.rpc("set_team_coach", {
+    target_team: teamId,
+    target_profile: profileId,
+    present,
+  });
+  if (rpcErr) return { error: rpcErr.message };
+  revalidateMemberViews();
+  revalidatePath("/teams", "layout");
+  return {};
+}
+
+/** Asigna/quita a una persona como JUGADOR de un equipo (admin o entrenador). */
+export async function setTeamPlayerAction(
+  teamId: string,
+  profileId: string,
+  present: boolean
+): Promise<{ error?: string }> {
+  const { profile } = await requireStaff();
+  if (!profile) return { error: "Sin permisos." };
+  const supabase = await createClient();
+  const { error: rpcErr } = await supabase.rpc("set_team_player", {
+    target_team: teamId,
+    target_profile: profileId,
+    present,
+  });
+  if (rpcErr) return { error: rpcErr.message };
+  revalidateMemberViews();
+  revalidatePath("/teams", "layout");
+  return {};
+}
+
 /** Expulsa a un miembro del club (RPC segura). */
 export async function removeMemberAction(formData: FormData): Promise<void> {
   const memberId = String(formData.get("memberId") ?? "");
