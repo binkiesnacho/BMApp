@@ -61,10 +61,17 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 p-8">
-      <div className="text-center">
-        <div className="mb-2 text-4xl">🤾</div>
-        <h1 className="text-xl font-semibold text-label">BMApp</h1>
-        <p className="text-sm text-label-2">Gestión de balonmano</p>
+      <div className="flex flex-col items-center text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/escudo-blanco.svg"
+          alt="CBM Quart"
+          width={104}
+          className="mb-3 drop-shadow-[0_12px_34px_rgba(76,155,238,0.35)]"
+        />
+        <p className="text-[13px] font-extrabold uppercase tracking-[0.18em] text-sky-200">
+          Gestión de balonmano
+        </p>
       </div>
 
       <div className="flex w-full max-w-xs rounded-xl border border-separator/60 p-1 text-sm">
