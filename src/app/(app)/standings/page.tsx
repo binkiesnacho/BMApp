@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import { getMyTeams, getSessionProfile, isStaff } from "@/lib/auth";
 import { buildStandings } from "@/lib/standings";
+import { EditIcon } from "@/components/ui/icons";
 import TeamSelect from "./TeamSelect";
 import type { Match, StandingsRow, Team } from "@/lib/types/database";
 
@@ -66,9 +67,14 @@ export default async function StandingsPage({
     <Screen
       title="Clasificación"
       subtitle={team.name}
-      trailing={
+      action={
         canEdit ? (
-          <Link href={`/standings/edit?team=${team.id}`}>Editar</Link>
+          <Link
+            href={`/standings/edit?team=${team.id}`}
+            className="btn btn-secondary w-full py-3.5"
+          >
+            <EditIcon /> Editar clasificación
+          </Link>
         ) : undefined
       }
     >

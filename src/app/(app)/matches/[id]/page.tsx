@@ -14,6 +14,7 @@ import type {
 } from "@/lib/types/database";
 import { EVENT_LABELS } from "@/lib/events";
 import { aggregateByPlayer, shootingAccuracy } from "@/lib/stats";
+import { EditIcon } from "@/components/ui/icons";
 
 const STAT_COLS: StatEventType[] = [
   "goal",
@@ -93,9 +94,14 @@ export default async function MatchDetailPage({
       title={`vs ${match.opponent}`}
       subtitle={fmtDate(match.date)}
       back="/matches"
-      trailing={
+      action={
         canManage ? (
-          <Link href={`/matches/${match.id}/edit`}>Editar</Link>
+          <Link
+            href={`/matches/${match.id}/edit`}
+            className="btn btn-secondary w-full py-3.5"
+          >
+            <EditIcon /> Editar partido
+          </Link>
         ) : undefined
       }
     >

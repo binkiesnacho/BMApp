@@ -184,6 +184,23 @@ a[href]:active,
   }
 }
 
+/* Inputs de fecha/hora: esquema oscuro para que el icono del calendario y el
+   popup nativo se vean (icono blanco sobre fondo azul). */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"] {
+  color-scheme: dark;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.9;
+  cursor: pointer;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

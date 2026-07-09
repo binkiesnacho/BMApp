@@ -21,18 +21,18 @@ export function Tile({
   return (
     <Link
       href={href}
-      className="tap group relative flex aspect-square flex-col justify-end overflow-hidden rounded-3xl border border-separator bg-surface p-4 shadow-[0_14px_40px_rgba(6,12,30,0.35)] hover:border-brand/50"
+      className="tap group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl border border-separator bg-surface p-3 shadow-[0_14px_40px_rgba(6,12,30,0.35)] hover:border-brand/50"
     >
       {/* Punto de luz de marca en la esquina */}
-      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-brand/25 blur-2xl transition-opacity group-hover:opacity-80" />
+      <div className="pointer-events-none absolute -right-7 -top-7 h-20 w-20 rounded-full bg-brand/25 blur-2xl transition-opacity group-hover:opacity-80" />
 
       {/* Flecha de navegación */}
       <svg
-        width="18"
-        height="18"
+        width="16"
+        height="16"
         viewBox="0 0 24 24"
         fill="none"
-        className="absolute right-3.5 top-3.5 text-label-3 transition-colors group-hover:text-sky-200"
+        className="absolute right-3 top-3 text-label-3 transition-colors group-hover:text-sky-200"
       >
         <path
           d="M7 17 17 7M9 7h8v8"
@@ -44,11 +44,11 @@ export function Tile({
       </svg>
 
       <div className="relative">
-        <div className="text-[17px] font-extrabold leading-tight text-label">
+        <div className="text-[15px] font-extrabold leading-tight text-label">
           {title}
         </div>
         {subtitle && (
-          <div className="mt-1 text-[12px] leading-snug text-label-2">
+          <div className="mt-0.5 text-[11px] leading-snug text-label-2">
             {subtitle}
           </div>
         )}

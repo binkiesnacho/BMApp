@@ -4,6 +4,7 @@ import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile, isStaff } from "@/lib/auth";
+import { EditIcon } from "@/components/ui/icons";
 import PlayerRow from "./PlayerRow";
 import type { Player, Team } from "@/lib/types/database";
 
@@ -39,8 +40,15 @@ export default async function TeamDetailPage({
       title={team.name}
       subtitle={`${players?.length ?? 0} jugadores`}
       back="/teams"
-      trailing={
-        canEdit ? <Link href={`/teams/${team.id}/edit`}>Editar</Link> : undefined
+      action={
+        canEdit ? (
+          <Link
+            href={`/teams/${team.id}/edit`}
+            className="btn btn-secondary w-full py-3.5"
+          >
+            <EditIcon /> Editar plantilla
+          </Link>
+        ) : undefined
       }
     >
       {/* Vista de solo lectura: la edición de la plantilla vive en /teams/[id]/edit */}

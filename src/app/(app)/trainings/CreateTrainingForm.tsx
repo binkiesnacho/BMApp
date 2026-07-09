@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTrainingAction } from "./actions";
 import CourtDrawer from "@/components/court/CourtDrawer";
+import { DrawIcon } from "@/components/ui/icons";
 import type { Team, TrainingPhase } from "@/lib/types/database";
 
 const DEFAULT_PHASES: TrainingPhase[] = [
@@ -70,6 +71,9 @@ export default function CreateTrainingForm({
 
   const inputCls =
     "w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand";
+  // Fila-botón para añadir un ítem (objetivo/fase): se ve como una fila más.
+  const addRowCls =
+    "flex w-full items-center gap-2 rounded-xl border border-dashed border-separator px-3 py-2.5 text-sm font-medium text-label-2 hover:border-brand hover:text-label";
 
   return (
     <div className="space-y-3 rounded-2xl border border-separator/60 bg-surface p-3">
@@ -127,10 +131,12 @@ export default function CreateTrainingForm({
           ))}
         </div>
         <button
+          type="button"
           onClick={() => setObjectives((os) => [...os, ""])}
-          className="mt-2 text-xs text-brand"
+          className={addRowCls + " mt-2"}
         >
-          + Añadir objetivo
+          <span className="text-base leading-none text-brand">＋</span> Añadir
+          objetivo
         </button>
       </div>
 
@@ -168,6 +174,19 @@ export default function CreateTrainingForm({
                   />
                   <button
                     type="button"
+                    onClick={() => setOpenDrawer(openDrawer === i ? null : i)}
+                    aria-label={hasDrawing ? "Editar pizarra" : "Añadir pizarra"}
+                    title={hasDrawing ? "Editar pizarra" : "Añadir pizarra"}
+                    className={`flex w-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                      hasDrawing || openDrawer === i
+                        ? "border-brand bg-brand/15 text-sky-200"
+                        : "border-separator text-label-3 hover:text-label"
+                    }`}
+                  >
+                    <DrawIcon />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setPhases((ps) => ps.filter((_, j) => j !== i))}
                     className="px-2 text-label-3 hover:text-red-400"
                     aria-label="Quitar fase"
@@ -175,16 +194,6 @@ export default function CreateTrainingForm({
                     ✕
                   </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setOpenDrawer(openDrawer === i ? null : i)}
-                  className="text-xs text-brand"
-                >
-                  🎨 {hasDrawing ? "Editar pizarra" : "Añadir pizarra"}
-                  {hasDrawing && (
-                    <span className="ml-1 text-label-3">· con esquema</span>
-                  )}
-                </button>
                 {openDrawer === i && (
                   <CourtDrawer
                     value={p.drawing ?? null}
@@ -196,10 +205,12 @@ export default function CreateTrainingForm({
           })}
         </div>
         <button
+          type="button"
           onClick={() => setPhases((ps) => [...ps, { name: "", minutes: 0 }])}
-          className="mt-2 text-xs text-brand"
+          className={addRowCls + " mt-2"}
         >
-          + Añadir fase
+          <span className="text-base leading-none text-brand">＋</span> Añadir
+          fase
         </button>
       </div>
 

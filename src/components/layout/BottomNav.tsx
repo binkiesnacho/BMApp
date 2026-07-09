@@ -80,7 +80,7 @@ export default function BottomNav({
   const items = [
     { href: "/", label: "Inicio", icon: Icon.home, activePath: "/", exact: true },
     { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, activePath: "/mi-ficha" },
-    { href: "/teams", label: "Club", icon: Icon.teams, activePath: "/teams" },
+    { href: "/teams", label: "Club", img: "/brand/escudo-blanco.svg", activePath: "/teams" },
     { href: "/equipo", label: "Equipo", icon: Icon.equipo, activePath: "/equipo" },
     { href: "/matches", label: "Calendario", icon: Icon.calendar, activePath: "/matches" },
     { href: "/trainings", label: "Entrenos", icon: Icon.trainings, activePath: "/trainings" },
@@ -107,9 +107,22 @@ export default function BottomNav({
                     : "text-label-3 hover:text-label-2"
                 }`}
               >
-                <svg width="23" height="23" viewBox="0 0 24 24">
-                  {item.icon({ active })}
-                </svg>
+                {"img" in item ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.img}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className={`h-6 w-6 object-contain transition-opacity ${
+                      active ? "opacity-100" : "opacity-45"
+                    }`}
+                  />
+                ) : (
+                  <svg width="23" height="23" viewBox="0 0 24 24">
+                    {item.icon({ active })}
+                  </svg>
+                )}
               </Link>
             </li>
           );
