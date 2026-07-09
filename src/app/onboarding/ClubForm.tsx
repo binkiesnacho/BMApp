@@ -60,7 +60,7 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
           <button
             type="submit"
             disabled={creating}
-            className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-50"
+            className="btn btn-primary w-full py-3.5"
           >
             {creating ? "Creando…" : "Crear club (seré admin)"}
           </button>
@@ -81,7 +81,7 @@ export default function ClubForm({ canCreate = false }: { canCreate?: boolean })
           <button
             type="submit"
             disabled={joining}
-            className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white disabled:opacity-50"
+            className="btn btn-primary w-full py-3.5"
           >
             {joining ? "Uniéndome…" : "Unirme al club"}
           </button>

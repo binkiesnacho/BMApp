@@ -7,7 +7,11 @@ export default function Card({
   className?: string;
 }) {
   return (
-    <div className={`rounded-2xl bg-surface p-4 ${className}`}>{children}</div>
+    <div
+      className={`rounded-2xl border border-separator bg-[linear-gradient(180deg,var(--color-surface),#0f1a38)] p-4 shadow-[0_14px_40px_rgba(6,12,30,0.45)] ${className}`}
+    >
+      {children}
+    </div>
   );
 }
 

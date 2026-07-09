@@ -95,7 +95,7 @@ export default function EditMatchForm({
         <button
           type="submit"
           disabled={pending}
-          className="flex-1 rounded-xl bg-brand px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="btn btn-primary flex-1"
         >
           {pending ? "Guardando…" : "Guardar"}
         </button>

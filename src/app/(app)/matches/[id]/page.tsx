@@ -130,7 +130,7 @@ export default async function MatchDetailPage({
         <div className="mt-3">
           <Link
             href={`/matches/${match.id}/live`}
-            className="block rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
+            className="btn btn-primary w-full py-3.5"
           >
             {finished
               ? "Revisar / editar en vivo"

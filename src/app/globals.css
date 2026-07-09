@@ -1,28 +1,30 @@
 @import "tailwindcss";
 
 /* =============================================================================
-   Sistema de diseño — estilo iOS (Human Interface Guidelines), tema oscuro.
-   Colores semánticos por capas + acento azul del sistema (combina con el logo).
+   Sistema de diseño — CBM Quart. Azul profundo (no negro), un punto de luz.
+   Tipografía Archivo (texto) + Anton (display). Colores semánticos por capas.
    ============================================================================= */
 @theme inline {
-  --color-brand: #0a84ff;        /* iOS system blue (dark) */
-  --color-brand-strong: #0071e3;
+  --color-brand: #2e6de0;        /* royal-bright: CTA / rayo / VS */
+  --color-brand-strong: #1e48a8; /* royal: azul principal kit */
+  --color-sky: #4c9bee;          /* interactivo / luz */
+  --color-sky-200: #a9d2f7;      /* acento suave */
 
-  --color-canvas: #000000;       /* systemBackground */
-  --color-surface: #1c1c1e;      /* secondarySystemBackground / cards */
-  --color-surface-2: #2c2c2e;    /* tertiarySystemBackground */
-  --color-separator: rgba(84, 84, 88, 0.55);
+  --color-canvas: #0b1226;       /* fondo app (azul profundo) */
+  --color-surface: #152449;      /* tarjetas */
+  --color-surface-2: #1c2f5e;    /* realzado / hover */
+  --color-separator: rgba(255, 255, 255, 0.09); /* borde-reflejo (hair) */
 
-  --color-label: #f2f2f7;                       /* label */
-  --color-label-2: rgba(235, 235, 245, 0.6);    /* secondaryLabel */
-  --color-label-3: rgba(235, 235, 245, 0.32);   /* tertiaryLabel */
+  --color-label: #eaf0fa;                 /* texto principal */
+  --color-label-2: #a7b4ce;               /* texto secundario */
+  --color-label-3: #6a7799;               /* texto atenuado */
 
-  --color-positive: #30d158;     /* systemGreen */
-  --color-negative: #ff453a;     /* systemRed */
-  --color-warning: #ff9f0a;      /* systemOrange */
+  --color-positive: #2fbf71;     /* victoria */
+  --color-negative: #f0453f;     /* en directo / derrota */
+  --color-warning: #ff9f0a;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
-    "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-archivo), system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-anton), Impact, sans-serif;
 }
 
 html {
@@ -32,12 +34,17 @@ html {
 
 body {
   min-height: 100dvh;
-  background: var(--color-canvas);
   color: var(--color-label);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
-  letter-spacing: -0.01em;
+  /* Base luminosa: azul profundo con un punto de luz. */
+  background:
+    radial-gradient(1000px 520px at 82% -6%, rgba(76, 155, 238, 0.2), transparent 62%),
+    radial-gradient(760px 460px at 8% 12%, rgba(30, 95, 168, 0.2), transparent 60%),
+    radial-gradient(900px 700px at 50% 108%, rgba(46, 109, 224, 0.14), transparent 60%),
+    linear-gradient(180deg, #0a1024, var(--color-canvas) 45%, #0a1330);
+  background-attachment: fixed;
 }
 
 /* Safe-areas del notch/gestos */
@@ -48,24 +55,89 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Título grande estilo iOS */
+/* Título grande — display (Anton, mayúsculas) */
 .ios-large-title {
-  font-size: 1.9rem;
-  line-height: 2.2rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-/* Encabezado de sección (caption en mayúsculas) */
+/* Encabezado de sección (label en mayúsculas) */
 .ios-section-caption {
   font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-label-3);
 }
 
-/* Cursor y feedback en TODO lo interactivo (Tailwind v4 no lo pone por defecto) */
+/* =============================================================================
+   Botones — CBM Quart (mayúsculas, negrita, radios de marca)
+   ============================================================================= */
+.btn {
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 20px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: linear-gradient(180deg, var(--color-sky), var(--color-brand));
+  color: #fff;
+  box-shadow:
+    0 6px 20px -6px rgba(46, 109, 224, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.btn-primary:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+.btn-secondary {
+  background: var(--color-surface-2);
+  color: #fff;
+  border: 1px solid var(--color-brand-strong);
+}
+.btn-secondary:not(:disabled):hover {
+  background: var(--color-brand-strong);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-sky);
+  border: 1px solid #263860;
+}
+.btn-ghost:not(:disabled):hover {
+  background: rgba(76, 155, 238, 0.12);
+}
+
+/* Etiqueta/píldora de estado (uppercase, tinte + color) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* Cursor y feedback en TODO lo interactivo */
 button:not(:disabled),
 [role="button"],
 a[href],
@@ -86,7 +158,7 @@ textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Feedback al pulsar: escala/opacidad. Se aplica a .tap y a botones/links. */
+/* Feedback al pulsar: escala/opacidad. */
 .tap,
 button:not(:disabled),
 a[href],
@@ -95,7 +167,8 @@ a[href],
     transform 0.12s ease,
     opacity 0.12s ease,
     background-color 0.12s ease,
-    border-color 0.12s ease;
+    border-color 0.12s ease,
+    filter 0.12s ease;
 }
 .tap:active,
 button:not(:disabled):active,
@@ -104,7 +177,6 @@ a[href]:active,
   transform: scale(0.98);
   opacity: 0.9;
 }
-/* Hover sutil en dispositivos con puntero */
 @media (hover: hover) {
   a[href]:hover,
   button:not(:disabled):hover {

@@ -229,7 +229,7 @@ export default function LiveMatch({
         <button
           onClick={() => save(true)}
           disabled={saving}
-          className="flex-1 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="btn btn-primary flex-1 py-3.5"
         >
           {saving ? "Guardando…" : "Guardar y finalizar"}
         </button>

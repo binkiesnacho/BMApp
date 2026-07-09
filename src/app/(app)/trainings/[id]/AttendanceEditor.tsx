@@ -86,7 +86,7 @@ export default function AttendanceEditor({
       <button
         onClick={save}
         disabled={saving || players.length === 0}
-        className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        className="btn btn-primary w-full py-3.5"
       >
         {saving ? "Guardando…" : "Guardar asistencia"}
       </button>

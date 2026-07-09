@@ -8,8 +8,8 @@ export function SectionTitle({ children }: { children: React.ReactNode }) {
 /** Contenedor de lista agrupada (inset, esquinas redondeadas). */
 export function ListGroup({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-surface">
-      <ul className="divide-y divide-separator/50">{children}</ul>
+    <div className="overflow-hidden rounded-2xl border border-separator bg-surface shadow-[0_14px_40px_rgba(6,12,30,0.35)]">
+      <ul className="divide-y divide-separator">{children}</ul>
     </div>
   );
 }
@@ -52,7 +52,10 @@ export function ListRow({
   if (href) {
     return (
       <li>
-        <Link href={href} className="tap block active:bg-surface-2">
+        <Link
+          href={href}
+          className="tap block hover:bg-surface-2/60 active:bg-surface-2"
+        >
           {inner}
         </Link>
       </li>

@@ -76,10 +76,7 @@ export default function InstallPrompt() {
         )}
       </div>
       {deferred && (
-        <button
-          onClick={install}
-          className="tap shrink-0 rounded-xl bg-brand px-3 py-2 text-[14px] font-semibold text-white"
-        >
+        <button onClick={install} className="btn btn-primary shrink-0">
           Instalar
         </button>
       )}

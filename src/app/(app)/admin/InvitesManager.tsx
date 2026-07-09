@@ -71,7 +71,7 @@ export default function InvitesManager({
             </option>
           ))}
         </select>
-        <button className="rounded-lg bg-brand px-3 py-1.5 text-[13px] font-semibold text-white">
+        <button className="btn btn-primary text-[11px] !px-3 !py-2">
           Crear
         </button>
       </form>

@@ -62,7 +62,7 @@ export default function AddObservationForm({
         placeholder="Observación (privada del cuerpo técnico)…"
         className={inputCls}
       />
-      <button className="tap w-full rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white">
+      <button className="btn btn-primary w-full">
         Añadir observación
       </button>
     </form>

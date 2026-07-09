@@ -57,10 +57,7 @@ export default async function TrainingsPage() {
   return (
     <Screen title="Entrenamientos">
       {capture && (
-        <Link
-          href="/trainings/new"
-          className="tap mb-4 flex items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-[15px] font-semibold text-white"
-        >
+        <Link href="/trainings/new" className="btn btn-primary mb-4 w-full py-3.5">
           <span className="text-lg leading-none">＋</span> Nuevo entrenamiento
         </Link>
       )}

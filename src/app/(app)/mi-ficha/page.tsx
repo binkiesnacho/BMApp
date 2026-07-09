@@ -234,7 +234,7 @@ async function CoachTab({ profileId, supabase }: { profileId: string; supabase: 
 
       <Link
         href="/trainings/new"
-        className="tap flex items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-[15px] font-semibold text-white"
+        className="btn btn-primary w-full py-3.5"
       >
         <span className="text-lg leading-none">＋</span> Nuevo entrenamiento
       </Link>
@@ -306,7 +306,7 @@ async function TecnicoTab({ teamId, supabase }: { teamId: string | null; supabas
 
       <Link
         href="/trainings/new"
-        className="tap flex items-center justify-center gap-2 rounded-2xl bg-brand px-4 py-3 text-[15px] font-semibold text-white"
+        className="btn btn-primary w-full py-3.5"
       >
         <span className="text-lg leading-none">＋</span> Nuevo entrenamiento
       </Link>

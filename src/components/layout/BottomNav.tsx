@@ -88,10 +88,8 @@ export default function BottomNav({
   ];
 
   return (
-    <nav
-      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-separator/50 bg-canvas/80 backdrop-blur-xl"
-    >
-      <ul className="mx-auto flex max-w-md items-stretch">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-separator bg-[rgba(9,15,34,0.78)] backdrop-blur-xl">
+      <ul className="mx-auto flex max-w-md items-stretch px-1 pt-1">
         {items.map((item, i) => {
           const active =
             "exact" in item && item.exact
@@ -101,11 +99,13 @@ export default function BottomNav({
             <li key={i} className="min-w-0 flex-1">
               <Link
                 href={item.href}
-                className={`flex flex-col items-center gap-0.5 px-0.5 pt-2 pb-1.5 text-[9px] font-medium ${
-                  active ? "text-brand" : "text-label-3"
+                className={`flex flex-col items-center gap-0.5 rounded-lg px-0.5 pt-1.5 pb-1 text-[8px] font-extrabold uppercase tracking-wide ${
+                  active
+                    ? "bg-surface-2/70 text-sky-200 shadow-[inset_0_0_0_1px_var(--color-separator)]"
+                    : "text-label-3"
                 }`}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24">
+                <svg width="23" height="23" viewBox="0 0 24 24">
                   {item.icon({ active })}
                 </svg>
                 <span className="max-w-full truncate">{item.label}</span>

@@ -208,7 +208,7 @@ export default function CreateTrainingForm({
         <button
           onClick={submit}
           disabled={saving}
-          className="flex-1 rounded-xl bg-brand px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="btn btn-primary flex-1"
         >
           {saving ? "Creando…" : "Crear entrenamiento"}
         </button>

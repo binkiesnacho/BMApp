@@ -66,7 +66,7 @@ export default function AddPlayerForm({ teamId }: { teamId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+        className="w-full btn btn-primary"
       >
         {pending ? "Añadiendo…" : "Añadir jugador"}
       </button>

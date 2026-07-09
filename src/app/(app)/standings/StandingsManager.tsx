@@ -74,7 +74,7 @@ function AddForm({ teamId }: { teamId: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="flex-1 rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="btn btn-primary flex-1"
         >
           {pending ? "Guardando…" : "Añadir"}
         </button>
@@ -117,7 +117,7 @@ function RivalRow({ row }: { row: StandingsRow }) {
           <button
             type="submit"
             disabled={pending}
-            className="flex-1 rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="btn btn-primary flex-1"
           >
             {pending ? "Guardando…" : "Guardar"}
           </button>

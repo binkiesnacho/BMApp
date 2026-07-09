@@ -18,10 +18,10 @@ export default function Segmented<T extends string>({
           <button
             key={o.value}
             onClick={() => onChange(o.value)}
-            className={`flex-1 rounded-lg py-1.5 text-[13px] font-semibold transition-colors ${
+            className={`flex-1 rounded-lg py-1.5 text-[12px] font-extrabold uppercase tracking-wide transition-colors ${
               active
-                ? "bg-[#48484a] text-label shadow-sm"
-                : "text-label-2"
+                ? "bg-surface-2 text-sky-200 shadow-[inset_0_0_0_1px_var(--color-separator)]"
+                : "text-label-3"
             }`}
           >
             {o.label}
