@@ -11,7 +11,7 @@ import CourtDrawer from "@/components/court/CourtDrawer";
 export default function PizarraPage() {
   return (
     <Screen title="Pizarra" subtitle="Modo explicación" back="/">
-      <CourtDrawer value={null} onChange={() => {}} />
+      <CourtDrawer value={null} onChange={() => {}} fill />
     </Screen>
   );
 }

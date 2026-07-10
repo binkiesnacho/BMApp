@@ -28,9 +28,12 @@ function toPoints(p: number[]) {
 export default function CourtDrawer({
   value,
   onChange,
+  fill = false,
 }: {
   value?: TrainingDrawing | null;
   onChange: (d: TrainingDrawing | null) => void;
+  /** Ocupa gran parte del alto disponible (modo pizarra a página). */
+  fill?: boolean;
 }) {
   const [court, setCourt] = useState<"full" | "half">(value?.court ?? "full");
   const [strokes, setStrokes] = useState<DrawStroke[]>(value?.strokes ?? []);
@@ -186,25 +189,29 @@ export default function CourtDrawer({
   }
 
   const allStrokes = current ? [...strokes, current] : strokes;
+  const big = fs || fill;
   const btn =
-    "flex min-h-[40px] touch-none items-center justify-center rounded-xl border border-separator px-3 text-label active:scale-95 active:bg-surface-2";
+    "flex h-10 w-10 shrink-0 touch-none items-center justify-center rounded-xl border border-separator text-label active:scale-95 active:bg-surface-2";
+  const iconBtn =
+    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-separator text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40";
 
   return (
     <div
       className={
         fs
           ? "fixed inset-0 z-[70] flex flex-col gap-2 bg-canvas p-3 pt-[calc(env(safe-area-inset-top)+0.6rem)] pb-[calc(env(safe-area-inset-bottom)+0.6rem)]"
-          : "space-y-2"
+          : "flex flex-col gap-2"
       }
     >
+      {/* Barra de herramientas arriba: pista, fichas, deshacer/limpiar y pantalla completa. */}
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <Segmented<"full" | "half">
             value={court}
             onChange={switchCourt}
             options={[
-              { value: "full", label: "Pista completa" },
-              { value: "half", label: "Media pista" },
+              { value: "full", label: "Completa" },
+              { value: "half", label: "Media" },
             ]}
           />
         </div>
@@ -212,7 +219,7 @@ export default function CourtDrawer({
           type="button"
           onClick={() => setFs((v) => !v)}
           aria-label={fs ? "Salir de pantalla completa" : "Pantalla completa"}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-separator text-label active:scale-95 active:bg-surface-2"
+          className={btn}
         >
           {fs ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -226,11 +233,68 @@ export default function CourtDrawer({
         </button>
       </div>
 
+      <div className="flex items-center gap-2">
+        <span className="mr-0.5 text-[11px] text-label-3">Arrastra:</span>
+        <button
+          type="button"
+          aria-label="Atacante (círculo)"
+          onPointerDown={(e) => paletteDown(e, "attacker")}
+          onPointerMove={paletteMove}
+          onPointerUp={paletteUp}
+          className={btn}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          aria-label="Defensor (triángulo)"
+          onPointerDown={(e) => paletteDown(e, "defender")}
+          onPointerMove={paletteMove}
+          onPointerUp={paletteUp}
+          className={btn}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24">
+            <polygon points="12,4 20,19 4,19" fill="none" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        </button>
+        <div className="ml-auto flex gap-2">
+          <button
+            type="button"
+            onClick={undo}
+            disabled={history.length === 0}
+            aria-label="Deshacer"
+            className={iconBtn}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 7 4 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 12h11a5 5 0 0 1 0 10h-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={clearAll}
+            disabled={history.length === 0}
+            aria-label="Limpiar"
+            className={iconBtn}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9l.8-12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {/* El contenedor HTML (no el <svg>) es quien iOS respeta para touch-action. */}
       <div
         ref={wrapRef}
         className={`touch-none select-none ${
-          fs ? "grid min-h-0 flex-1 place-items-center" : ""
+          fs
+            ? "grid min-h-0 flex-1 place-items-center"
+            : fill
+              ? "grid h-[64dvh] place-items-center"
+              : ""
         }`}
         style={{ touchAction: "none", WebkitUserSelect: "none" }}
       >
@@ -238,7 +302,7 @@ export default function CourtDrawer({
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        className={`touch-none select-none rounded-xl ${fs ? "h-full w-full" : "w-full"}`}
+        className={`touch-none select-none rounded-xl ${big ? "h-full w-full" : "w-full"}`}
         style={{
           display: "block",
           cursor: "crosshair",
@@ -276,66 +340,6 @@ export default function CourtDrawer({
         )}
       </svg>
       </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-label-3">Arrastra:</span>
-        <button
-          type="button"
-          aria-label="Atacante"
-          onPointerDown={(e) => paletteDown(e, "attacker")}
-          onPointerMove={paletteMove}
-          onPointerUp={paletteUp}
-          className={btn}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          aria-label="Defensor"
-          onPointerDown={(e) => paletteDown(e, "defender")}
-          onPointerMove={paletteMove}
-          onPointerUp={paletteUp}
-          className={btn}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24">
-            <polygon points="12,4 20,19 4,19" fill="none" stroke="currentColor" strokeWidth="2" />
-          </svg>
-        </button>
-        <div className="ml-auto flex gap-2">
-          <button
-            type="button"
-            onClick={undo}
-            disabled={history.length === 0}
-            aria-label="Deshacer"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-separator text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M9 7 4 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M4 12h11a5 5 0 0 1 0 10h-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={clearAll}
-            disabled={history.length === 0}
-            aria-label="Limpiar"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-separator text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9l.8-12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {!fs && (
-        <p className="text-[11px] text-label-3">
-          Círculo = atacante, triángulo = defensor. Arrástralos a la pista y
-          muévelos; dibuja líneas con el dedo.
-        </p>
-      )}
     </div>
   );
 }
