@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyTeams, getSessionProfile, isStaff } from "@/lib/auth";
 import { buildStandings } from "@/lib/standings";
 import { EditIcon } from "@/components/ui/icons";
-import TeamSelect from "./TeamSelect";
+import FilterPills from "@/components/ui/FilterPills";
 import type { Match, StandingsRow, Team } from "@/lib/types/database";
 
 export const metadata = { title: "Clasificación" };
@@ -79,11 +79,12 @@ export default async function StandingsPage({
         ) : undefined
       }
     >
-      {teamOptions.length > 1 && (
-        <div className="mb-4">
-          <TeamSelect teams={teamOptions} value={teamValue} />
-        </div>
-      )}
+      <FilterPills
+        options={teamOptions.map((t) => ({ value: t.id, label: t.name }))}
+        value={teamValue}
+        ariaLabel="Filtrar por equipo"
+        hrefFor={(v) => `/standings?team=${v}`}
+      />
 
       <div className="no-scrollbar overflow-x-auto rounded-2xl bg-surface">
         <table className="w-full text-[14px]">

@@ -1,13 +1,8 @@
-"use client";
-
-import Link from "next/link";
+import FilterPills from "@/components/ui/FilterPills";
 
 type Opt = { id: string; name: string };
 
-/**
- * Filtro por equipo del calendario (pastillas con scroll horizontal).
- * Conserva la pestaña activa (`tab`) al cambiar de equipo.
- */
+/** Filtro por equipo del calendario. Conserva la pestaña activa (`tab`). */
 export default function MatchTeamFilter({
   teams,
   value,
@@ -19,31 +14,16 @@ export default function MatchTeamFilter({
   tab: string;
   showAll: boolean;
 }) {
-  const pills: Opt[] = [
-    ...teams,
-    ...(showAll ? [{ id: "all", name: "Todos" }] : []),
+  const options = [
+    ...teams.map((t) => ({ value: t.id, label: t.name })),
+    ...(showAll ? [{ value: "all", label: "Todos" }] : []),
   ];
-  if (pills.length <= 1) return null;
-
   return (
-    <div className="no-scrollbar -mx-4 mb-3 flex gap-2 overflow-x-auto px-4">
-      {pills.map((o) => {
-        const active = o.id === value;
-        return (
-          <Link
-            key={o.id}
-            href={`/matches?team=${o.id}&tab=${tab}`}
-            scroll={false}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium ${
-              active
-                ? "bg-brand text-white"
-                : "bg-surface-2 text-label-2"
-            }`}
-          >
-            {o.name}
-          </Link>
-        );
-      })}
-    </div>
+    <FilterPills
+      options={options}
+      value={value}
+      ariaLabel="Filtrar por equipo"
+      hrefFor={(v) => `/matches?team=${v}&tab=${tab}`}
+    />
   );
 }

@@ -1,34 +1,34 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import RoleTags from "@/components/ui/RoleTags";
+import FilterPills from "@/components/ui/FilterPills";
 import { createClient } from "@/lib/supabase/server";
-import {
-  canAdminister,
-  getSessionProfile,
-  isStaff,
-  rolesOf,
-} from "@/lib/auth";
-import {
-  addMemberRoleAction,
-  removeMemberAction,
-  removeMemberRoleAction,
-} from "../actions";
+import { getSessionProfile, isStaff, rolesOf } from "@/lib/auth";
 import type { Profile, Team, UserRole } from "@/lib/types/database";
 
 export const metadata = { title: "Miembros" };
 
-const ROLE_LABEL: Record<UserRole, string> = {
-  admin: "Admin",
-  coach: "Entrenador",
-  tecnico: "Técnico",
-  player: "Jugador",
-};
+const ROLE_FILTERS: { value: string; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "admin", label: "Admin" },
+  { value: "coach", label: "Entrenador" },
+  { value: "tecnico", label: "Técnico" },
+  { value: "player", label: "Jugador" },
+];
 
-export default async function MembersPage() {
+export default async function MembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; team?: string }>;
+}) {
+  const { role: roleParam, team: teamParam } = await searchParams;
   const { profile } = await getSessionProfile();
   if (!profile?.club_id) redirect("/onboarding");
   if (!isStaff(profile)) redirect("/");
-  const isAdmin = canAdminister(profile);
+
+  const roleValue = roleParam ?? "all";
+  const teamValue = teamParam ?? "all";
 
   const supabase = await createClient();
   const [{ data: members }, { data: teams }] = await Promise.all([
@@ -36,102 +36,113 @@ export default async function MembersPage() {
       .from("profiles")
       .select("*")
       .eq("club_id", profile.club_id)
-      .order("created_at", { ascending: true })
+      .order("name", { ascending: true })
       .returns<Profile[]>(),
     supabase
       .from("teams")
-      .select("*")
+      .select("id, name")
       .eq("club_id", profile.club_id)
-      .returns<Team[]>(),
+      .order("name", { ascending: true })
+      .returns<Pick<Team, "id" | "name">[]>(),
   ]);
 
-  const teamName = (id: string | null) => teams?.find((t) => t.id === id)?.name;
-  // Roles que este staff puede asignar: admin todos; entrenador solo player/tecnico.
-  const assignable: UserRole[] = isAdmin
-    ? ["admin", "coach", "tecnico", "player"]
-    : ["tecnico", "player"];
+  const teamIds = (teams ?? []).map((t) => t.id);
+  const [{ data: coachRows }, { data: playerRows }] = await Promise.all([
+    teamIds.length
+      ? supabase
+          .from("team_coaches")
+          .select("team_id, profile_id")
+          .in("team_id", teamIds)
+          .returns<{ team_id: string; profile_id: string }[]>()
+      : Promise.resolve({ data: [] as { team_id: string; profile_id: string }[] }),
+    teamIds.length
+      ? supabase
+          .from("players")
+          .select("team_id, profile_id")
+          .in("team_id", teamIds)
+          .not("profile_id", "is", null)
+          .returns<{ team_id: string; profile_id: string }[]>()
+      : Promise.resolve({ data: [] as { team_id: string; profile_id: string }[] }),
+  ]);
+
+  // Mapa persona -> equipos (como jugador o entrenador).
+  const teamsByMember = new Map<string, Set<string>>();
+  const add = (pid: string, tid: string) => {
+    if (!teamsByMember.has(pid)) teamsByMember.set(pid, new Set());
+    teamsByMember.get(pid)!.add(tid);
+  };
+  (coachRows ?? []).forEach((r) => add(r.profile_id, r.team_id));
+  (playerRows ?? []).forEach((r) => add(r.profile_id, r.team_id));
+  const teamName = (tid: string) =>
+    (teams ?? []).find((t) => t.id === tid)?.name ?? "Equipo";
+
+  const filtered = (members ?? []).filter((m) => {
+    if (roleValue !== "all" && !rolesOf(m).includes(roleValue as UserRole))
+      return false;
+    if (teamValue !== "all" && !teamsByMember.get(m.id)?.has(teamValue))
+      return false;
+    return true;
+  });
+
+  const teamOptions = [
+    { value: "all", label: "Todos" },
+    ...(teams ?? []).map((t) => ({ value: t.id, label: t.name })),
+  ];
 
   return (
-    <Screen title="Miembros" subtitle={`${members?.length ?? 0} personas`} back="/admin">
-      <ul className="space-y-2">
-        {members?.map((m) => {
-          const memberRoles = rolesOf(m);
-          const isSelf = m.id === profile.id;
-          const hasTeam =
-            memberRoles.includes("player") || memberRoles.includes("tecnico");
-          // El coach solo gestiona a quien NO sea admin/entrenador.
-          const canManage =
-            isAdmin ||
-            (!memberRoles.includes("admin") && !memberRoles.includes("coach"));
+    <Screen
+      title="Miembros"
+      subtitle={`${filtered.length} de ${members?.length ?? 0}`}
+      back="/admin"
+    >
+      <FilterPills
+        options={ROLE_FILTERS}
+        value={roleValue}
+        ariaLabel="Filtrar por rol"
+        hrefFor={(v) => `/admin/members?role=${v}&team=${teamValue}`}
+      />
+      <FilterPills
+        options={teamOptions}
+        value={teamValue}
+        ariaLabel="Filtrar por equipo"
+        hrefFor={(v) => `/admin/members?role=${roleValue}&team=${v}`}
+      />
 
+      <ul className="mt-1 space-y-2">
+        {filtered.map((m) => {
+          const memberTeams = [...(teamsByMember.get(m.id) ?? [])];
           return (
-            <li key={m.id} className="space-y-2 rounded-2xl bg-surface px-3 py-2.5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
+            <li key={m.id}>
+              <Link
+                href={`/miembros/${m.id}`}
+                className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 transition active:scale-[0.99] active:bg-surface-2"
+              >
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-medium text-label">
-                    {m.name || "(sin nombre)"} {isSelf && "· tú"}
+                    {m.name || "(sin nombre)"}
+                    {m.id === profile.id && " · tú"}
                   </p>
                   <div className="mt-1">
-                    <RoleTags roles={memberRoles} superadmin={m.is_superadmin} />
+                    <RoleTags roles={rolesOf(m)} superadmin={m.is_superadmin} />
                   </div>
-                  {hasTeam && (
-                    <p className="mt-1 text-[12px] text-label-3">
-                      Equipo: {teamName(m.team_id) ?? "sin asignar"}
+                  {memberTeams.length > 0 && (
+                    <p className="mt-1 truncate text-[12px] text-label-3">
+                      {memberTeams.map(teamName).join(" · ")}
                     </p>
                   )}
                 </div>
-                {!isSelf && isAdmin && (
-                  <form action={removeMemberAction}>
-                    <input type="hidden" name="memberId" value={m.id} />
-                    <button
-                      className="rounded-lg px-2 py-1 text-xs text-label-3 hover:text-negative"
-                      aria-label={`Expulsar ${m.name}`}
-                    >
-                      ✕
-                    </button>
-                  </form>
-                )}
-              </div>
-
-              {canManage && (
-                <>
-                  {/* Toggles de rol */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {assignable.map((r) => {
-                      const active = memberRoles.includes(r);
-                      const disabledSelf = isSelf && r === "admin" && active;
-                      return (
-                        <form
-                          key={r}
-                          action={active ? removeMemberRoleAction : addMemberRoleAction}
-                        >
-                          <input type="hidden" name="memberId" value={m.id} />
-                          <input type="hidden" name="role" value={r} />
-                          <button
-                            disabled={disabledSelf}
-                            className={`rounded-full px-2.5 py-1 text-[12px] font-medium disabled:opacity-40 ${
-                              active
-                                ? "bg-brand text-white"
-                                : "bg-surface-2 text-label-2"
-                            }`}
-                          >
-                            {active ? "✓ " : "+ "}
-                            {ROLE_LABEL[r]}
-                          </button>
-                        </form>
-                      );
-                    })}
-                  </div>
-
-                  <p className="text-[11px] text-label-3">
-                    La pertenencia a equipos se gestiona desde el equipo o la
-                    ficha del jugador.
-                  </p>
-                </>
-              )}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-label-3">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
             </li>
           );
         })}
+        {filtered.length === 0 && (
+          <li className="rounded-2xl border border-dashed border-separator/70 p-6 text-center text-[13px] text-label-3">
+            No hay miembros para ese filtro.
+          </li>
+        )}
       </ul>
     </Screen>
   );
