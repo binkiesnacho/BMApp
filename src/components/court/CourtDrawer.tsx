@@ -72,8 +72,14 @@ export default function CourtDrawer({
 
   function toCourt(clientX: number, clientY: number) {
     const r = svgRef.current!.getBoundingClientRect();
-    const x = Math.min(Math.max(((clientX - r.left) / r.width) * W, 0), W);
-    const y = Math.min(Math.max(((clientY - r.top) / r.height) * H, 0), H);
+    // El SVG puede tener "letterbox" (preserveAspectRatio) cuando llena un
+    // contenedor de otra proporción (p. ej. en pantalla completa): mapeamos
+    // teniendo en cuenta la escala y los márgenes reales de la pista.
+    const scale = Math.min(r.width / W, r.height / H);
+    const offX = (r.width - W * scale) / 2;
+    const offY = (r.height - H * scale) / 2;
+    const x = Math.min(Math.max((clientX - r.left - offX) / scale, 0), W);
+    const y = Math.min(Math.max((clientY - r.top - offY) / scale, 0), H);
     return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
   }
   function inside(clientX: number, clientY: number) {
@@ -231,7 +237,8 @@ export default function CourtDrawer({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        className={`touch-none select-none rounded-xl ${fs ? "max-h-full w-full" : "w-full"}`}
+        preserveAspectRatio="xMidYMid meet"
+        className={`touch-none select-none rounded-xl ${fs ? "h-full w-full" : "w-full"}`}
         style={{
           display: "block",
           cursor: "crosshair",
@@ -301,17 +308,24 @@ export default function CourtDrawer({
             type="button"
             onClick={undo}
             disabled={history.length === 0}
-            className="min-h-[40px] rounded-xl border border-separator px-3 text-sm text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
+            aria-label="Deshacer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-separator text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
           >
-            Deshacer
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 7 4 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 12h11a5 5 0 0 1 0 10h-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
           <button
             type="button"
             onClick={clearAll}
             disabled={history.length === 0}
-            className="min-h-[40px] rounded-xl border border-separator px-3 text-sm text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
+            aria-label="Limpiar"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-separator text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
           >
-            Limpiar
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9l.8-12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </div>
       </div>

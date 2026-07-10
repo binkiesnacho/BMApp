@@ -9,7 +9,7 @@ import {
   getMyTeams,
   getSessionProfile,
 } from "@/lib/auth";
-import type { Player, Team } from "@/lib/types/database";
+import type { Team } from "@/lib/types/database";
 
 export const metadata = { title: "Equipo" };
 
@@ -25,15 +25,11 @@ export default async function TeamHubPage({
   ]);
   const supabase = await createClient();
 
-  const [{ data: team }, { data: ficha }] = await Promise.all([
-    supabase.from("teams").select("*").eq("id", id).maybeSingle<Team>(),
-    supabase
-      .from("players")
-      .select("id")
-      .eq("team_id", id)
-      .eq("profile_id", profile?.id ?? "")
-      .maybeSingle<Pick<Player, "id">>(),
-  ]);
+  const { data: team } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle<Team>();
   if (!team) notFound();
 
   // Solo mostramos "Atrás → Equipos" si el usuario tiene varios equipos.
@@ -82,14 +78,6 @@ export default async function TeamHubPage({
             title="Faltas"
             subtitle="Ausencias por jugador"
             icon="🚫"
-          />
-        )}
-        {ficha && (
-          <Tile
-            href="/mi-ficha"
-            title="Mi ficha"
-            subtitle="Tus estadísticas y faltas"
-            icon="⭐"
           />
         )}
       </TileGrid>

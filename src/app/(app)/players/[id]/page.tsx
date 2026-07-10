@@ -1,16 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { createClient } from "@/lib/supabase/server";
 import {
-  canAdminister,
   canManageTeam,
   getMyCoachTeamIds,
   getSessionProfile,
 } from "@/lib/auth";
 import { loadObservations } from "@/lib/observations";
 import ObservationsSection from "../../observations/ObservationsSection";
-import MembershipToggle from "@/components/admin/MembershipToggle";
 import { EVENT_LABELS } from "@/lib/events";
 import { shootingAccuracy, savePercentage, type EventCounts } from "@/lib/stats";
 import type {
@@ -84,35 +83,9 @@ export default async function PlayerPage({
     ? await loadObservations(supabase, { playerId: id })
     : [];
 
-  // Gestión de equipos de esta persona (solo admin y si la ficha está vinculada).
-  const isAdmin = canAdminister(profile);
-  const linkedProfileId = player.profile_id; // const local: el narrowing persiste en el map
-  let teamRows: { id: string; name: string }[] = [];
-  let coachSet = new Set<string>();
-  let playerSet = new Set<string>();
-  if (isAdmin && linkedProfileId && team?.club_id) {
-    const [{ data: allTeams }, { data: tc }, { data: pl }] = await Promise.all([
-      supabase
-        .from("teams")
-        .select("id, name")
-        .eq("club_id", team.club_id)
-        .order("name", { ascending: true })
-        .returns<{ id: string; name: string }[]>(),
-      supabase
-        .from("team_coaches")
-        .select("team_id")
-        .eq("profile_id", linkedProfileId)
-        .returns<{ team_id: string }[]>(),
-      supabase
-        .from("players")
-        .select("team_id")
-        .eq("profile_id", linkedProfileId)
-        .returns<{ team_id: string }[]>(),
-    ]);
-    teamRows = allTeams ?? [];
-    coachSet = new Set((tc ?? []).map((r) => r.team_id));
-    playerSet = new Set((pl ?? []).map((r) => r.team_id));
-  }
+  // Si la ficha está vinculada a una cuenta, se puede abrir la ficha completa
+  // (todos sus equipos, roles y, para admin, su gestión) en /miembros.
+  const linkedProfileId = player.profile_id;
 
   const c: EventCounts = {};
   for (const e of events ?? []) c[e.event_type] = (c[e.event_type] ?? 0) + 1;
@@ -188,32 +161,17 @@ export default async function PlayerPage({
         />
       </ListGroup>
 
-      {/* Gestión de equipos de esta persona (admin) */}
-      {isAdmin && linkedProfileId && teamRows.length > 0 && (
-        <>
-          <div className="mt-5 mb-1.5 px-1">
-            <span className="ios-section-caption">Equipos</span>
-          </div>
-          <ul className="space-y-2">
-            {teamRows.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-center justify-between gap-2 rounded-2xl bg-surface px-3 py-2.5"
-              >
-                <span className="min-w-0 truncate text-[14px] text-label">
-                  {t.name}
-                </span>
-                <MembershipToggle
-                  teamId={t.id}
-                  profileId={linkedProfileId}
-                  isCoach={coachSet.has(t.id)}
-                  isPlayer={playerSet.has(t.id)}
-                  canAssignCoach
-                />
-              </li>
-            ))}
-          </ul>
-        </>
+      {/* Enlace a la ficha completa de la persona (roles, equipos y gestión) */}
+      {linkedProfileId && (
+        <Link
+          href={`/miembros/${linkedProfileId}`}
+          className="mt-5 flex items-center justify-between gap-2 rounded-2xl bg-surface px-4 py-3.5 transition active:scale-[0.99] active:bg-surface-2"
+        >
+          <span className="text-[15px] font-medium text-label">Ver ficha completa</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-label-3">
+            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
       )}
 
       {/* Observaciones del cuerpo técnico sobre el jugador (con su origen) */}

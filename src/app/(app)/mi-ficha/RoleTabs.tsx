@@ -10,13 +10,15 @@ const LABEL: Record<string, string> = {
   tecnico: "Técnico",
 };
 
-/** Tabs de "Mi ficha" según los roles del usuario. Navega con ?tab=. */
+/** Tabs de ficha según los roles de la persona. Navega con ?tab= sobre basePath. */
 export default function RoleTabs({
   available,
   value,
+  basePath = "/mi-ficha",
 }: {
   available: UserRole[];
   value: UserRole;
+  basePath?: string;
 }) {
   const router = useRouter();
   if (available.length < 2) return null;
@@ -24,7 +26,7 @@ export default function RoleTabs({
     <div className="mb-4">
       <Segmented<UserRole>
         value={value}
-        onChange={(v) => router.push(`/mi-ficha?tab=${v}`, { scroll: false })}
+        onChange={(v) => router.push(`${basePath}?tab=${v}`, { scroll: false })}
         options={available.map((r) => ({ value: r, label: LABEL[r] ?? r }))}
       />
     </div>

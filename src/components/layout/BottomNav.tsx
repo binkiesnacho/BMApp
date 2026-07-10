@@ -102,7 +102,7 @@ export default function BottomNav({
   const svg = big ? 27 : 23;
 
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)]">
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.15rem)]">
       <ul
         className={`pointer-events-auto flex items-center rounded-full border border-separator/70 bg-[rgba(15,26,56,0.82)] py-2 shadow-[0_12px_40px_rgba(4,10,28,0.6)] backdrop-blur-xl ${
           big ? "gap-1 px-2" : "gap-0.5 px-1.5"
