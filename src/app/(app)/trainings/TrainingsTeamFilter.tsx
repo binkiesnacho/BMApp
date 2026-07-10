@@ -15,13 +15,8 @@ export default function TrainingsTeamFilter({
   const options = [
     ...(showAll ? [{ value: "all", label: "Todos" }] : []),
     ...teams.map((t) => ({ value: t.id, label: t.name })),
-  ];
+  ].map((o) => ({ ...o, href: `/trainings?team=${o.value}` }));
   return (
-    <FilterPills
-      options={options}
-      value={value}
-      ariaLabel="Filtrar por equipo"
-      hrefFor={(v) => `/trainings?team=${v}`}
-    />
+    <FilterPills options={options} value={value} ariaLabel="Filtrar por equipo" />
   );
 }

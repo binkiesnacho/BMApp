@@ -96,16 +96,20 @@ export default async function MembersPage({
       back="/admin"
     >
       <FilterPills
-        options={ROLE_FILTERS}
+        options={ROLE_FILTERS.map((o) => ({
+          ...o,
+          href: `/admin/members?role=${o.value}&team=${teamValue}`,
+        }))}
         value={roleValue}
         ariaLabel="Filtrar por rol"
-        hrefFor={(v) => `/admin/members?role=${v}&team=${teamValue}`}
       />
       <FilterPills
-        options={teamOptions}
+        options={teamOptions.map((o) => ({
+          ...o,
+          href: `/admin/members?role=${roleValue}&team=${o.value}`,
+        }))}
         value={teamValue}
         ariaLabel="Filtrar por equipo"
-        hrefFor={(v) => `/admin/members?role=${roleValue}&team=${v}`}
       />
 
       <ul className="mt-1 space-y-2">

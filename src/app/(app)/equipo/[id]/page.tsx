@@ -86,7 +86,7 @@ export default async function TeamHubPage({
         )}
         {ficha && (
           <Tile
-            href={`/players/${ficha.id}`}
+            href="/mi-ficha"
             title="Mi ficha"
             subtitle="Tus estadísticas y faltas"
             icon="⭐"

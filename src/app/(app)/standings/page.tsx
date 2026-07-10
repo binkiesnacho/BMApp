@@ -80,10 +80,13 @@ export default async function StandingsPage({
       }
     >
       <FilterPills
-        options={teamOptions.map((t) => ({ value: t.id, label: t.name }))}
+        options={teamOptions.map((t) => ({
+          value: t.id,
+          label: t.name,
+          href: `/standings?team=${t.id}`,
+        }))}
         value={teamValue}
         ariaLabel="Filtrar por equipo"
-        hrefFor={(v) => `/standings?team=${v}`}
       />
 
       <div className="no-scrollbar overflow-x-auto rounded-2xl bg-surface">

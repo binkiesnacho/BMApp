@@ -17,13 +17,8 @@ export default function MatchTeamFilter({
   const options = [
     ...teams.map((t) => ({ value: t.id, label: t.name })),
     ...(showAll ? [{ value: "all", label: "Todos" }] : []),
-  ];
+  ].map((o) => ({ ...o, href: `/matches?team=${o.value}&tab=${tab}` }));
   return (
-    <FilterPills
-      options={options}
-      value={value}
-      ariaLabel="Filtrar por equipo"
-      hrefFor={(v) => `/matches?team=${v}&tab=${tab}`}
-    />
+    <FilterPills options={options} value={value} ariaLabel="Filtrar por equipo" />
   );
 }
