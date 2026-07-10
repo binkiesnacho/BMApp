@@ -69,6 +69,7 @@ export default async function MatchesPage({
       subtitle={
         teamValue === "all" ? "Todos los equipos" : teamName(teamValue)
       }
+      back={teamValue === "all" ? "/" : `/equipo/${teamValue}`}
       action={
         staff ? (
           <Link href="/matches/new" className="btn btn-primary w-full py-3.5">

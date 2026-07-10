@@ -86,6 +86,7 @@ export default async function TrainingsPage({
     <Screen
       title="Entrenamientos"
       subtitle={teamName(teamValue)}
+      back={`/equipo/${teamValue}`}
       action={
         capture ? (
           <Link href="/trainings/new" className="btn btn-primary w-full py-3.5">

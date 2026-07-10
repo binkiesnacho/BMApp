@@ -67,6 +67,7 @@ export default async function StandingsPage({
     <Screen
       title="Clasificación"
       subtitle={team.name}
+      back={`/equipo/${team.id}`}
       action={
         canEdit ? (
           <Link

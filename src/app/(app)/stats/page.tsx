@@ -90,7 +90,11 @@ export default async function StatsPage({
       : teamOptions.find((t) => t.id === teamValue)?.name;
 
   return (
-    <Screen title="Estadísticas" subtitle={teamSubtitle}>
+    <Screen
+      title="Estadísticas"
+      subtitle={teamSubtitle}
+      back={teamValue === "all" ? "/" : `/equipo/${teamValue}`}
+    >
       <StatsFilters
         teams={teamOptions}
         teamValue={teamValue}

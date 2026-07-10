@@ -76,26 +76,23 @@ const Icon = {
 
 export default function BottomNav({
   fichaHref,
-  statsHref,
   pizarra = false,
 }: {
   fichaHref: string;
-  statsHref: string;
   pizarra?: boolean;
 }) {
   const pathname = usePathname();
 
   // `activePath` es el prefijo de pathname (sin query) que marca la pestaña activa.
+  // Nav mínimo: el resto de funciones vive dentro del equipo. Calendario,
+  // entrenos y estadísticas se abren desde el hub del equipo.
   const items = [
     { href: "/", label: "Inicio", icon: Icon.home, activePath: "/", exact: true },
     { href: fichaHref, label: "Mi ficha", icon: Icon.ficha, activePath: "/mi-ficha" },
-    { href: "/equipo", label: "Equipo", icon: Icon.equipo, activePath: "/equipo" },
-    { href: "/matches", label: "Calendario", icon: Icon.calendar, activePath: "/matches" },
-    { href: "/trainings", label: "Entrenos", icon: Icon.trainings, activePath: "/trainings" },
+    { href: "/equipo", label: "Equipos", icon: Icon.equipo, activePath: "/equipo" },
     ...(pizarra
       ? [{ href: "/pizarra", label: "Pizarra", icon: Icon.pizarra, activePath: "/pizarra" }]
       : []),
-    { href: statsHref, label: "Estadísticas", icon: Icon.stats, activePath: "/stats" },
   ];
 
   // Con 7 ítems (cuerpo técnico ve la pizarra) reducimos el tamaño para que la

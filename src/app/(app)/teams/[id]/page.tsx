@@ -39,7 +39,7 @@ export default async function TeamDetailPage({
     <Screen
       title={team.name}
       subtitle={`${players?.length ?? 0} jugadores`}
-      back="/teams"
+      back={`/equipo/${team.id}`}
       action={
         canEdit ? (
           <Link

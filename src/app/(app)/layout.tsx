@@ -18,11 +18,7 @@ export default async function AppLayout({
     <div className="relative mx-auto min-h-dvh max-w-md">
       {children}
       <InstallPrompt />
-      <BottomNav
-        fichaHref="/mi-ficha"
-        statsHref="/stats"
-        pizarra={canCapture(profile)}
-      />
+      <BottomNav fichaHref="/mi-ficha" pizarra={canCapture(profile)} />
     </div>
   );
 }

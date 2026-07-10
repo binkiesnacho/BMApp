@@ -25,22 +25,25 @@ export default function Screen({
     <>
       <header className="sticky top-0 z-30 border-b border-separator/40 bg-canvas/70 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+1.25rem)] backdrop-blur-xl">
         {(back || trailing) && (
-          <div className="flex h-8 items-center justify-between">
+          <div className="flex min-h-[44px] items-center justify-between gap-2">
             <div className="text-[15px] font-medium text-brand">{trailing}</div>
             {back ? (
               <Link
                 href={back}
-                className="tap ml-auto inline-flex items-center gap-1 rounded-full border border-separator bg-surface px-3 py-1.5 text-[13px] font-semibold text-white shadow-[0_4px_14px_rgba(6,12,30,0.3)] hover:bg-surface-2"
+                aria-label="Atrás"
+                className="group ml-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl border border-separator bg-surface py-1.5 pl-1.5 pr-4 text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(6,12,30,0.35)] transition-[transform,background-color,border-color] duration-150 ease-out hover:border-brand/50 hover:bg-surface-2 active:scale-[0.96] active:bg-brand/20"
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" className="-ml-0.5">
-                  <path
-                    d="M15 18l-6-6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand/15 text-sky-200 transition-colors group-active:bg-brand group-active:text-white">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M15 18l-6-6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
                 Atrás
               </Link>
             ) : null}
