@@ -191,9 +191,9 @@ export default function CourtDrawer({
   const allStrokes = current ? [...strokes, current] : strokes;
   const big = fs || fill;
   const btn =
-    "flex h-10 w-10 shrink-0 touch-none items-center justify-center rounded-xl border border-separator text-label active:scale-95 active:bg-surface-2";
+    "flex h-11 w-10 shrink-0 touch-none items-center justify-center rounded-xl border border-separator text-label active:scale-95 active:bg-surface-2";
   const iconBtn =
-    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-separator text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40";
+    "flex h-11 w-10 shrink-0 items-center justify-center rounded-xl border border-separator text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40";
 
   return (
     <div
@@ -203,9 +203,9 @@ export default function CourtDrawer({
           : "flex flex-col gap-2"
       }
     >
-      {/* Barra de herramientas arriba: pista, fichas, deshacer/limpiar y pantalla completa. */}
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
+      {/* Barra de herramientas (una fila): pista, fichas, historial y pantalla completa. */}
+      <div className="flex items-center gap-1.5">
+        <div className="min-w-0 shrink">
           <Segmented<"full" | "half">
             value={court}
             onChange={switchCourt}
@@ -215,26 +215,7 @@ export default function CourtDrawer({
             ]}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setFs((v) => !v)}
-          aria-label={fs ? "Salir de pantalla completa" : "Pantalla completa"}
-          className={btn}
-        >
-          {fs ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="mr-0.5 text-[11px] text-label-3">Arrastra:</span>
+        <span aria-hidden className="mx-0.5 h-6 w-px shrink-0 bg-separator" />
         <button
           type="button"
           aria-label="Atacante (círculo)"
@@ -259,31 +240,45 @@ export default function CourtDrawer({
             <polygon points="12,4 20,19 4,19" fill="none" stroke="currentColor" strokeWidth="2" />
           </svg>
         </button>
-        <div className="ml-auto flex gap-2">
-          <button
-            type="button"
-            onClick={undo}
-            disabled={history.length === 0}
-            aria-label="Deshacer"
-            className={iconBtn}
-          >
+        <button
+          type="button"
+          onClick={undo}
+          disabled={history.length === 0}
+          aria-label="Deshacer"
+          className={iconBtn}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M9 7 4 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M4 12h11a5 5 0 0 1 0 10h-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={clearAll}
+          disabled={history.length === 0}
+          aria-label="Limpiar"
+          className={iconBtn}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9l.8-12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => setFs((v) => !v)}
+          aria-label={fs ? "Salir de pantalla completa" : "Pantalla completa"}
+          className={btn}
+        >
+          {fs ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M9 7 4 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M4 12h11a5 5 0 0 1 0 10h-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
-          <button
-            type="button"
-            onClick={clearAll}
-            disabled={history.length === 0}
-            aria-label="Limpiar"
-            className={iconBtn}
-          >
+          ) : (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9l.8-12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
-        </div>
+          )}
+        </button>
       </div>
 
       {/* El contenedor HTML (no el <svg>) es quien iOS respeta para touch-action. */}
