@@ -42,6 +42,8 @@ export default function CourtDrawer({
     ...(value?.tokens ?? []).map(() => "t" as const),
   ]);
 
+  const [fs, setFs] = useState(false);
+
   const svgRef = useRef<SVGSVGElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const currentRef = useRef<DrawStroke | null>(null);
@@ -179,29 +181,57 @@ export default function CourtDrawer({
 
   const allStrokes = current ? [...strokes, current] : strokes;
   const btn =
-    "touch-none rounded-lg border border-separator px-2 py-1 text-label";
+    "flex min-h-[40px] touch-none items-center justify-center rounded-xl border border-separator px-3 text-label active:scale-95 active:bg-surface-2";
 
   return (
-    <div className="space-y-2">
-      <Segmented<"full" | "half">
-        value={court}
-        onChange={switchCourt}
-        options={[
-          { value: "full", label: "Pista completa" },
-          { value: "half", label: "Media pista" },
-        ]}
-      />
+    <div
+      className={
+        fs
+          ? "fixed inset-0 z-[70] flex flex-col gap-2 bg-canvas p-3 pt-[calc(env(safe-area-inset-top)+0.6rem)] pb-[calc(env(safe-area-inset-bottom)+0.6rem)]"
+          : "space-y-2"
+      }
+    >
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <Segmented<"full" | "half">
+            value={court}
+            onChange={switchCourt}
+            options={[
+              { value: "full", label: "Pista completa" },
+              { value: "half", label: "Media pista" },
+            ]}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setFs((v) => !v)}
+          aria-label={fs ? "Salir de pantalla completa" : "Pantalla completa"}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-separator text-label active:scale-95 active:bg-surface-2"
+        >
+          {fs ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
+      </div>
 
       {/* El contenedor HTML (no el <svg>) es quien iOS respeta para touch-action. */}
       <div
         ref={wrapRef}
-        className="touch-none select-none"
+        className={`touch-none select-none ${
+          fs ? "grid min-h-0 flex-1 place-items-center" : ""
+        }`}
         style={{ touchAction: "none", WebkitUserSelect: "none" }}
       >
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full touch-none select-none rounded-xl"
+        className={`touch-none select-none rounded-xl ${fs ? "max-h-full w-full" : "w-full"}`}
         style={{
           display: "block",
           cursor: "crosshair",
@@ -271,7 +301,7 @@ export default function CourtDrawer({
             type="button"
             onClick={undo}
             disabled={history.length === 0}
-            className="rounded-lg border border-separator px-2.5 py-1 text-xs text-label disabled:opacity-40"
+            className="min-h-[40px] rounded-xl border border-separator px-3 text-sm text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
           >
             Deshacer
           </button>
@@ -279,17 +309,19 @@ export default function CourtDrawer({
             type="button"
             onClick={clearAll}
             disabled={history.length === 0}
-            className="rounded-lg border border-separator px-2.5 py-1 text-xs text-label disabled:opacity-40"
+            className="min-h-[40px] rounded-xl border border-separator px-3 text-sm text-label transition active:scale-95 active:bg-surface-2 disabled:opacity-40"
           >
             Limpiar
           </button>
         </div>
       </div>
 
-      <p className="text-[11px] text-label-3">
-        Círculo = atacante, triángulo = defensor. Arrástralos a la pista y muévelos;
-        dibuja líneas con el dedo.
-      </p>
+      {!fs && (
+        <p className="text-[11px] text-label-3">
+          Círculo = atacante, triángulo = defensor. Arrástralos a la pista y
+          muévelos; dibuja líneas con el dedo.
+        </p>
+      )}
     </div>
   );
 }
