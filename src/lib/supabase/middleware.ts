@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
   const hasSession = Boolean(claims?.claims?.sub);
 
   // Rutas públicas (no requieren sesión)
-  const publicPaths = ["/login", "/auth"];
+  const publicPaths = ["/login", "/auth", "/reset-password"];
   const isPublic = publicPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p)
   );

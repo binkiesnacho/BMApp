@@ -59,6 +59,27 @@ export default function LoginPage() {
     }
   }
 
+  async function handleReset() {
+    setError(null);
+    setInfo(null);
+    if (!email) {
+      setError("Escribe tu correo y pulsa de nuevo para enviarte el enlace.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
+    });
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setInfo(
+      "Te hemos enviado un correo para restablecer la contraseña. Revisa tu bandeja."
+    );
+  }
+
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 p-8">
       <div className="flex flex-col items-center text-center">
@@ -97,6 +118,8 @@ export default function LoginPage() {
         {mode === "signup" && (
           <input
             type="text"
+            name="name"
+            autoComplete="name"
             required
             placeholder="Tu nombre"
             value={name}
@@ -106,7 +129,11 @@ export default function LoginPage() {
         )}
         <input
           type="email"
+          name="email"
           inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
           required
           placeholder="tu@email.com"
           value={email}
@@ -115,6 +142,8 @@ export default function LoginPage() {
         />
         <input
           type="password"
+          name="password"
+          autoComplete={mode === "signin" ? "current-password" : "new-password"}
           required
           minLength={6}
           placeholder="Contraseña (mín. 6)"
@@ -137,6 +166,17 @@ export default function LoginPage() {
               ? "Entrar"
               : "Crear cuenta"}
         </button>
+
+        {mode === "signin" && (
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={loading}
+            className="w-full py-2 text-center text-[13px] font-medium text-sky-200 underline-offset-4 hover:underline disabled:opacity-50"
+          >
+            ¿Has olvidado tu contraseña?
+          </button>
+        )}
       </form>
     </main>
   );
