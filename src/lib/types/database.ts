@@ -91,20 +91,37 @@ export interface DrawStroke {
   points: number[];
 }
 
-/** Ficha arrastrable: atacante (círculo) o defensor (triángulo). */
-export type TokenShape = "attacker" | "defender";
+/** Ficha arrastrable: atacante (círculo), defensor (triángulo) o balón. */
+export type TokenShape = "attacker" | "defender" | "ball";
 export interface DrawToken {
+  /** Identidad estable entre fotogramas: permite interpolar (lerp) su movimiento.
+   *  Opcional por compatibilidad con pizarras guardadas antes de las jugadas. */
+  id?: string;
   shape: TokenShape;
   x: number;
   y: number;
 }
 
-/** Pizarra táctica (vector) de un ejercicio, sobre una pista de balonmano. */
+/** Un fotograma de una jugada: trazos + posición de las fichas. */
+export interface DrawFrame {
+  strokes: DrawStroke[];
+  tokens: DrawToken[];
+}
+
+/** Pizarra táctica (vector) de un ejercicio, sobre una pista de balonmano.
+ *  Con varios `frames` se convierte en una jugada animada: al reproducir se
+ *  interpolan las posiciones de cada ficha (por `id`) entre fotogramas. */
 export interface TrainingDrawing {
   /** Pista completa (400×200) o media pista (200×200). Por defecto completa. */
   court?: "full" | "half";
+  /** Primer fotograma. Se mantiene siempre sincronizado con `frames[0]` para que
+   *  las pizarras antiguas (sin `frames`) se sigan leyendo igual. */
   strokes: DrawStroke[];
   tokens?: DrawToken[];
+  /** Todos los fotogramas de la jugada (incluido el primero). */
+  frames?: DrawFrame[];
+  /** Milisegundos de transición entre fotogramas al reproducir. */
+  frameMs?: number;
 }
 
 /** Una pizarra de una fase: dibujo sobre la pista + descripción opcional. */
