@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth";
 import { loadObservations } from "@/lib/observations";
 import ObservationsSection from "../../observations/ObservationsSection";
+import SquadEditor from "@/components/match/SquadEditor";
 import type {
   Match,
   Player,
@@ -58,24 +59,31 @@ export default async function MatchDetailPage({
     .maybeSingle<Match>();
   if (!match) notFound();
 
-  const [{ data: team }, { data: players }, { data: events }] = await Promise.all([
-    supabase
-      .from("teams")
-      .select("id, coach_id")
-      .eq("id", match.team_id)
-      .maybeSingle<Pick<Team, "id" | "coach_id">>(),
-    supabase
-      .from("players")
-      .select("*")
-      .eq("team_id", match.team_id)
-      .returns<Player[]>(),
-    supabase
-      .from("stats_events")
-      .select("*")
-      .eq("match_id", id)
-      .order("game_second", { ascending: true })
-      .returns<StatEvent[]>(),
-  ]);
+  const [{ data: team }, { data: players }, { data: events }, { data: squad }] =
+    await Promise.all([
+      supabase
+        .from("teams")
+        .select("id, coach_id")
+        .eq("id", match.team_id)
+        .maybeSingle<Pick<Team, "id" | "coach_id">>(),
+      supabase
+        .from("players")
+        .select("*")
+        .eq("team_id", match.team_id)
+        .order("number", { ascending: true, nullsFirst: false })
+        .returns<Player[]>(),
+      supabase
+        .from("stats_events")
+        .select("*")
+        .eq("match_id", id)
+        .order("game_second", { ascending: true })
+        .returns<StatEvent[]>(),
+      supabase
+        .from("match_squad")
+        .select("player_id")
+        .eq("match_id", id)
+        .returns<{ player_id: string }[]>(),
+    ]);
 
   const canManage = canManageTeam(profile, team ?? null, await getMyCoachTeamIds());
   const observations = canManage
@@ -149,6 +157,17 @@ export default async function MatchDetailPage({
                 ? "▶ Continuar en vivo"
                 : "▶ Iniciar en vivo"}
           </Link>
+        </div>
+      )}
+
+      {/* Convocatoria: se prepara antes del partido; el modo en vivo la usa. */}
+      {capture && !finished && (
+        <div className="mt-6">
+          <SquadEditor
+            matchId={match.id}
+            players={players ?? []}
+            initial={(squad ?? []).map((s) => s.player_id)}
+          />
         </div>
       )}
 
@@ -246,6 +265,14 @@ export default async function MatchDetailPage({
               </span>
               <span>{info?.icon}</span>
               <span className="text-label">{info?.label}</span>
+              {e.goal_zone && (
+                <span
+                  className="rounded bg-surface-2 px-1.5 font-mono text-[10px] text-label-2"
+                  title={`Zona ${e.goal_zone} de la portería`}
+                >
+                  Z{e.goal_zone}
+                </span>
+              )}
               <span className="ml-auto truncate text-label-2">
                 {playerName(e.player_id)}
               </span>

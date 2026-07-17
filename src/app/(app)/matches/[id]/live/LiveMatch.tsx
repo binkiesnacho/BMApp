@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveGameStore } from "@/lib/store/liveGameStore";
 import { EVENT_ORDER, EVENT_LABELS } from "@/lib/events";
+import GoalZonePicker from "@/components/match/GoalZonePicker";
+import { isShotEvent } from "@/lib/types/database";
 import { saveLiveMatchAction } from "../../actions";
-import type { Match, Player } from "@/lib/types/database";
+import type { GoalZone, Match, Player, StatEventType } from "@/lib/types/database";
 
 function clock(sec: number) {
   const m = Math.floor(sec / 60);
@@ -16,13 +18,18 @@ function clock(sec: number) {
 export default function LiveMatch({
   match,
   players,
+  squadIds,
 }: {
   match: Match;
   players: Player[];
+  squadIds: string[];
 }) {
   const router = useRouter();
   const store = useLiveGameStore();
-  const [selected, setSelected] = useState<string | null>(null); // playerId | null (Equipo)
+  // Flujo: 1) evento, 2) zona de portería si es un tiro, 3) jugador (registra).
+  const [armed, setArmed] = useState<StatEventType | null>(null);
+  const [zone, setZone] = useState<GoalZone | null>(null);
+  const [showAll, setShowAll] = useState(squadIds.length === 0);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -47,11 +54,25 @@ export default function LiveMatch({
     [store.events]
   );
 
+  // Con convocatoria guardada, se muestran solo los convocados (ampliable).
+  const squad = useMemo(() => new Set(squadIds), [squadIds]);
+  const shown = useMemo(
+    () => (showAll ? players : players.filter((p) => squad.has(p.id))),
+    [players, showAll, squad]
+  );
+
   const playerLabel = (pid: string | null) => {
     if (pid === null) return "Equipo";
     const p = players.find((x) => x.id === pid);
     return p ? `${p.number ?? ""} ${p.name}`.trim() : "?";
   };
+
+  function register(playerId: string | null) {
+    if (!armed) return;
+    store.addEvent(playerId, armed, isShotEvent(armed) ? zone : null);
+    setArmed(null);
+    setZone(null);
+  }
 
   async function save(finish: boolean) {
     setSaving(true);
@@ -65,6 +86,7 @@ export default function LiveMatch({
         playerId: e.playerId,
         eventType: e.eventType,
         gameSecond: e.gameSecond,
+        goalZone: e.goalZone,
       })),
     });
     setSaving(false);
@@ -82,6 +104,7 @@ export default function LiveMatch({
   }
 
   const recent = [...store.events].slice(-6).reverse();
+  const needsZone = armed !== null && isShotEvent(armed);
 
   return (
     <div className="px-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
@@ -97,21 +120,15 @@ export default function LiveMatch({
             <button
               onClick={() => store.toggleClock()}
               className={`mt-1 rounded-lg px-3 py-1 text-xs font-semibold ${
-                store.isRunning
-                  ? "bg-amber-600 text-white"
-                  : "bg-emerald-600 text-white"
+                store.isRunning ? "bg-amber-600 text-white" : "bg-emerald-600 text-white"
               }`}
             >
               {store.isRunning ? "Pausar" : "Iniciar"}
             </button>
           </div>
           <div className="text-center">
-            <p className="max-w-20 truncate text-[10px] text-label-2">
-              {match.opponent}
-            </p>
-            <p className="font-mono text-3xl font-bold text-label">
-              {store.oppScore}
-            </p>
+            <p className="max-w-20 truncate text-[10px] text-label-2">{match.opponent}</p>
+            <p className="font-mono text-3xl font-bold text-label">{store.oppScore}</p>
             <div className="mt-1 flex gap-1">
               <button
                 onClick={() => store.setOppScore(store.oppScore - 1)}
@@ -130,50 +147,25 @@ export default function LiveMatch({
         </div>
       </div>
 
-      {/* Selección de jugador */}
-      <p className="mt-4 mb-2 text-xs font-semibold text-label-2">
-        1 · Elige jugador
-      </p>
-      <div className="grid grid-cols-3 gap-2">
-        <button
-          onClick={() => setSelected(null)}
-          className={`rounded-xl border px-2 py-2 text-sm ${
-            selected === null
-              ? "border-brand bg-brand/20 text-white"
-              : "border-separator bg-surface text-label"
-          }`}
-        >
-          Equipo
-        </button>
-        {players.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setSelected(p.id)}
-            className={`truncate rounded-xl border px-2 py-2 text-sm ${
-              selected === p.id
-                ? "border-brand bg-brand/20 text-white"
-                : "border-separator bg-surface text-label"
-            }`}
-          >
-            <span className="font-bold text-brand">{p.number ?? "–"}</span>{" "}
-            {p.name.split(" ")[0]}
-          </button>
-        ))}
-      </div>
-
-      {/* Botones de evento */}
-      <p className="mt-4 mb-2 text-xs font-semibold text-label-2">
-        2 · Registra evento{" "}
-        <span className="text-label-3">({playerLabel(selected)})</span>
-      </p>
+      {/* 1 · Evento */}
+      <p className="mt-4 mb-2 text-xs font-semibold text-label-2">1 · Elige evento</p>
       <div className="grid grid-cols-4 gap-2">
         {EVENT_ORDER.map((type) => {
           const info = EVENT_LABELS[type];
+          const active = armed === type;
           return (
             <button
               key={type}
-              onClick={() => store.addEvent(selected, type)}
-              className="flex flex-col items-center gap-1 rounded-xl border border-separator bg-surface py-2.5 text-[11px] text-label active:scale-95 active:border-brand"
+              onClick={() => {
+                setArmed(active ? null : type);
+                setZone(null);
+              }}
+              aria-pressed={active}
+              className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] transition active:scale-95 ${
+                active
+                  ? "border-brand bg-brand/20 text-white"
+                  : "border-separator bg-surface text-label"
+              }`}
             >
               <span className="text-lg">{info.icon}</span>
               {info.short}
@@ -182,11 +174,65 @@ export default function LiveMatch({
         })}
       </div>
 
+      {/* 2 · Zona de portería (solo tiros) */}
+      {needsZone && (
+        <>
+          <p className="mt-4 mb-2 text-xs font-semibold text-label-2">
+            2 · ¿Por dónde?{" "}
+            <span className="text-label-3">({EVENT_LABELS[armed].label})</span>
+          </p>
+          <GoalZonePicker value={zone} onChange={setZone} />
+        </>
+      )}
+
+      {/* 3 · Jugador (registra el evento) */}
+      <div className="mt-4 mb-2 flex items-center justify-between">
+        <p className="text-xs font-semibold text-label-2">
+          {needsZone ? "3" : "2"} · Elige jugador{" "}
+          {armed ? (
+            <span className="text-brand">→ registra</span>
+          ) : (
+            <span className="text-label-3">(elige un evento antes)</span>
+          )}
+        </p>
+        {squadIds.length > 0 && (
+          <button
+            onClick={() => setShowAll((v) => !v)}
+            className="text-[11px] font-medium text-sky-200"
+          >
+            {showAll ? `Solo convocados (${squadIds.length})` : "Ver plantilla"}
+          </button>
+        )}
+      </div>
+      <div className={`grid grid-cols-3 gap-2 ${armed ? "" : "opacity-40"}`}>
+        <button
+          onClick={() => register(null)}
+          disabled={!armed}
+          className="rounded-xl border border-separator bg-surface px-2 py-3 text-sm text-label active:scale-95 active:border-brand disabled:active:scale-100"
+        >
+          Equipo
+        </button>
+        {shown.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => register(p.id)}
+            disabled={!armed}
+            className="truncate rounded-xl border border-separator bg-surface px-2 py-3 text-sm text-label active:scale-95 active:border-brand disabled:active:scale-100"
+          >
+            <span className="font-bold text-brand">{p.number ?? "–"}</span>{" "}
+            {p.name.split(" ")[0]}
+          </button>
+        ))}
+      </div>
+      {shown.length === 0 && (
+        <p className="mt-2 text-center text-[12px] text-label-3">
+          No hay convocados guardados. Pulsa &quot;Ver plantilla&quot;.
+        </p>
+      )}
+
       {/* Eventos recientes */}
       <div className="mt-4 flex items-center justify-between">
-        <p className="text-xs font-semibold text-label-2">
-          Últimos ({store.events.length})
-        </p>
+        <p className="text-xs font-semibold text-label-2">Últimos ({store.events.length})</p>
         <button
           onClick={() => store.undoLast()}
           disabled={store.events.length === 0}
@@ -207,17 +253,18 @@ export default function LiveMatch({
             </span>
             <span>{EVENT_LABELS[e.eventType].icon}</span>
             <span className="text-label">{EVENT_LABELS[e.eventType].label}</span>
-            <span className="ml-auto truncate text-label-2">
-              {playerLabel(e.playerId)}
-            </span>
+            {e.goalZone && (
+              <span className="rounded bg-surface-2 px-1.5 font-mono text-[10px] text-label-2">
+                Z{e.goalZone}
+              </span>
+            )}
+            <span className="ml-auto truncate text-label-2">{playerLabel(e.playerId)}</span>
           </li>
         ))}
       </ul>
 
       {/* Guardar */}
-      {msg && (
-        <p className="mt-3 text-center text-sm text-emerald-400">{msg}</p>
-      )}
+      {msg && <p className="mt-3 text-center text-sm text-emerald-400">{msg}</p>}
       <div className="mt-4 flex gap-2">
         <button
           onClick={() => save(false)}

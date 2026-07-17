@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
-import type { MatchStatus, StatEventType } from "@/lib/types/database";
+import type { GoalZone, MatchStatus, StatEventType } from "@/lib/types/database";
 
 export type MatchFormState = { error?: string };
 
@@ -95,10 +95,43 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   redirect("/matches");
 }
 
+/**
+ * Guarda la convocatoria de un partido (lista de jugadores citados). Reemplaza
+ * la anterior por completo, así que es idempotente.
+ */
+export async function saveSquadAction(
+  matchId: string,
+  playerIds: string[]
+): Promise<{ error?: string }> {
+  if (!matchId) return { error: "Partido no válido." };
+
+  const { profile } = await getSessionProfile();
+  if (!canCapture(profile)) return { error: "Sin permisos." };
+
+  const supabase = await createClient();
+  const { error: delErr } = await supabase
+    .from("match_squad")
+    .delete()
+    .eq("match_id", matchId);
+  if (delErr) return { error: delErr.message };
+
+  if (playerIds.length > 0) {
+    const { error: insErr } = await supabase
+      .from("match_squad")
+      .insert(playerIds.map((player_id) => ({ match_id: matchId, player_id })));
+    if (insErr) return { error: insErr.message };
+  }
+
+  revalidatePath(`/matches/${matchId}`);
+  return {};
+}
+
 export interface LiveEventInput {
   playerId: string | null;
   eventType: StatEventType;
   gameSecond: number;
+  /** Zona de portería del tiro (1..6), si se indicó. */
+  goalZone?: GoalZone | null;
 }
 
 /**
@@ -133,6 +166,7 @@ export async function saveLiveMatchAction(input: {
       player_id: e.playerId,
       event_type: e.eventType,
       game_second: e.gameSecond,
+      goal_zone: e.goalZone ?? null,
     }));
     const { error: insError } = await supabase.from("stats_events").insert(rows);
     if (insError) return { error: insError.message };

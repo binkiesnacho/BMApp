@@ -24,12 +24,25 @@ export default async function LiveMatchPage({
     .maybeSingle<Match>();
   if (!match) notFound();
 
-  const { data: players } = await supabase
-    .from("players")
-    .select("*")
-    .eq("team_id", match.team_id)
-    .order("number", { ascending: true, nullsFirst: false })
-    .returns<Player[]>();
+  const [{ data: players }, { data: squad }] = await Promise.all([
+    supabase
+      .from("players")
+      .select("*")
+      .eq("team_id", match.team_id)
+      .order("number", { ascending: true, nullsFirst: false })
+      .returns<Player[]>(),
+    supabase
+      .from("match_squad")
+      .select("player_id")
+      .eq("match_id", id)
+      .returns<{ player_id: string }[]>(),
+  ]);
 
-  return <LiveMatch match={match} players={players ?? []} />;
+  return (
+    <LiveMatch
+      match={match}
+      players={players ?? []}
+      squadIds={(squad ?? []).map((s) => s.player_id)}
+    />
+  );
 }

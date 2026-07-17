@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { StatEventType } from "@/lib/types/database";
+import type { GoalZone, StatEventType } from "@/lib/types/database";
 
 /** Evento capturado en vivo, aún no persistido en Supabase. */
 export interface LiveEvent {
@@ -8,6 +8,8 @@ export interface LiveEvent {
   playerId: string | null;
   eventType: StatEventType;
   gameSecond: number;
+  /** Parte de la portería (solo tiros); null si no se indicó. */
+  goalZone: GoalZone | null;
   createdAt: number;
 }
 
@@ -23,7 +25,11 @@ interface LiveGameState {
   startMatch: (matchId: string, initialOppScore?: number) => void;
   toggleClock: () => void;
   tick: () => void;
-  addEvent: (playerId: string | null, eventType: StatEventType) => void;
+  addEvent: (
+    playerId: string | null,
+    eventType: StatEventType,
+    goalZone?: GoalZone | null
+  ) => void;
   undoLast: () => void;
   setOppScore: (n: number) => void;
   reset: () => void;
@@ -49,7 +55,7 @@ export const useLiveGameStore = create<LiveGameState>((set, get) => ({
 
   tick: () => set((s) => (s.isRunning ? { elapsed: s.elapsed + 1 } : {})),
 
-  addEvent: (playerId, eventType) =>
+  addEvent: (playerId, eventType, goalZone = null) =>
     set((s) => ({
       events: [
         ...s.events,
@@ -58,6 +64,7 @@ export const useLiveGameStore = create<LiveGameState>((set, get) => ({
           playerId,
           eventType,
           gameSecond: get().elapsed,
+          goalZone,
           createdAt: Date.now(),
         },
       ],

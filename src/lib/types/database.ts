@@ -147,6 +147,10 @@ export interface Training {
   description: string | null;
   phases: TrainingPhase[];
   objectives: string[];
+  /** Cuándo se pasó lista (null = aún sin hacer). */
+  attendance_taken_at: string | null;
+  /** Quién pasó lista. */
+  attendance_by: string | null;
   created_at: string;
 }
 
@@ -158,12 +162,43 @@ export interface TrainingAttendance {
   created_at: string;
 }
 
+/** Zonas de la portería: 1-2-3 arriba (izq→der), 4-5-6 abajo (izq→der). */
+export type GoalZone = 1 | 2 | 3 | 4 | 5 | 6;
+
+/** Eventos de tiro: son los únicos que registran zona de portería. */
+export const SHOT_EVENTS = ["goal", "miss", "save", "goal_conceded"] as const;
+export type ShotEvent = (typeof SHOT_EVENTS)[number];
+export const isShotEvent = (t: StatEventType): t is ShotEvent =>
+  (SHOT_EVENTS as readonly string[]).includes(t);
+
 export interface StatEvent {
   id: string;
   match_id: string;
   player_id: string | null;
   event_type: StatEventType;
   game_second: number | null;
+  /** Parte de la portería del tiro (solo en eventos de tiro). */
+  goal_zone: GoalZone | null;
+  created_at: string;
+}
+
+/** Jugador convocado para un partido (alineación guardada con antelación). */
+export interface MatchSquad {
+  id: string;
+  match_id: string;
+  player_id: string;
+  created_at: string;
+}
+
+/** Adjunto de un entrenamiento (foto o PDF) en el bucket privado. */
+export interface TrainingFile {
+  id: string;
+  training_id: string;
+  path: string;
+  name: string;
+  mime: string;
+  size_bytes: number | null;
+  author_id: string | null;
   created_at: string;
 }
 
