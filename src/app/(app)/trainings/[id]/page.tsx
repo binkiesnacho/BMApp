@@ -12,7 +12,15 @@ import ObservationsSection from "../../observations/ObservationsSection";
 import CourtView from "@/components/court/CourtView";
 import { deleteTrainingAction } from "../actions";
 import AttendanceEditor from "./AttendanceEditor";
-import type { Player, Team, Training, TrainingAttendance } from "@/lib/types/database";
+import TrainingFiles from "./TrainingFiles";
+import type {
+  Player,
+  Profile,
+  Team,
+  Training,
+  TrainingAttendance,
+  TrainingFile,
+} from "@/lib/types/database";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("es-ES", {
@@ -42,7 +50,7 @@ export default async function TrainingDetailPage({
     .maybeSingle<Training>();
   if (!training) notFound();
 
-  const [{ data: team }, { data: players }, { data: attendance }] =
+  const [{ data: team }, { data: players }, { data: attendance }, { data: files }] =
     await Promise.all([
       supabase
         .from("teams")
@@ -60,7 +68,24 @@ export default async function TrainingDetailPage({
         .select("*")
         .eq("training_id", id)
         .returns<TrainingAttendance[]>(),
+      supabase
+        .from("training_files")
+        .select("*")
+        .eq("training_id", id)
+        .order("created_at", { ascending: true })
+        .returns<TrainingFile[]>(),
     ]);
+
+  // Nombre de quien pasó lista, para que otros sepan quién registró las faltas.
+  let takenByName: string | null = null;
+  if (training.attendance_by) {
+    const { data: by } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", training.attendance_by)
+      .maybeSingle<Pick<Profile, "name">>();
+    takenByName = by?.name ?? null;
+  }
 
   const canManage = canManageTeam(profile, team ?? null, await getMyCoachTeamIds());
   const observations = canManage
@@ -143,6 +168,18 @@ export default async function TrainingDetailPage({
         )}
       </section>
 
+      {/* Material adjunto (fotos y PDFs hechos a mano) */}
+      <section className="mt-4 rounded-2xl border border-separator/60 bg-surface p-4">
+        <h2 className="mb-2 text-sm font-semibold text-label">
+          Material {files && files.length > 0 ? `(${files.length})` : ""}
+        </h2>
+        <TrainingFiles
+          trainingId={training.id}
+          files={files ?? []}
+          canEdit={staff}
+        />
+      </section>
+
       {/* Asistencia */}
       <section className="mt-4 rounded-2xl border border-separator/60 bg-surface p-4">
         <h2 className="mb-2 text-sm font-semibold text-label">Asistencia</h2>
@@ -151,11 +188,28 @@ export default async function TrainingDetailPage({
             trainingId={training.id}
             players={players ?? []}
             initialAttended={attendedIds}
+            takenAt={training.attendance_taken_at}
+            takenBy={takenByName}
           />
         ) : !recorded ? (
           <p className="text-xs text-label-3">Asistencia aún sin registrar.</p>
         ) : (
-          <ul className="space-y-1.5">
+          <>
+            {training.attendance_taken_at && (
+              <p className="mb-2 rounded-xl bg-canvas px-3 py-2 text-[12px] text-label-3">
+                Lista pasada el{" "}
+                <span className="text-label-2">
+                  {fmtDate(training.attendance_taken_at)}
+                </span>
+                {takenByName && (
+                  <>
+                    {" "}
+                    · por <span className="text-label-2">{takenByName}</span>
+                  </>
+                )}
+              </p>
+            )}
+            <ul className="space-y-1.5">
             {players?.map((p) => {
               const present = attendedSet.has(p.id);
               const mine = p.id === myPlayerId;
@@ -181,7 +235,8 @@ export default async function TrainingDetailPage({
                 </li>
               );
             })}
-          </ul>
+            </ul>
+          </>
         )}
       </section>
 

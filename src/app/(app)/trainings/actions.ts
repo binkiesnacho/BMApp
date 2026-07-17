@@ -121,7 +121,93 @@ export async function saveAttendanceAction(
     if (insErr) return { error: insErr.message };
   }
 
+  // Deja constancia de a qué hora se pasó lista y quién lo hizo, para que otros
+  // entrenadores y administradores puedan consultarlo después.
+  const { error: stampErr } = await supabase
+    .from("trainings")
+    .update({
+      attendance_taken_at: new Date().toISOString(),
+      attendance_by: profile!.id,
+    })
+    .eq("id", trainingId);
+  if (stampErr) return { error: stampErr.message };
+
   revalidatePath(`/trainings/${trainingId}`);
   revalidatePath("/trainings");
   return {};
+}
+
+/**
+ * Registra un adjunto ya subido al bucket privado `training-files`.
+ * La subida la hace el cliente; aquí solo guardamos la fila (RLS comprueba
+ * que quien lo hace puede capturar en el equipo del entrenamiento).
+ */
+export async function addTrainingFileAction(input: {
+  trainingId: string;
+  path: string;
+  name: string;
+  mime: string;
+  sizeBytes: number;
+}): Promise<{ error?: string }> {
+  const { profile } = await getSessionProfile();
+  if (!canCapture(profile)) return { error: "Sin permisos." };
+  if (!input.trainingId || !input.path) return { error: "Adjunto no válido." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("training_files").insert({
+    training_id: input.trainingId,
+    path: input.path,
+    name: input.name,
+    mime: input.mime,
+    size_bytes: input.sizeBytes,
+    author_id: profile!.id,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/trainings/${input.trainingId}`);
+  return {};
+}
+
+/** Elimina un adjunto (fila + objeto en Storage). */
+export async function deleteTrainingFileAction(
+  fileId: string
+): Promise<{ error?: string }> {
+  const { profile } = await getSessionProfile();
+  if (!canCapture(profile)) return { error: "Sin permisos." };
+
+  const supabase = await createClient();
+  const { data: file } = await supabase
+    .from("training_files")
+    .select("id, training_id, path")
+    .eq("id", fileId)
+    .maybeSingle<{ id: string; training_id: string; path: string }>();
+  if (!file) return { error: "Adjunto no encontrado." };
+
+  // Storage primero: si falla, la fila sigue y se puede reintentar.
+  const { error: stErr } = await supabase.storage
+    .from("training-files")
+    .remove([file.path]);
+  if (stErr) return { error: stErr.message };
+
+  const { error } = await supabase.from("training_files").delete().eq("id", fileId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/trainings/${file.training_id}`);
+  return {};
+}
+
+/** URLs firmadas (1 h) para ver/descargar los adjuntos de un entrenamiento. */
+export async function signTrainingFilesAction(
+  paths: string[]
+): Promise<Record<string, string>> {
+  if (paths.length === 0) return {};
+  const supabase = await createClient();
+  const { data } = await supabase.storage
+    .from("training-files")
+    .createSignedUrls(paths, 3600);
+  const map: Record<string, string> = {};
+  for (const s of data ?? []) {
+    if (s.path && s.signedUrl) map[s.path] = s.signedUrl;
+  }
+  return map;
 }
