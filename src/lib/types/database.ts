@@ -17,7 +17,11 @@ export type StatEventType =
   | "red_card"
   | "turnover"
   | "assist"
-  | "goal_conceded";
+  | "goal_conceded"
+  | "timeout";
+
+/** Origen del lanzamiento (solo en eventos de tiro). counter = contraataque. */
+export type ShotDistance = "6m" | "7m" | "9m" | "counter";
 
 export interface Club {
   id: string;
@@ -179,6 +183,8 @@ export interface StatEvent {
   game_second: number | null;
   /** Parte de la portería del tiro (solo en eventos de tiro). */
   goal_zone: GoalZone | null;
+  /** Origen del lanzamiento (solo en eventos de tiro). */
+  distance: ShotDistance | null;
   created_at: string;
 }
 

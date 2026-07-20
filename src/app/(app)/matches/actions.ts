@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
-import type { GoalZone, MatchStatus, StatEventType } from "@/lib/types/database";
+import type {
+  GoalZone,
+  MatchStatus,
+  ShotDistance,
+  StatEventType,
+} from "@/lib/types/database";
 
 export type MatchFormState = { error?: string };
 
@@ -132,6 +137,8 @@ export interface LiveEventInput {
   gameSecond: number;
   /** Zona de portería del tiro (1..6), si se indicó. */
   goalZone?: GoalZone | null;
+  /** Distancia/origen del lanzamiento, si se indicó. */
+  distance?: ShotDistance | null;
 }
 
 /**
@@ -167,6 +174,7 @@ export async function saveLiveMatchAction(input: {
       event_type: e.eventType,
       game_second: e.gameSecond,
       goal_zone: e.goalZone ?? null,
+      distance: e.distance ?? null,
     }));
     const { error: insError } = await supabase.from("stats_events").insert(rows);
     if (insError) return { error: insError.message };

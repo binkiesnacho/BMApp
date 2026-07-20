@@ -3,11 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveGameStore } from "@/lib/store/liveGameStore";
-import { EVENT_ORDER, EVENT_LABELS } from "@/lib/events";
+import { EVENT_ORDER, EVENT_LABELS, SHOT_DISTANCES, distanceLabel } from "@/lib/events";
 import GoalZonePicker from "@/components/match/GoalZonePicker";
 import { isShotEvent } from "@/lib/types/database";
 import { saveLiveMatchAction } from "../../actions";
-import type { GoalZone, Match, Player, StatEventType } from "@/lib/types/database";
+import type {
+  GoalZone,
+  Match,
+  Player,
+  ShotDistance,
+  StatEventType,
+} from "@/lib/types/database";
 
 function clock(sec: number) {
   const m = Math.floor(sec / 60);
@@ -26,8 +32,10 @@ export default function LiveMatch({
 }) {
   const router = useRouter();
   const store = useLiveGameStore();
-  // Flujo: 1) evento, 2) zona de portería si es un tiro, 3) jugador (registra).
+  // Flujo: 1) evento → 2) jugador → (si es tiro) 3) zona → 4) distancia (registra).
   const [armed, setArmed] = useState<StatEventType | null>(null);
+  const [picked, setPicked] = useState(false); // jugador ya elegido (flujo de tiro)
+  const [pickedPlayer, setPickedPlayer] = useState<string | null>(null);
   const [zone, setZone] = useState<GoalZone | null>(null);
   const [showAll, setShowAll] = useState(squadIds.length === 0);
   const [saving, setSaving] = useState(false);
@@ -54,7 +62,6 @@ export default function LiveMatch({
     [store.events]
   );
 
-  // Con convocatoria guardada, se muestran solo los convocados (ampliable).
   const squad = useMemo(() => new Set(squadIds), [squadIds]);
   const shown = useMemo(
     () => (showAll ? players : players.filter((p) => squad.has(p.id))),
@@ -67,11 +74,40 @@ export default function LiveMatch({
     return p ? `${p.number ?? ""} ${p.name}`.trim() : "?";
   };
 
-  function register(playerId: string | null) {
-    if (!armed) return;
-    store.addEvent(playerId, armed, isShotEvent(armed) ? zone : null);
+  const isShot = armed !== null && isShotEvent(armed);
+
+  function reset() {
     setArmed(null);
+    setPicked(false);
+    setPickedPlayer(null);
     setZone(null);
+  }
+
+  function commit(
+    playerId: string | null,
+    type: StatEventType,
+    z: GoalZone | null,
+    dist: ShotDistance | null
+  ) {
+    store.addEvent(playerId, type, z, dist);
+    reset();
+  }
+
+  // Paso 2: al elegir jugador, los eventos que no son tiro se registran ya;
+  // los tiros avanzan a zona + distancia.
+  function choosePlayer(playerId: string | null) {
+    if (!armed) return;
+    if (isShot) {
+      setPickedPlayer(playerId);
+      setPicked(true);
+    } else {
+      commit(playerId, armed, null, null);
+    }
+  }
+
+  function timeout() {
+    // Tiempo muerto: evento de equipo, registra el minuto actual.
+    store.addEvent(null, "timeout", null, null);
   }
 
   async function save(finish: boolean) {
@@ -87,6 +123,7 @@ export default function LiveMatch({
         eventType: e.eventType,
         gameSecond: e.gameSecond,
         goalZone: e.goalZone,
+        distance: e.distance,
       })),
     });
     setSaving(false);
@@ -104,7 +141,8 @@ export default function LiveMatch({
   }
 
   const recent = [...store.events].slice(-6).reverse();
-  const needsZone = armed !== null && isShotEvent(armed);
+  // El grid de jugadores está activo si hay evento y aún no se pasó a zona (tiro).
+  const pickingPlayer = armed !== null && !(isShot && picked);
 
   return (
     <div className="px-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
@@ -157,8 +195,8 @@ export default function LiveMatch({
             <button
               key={type}
               onClick={() => {
-                setArmed(active ? null : type);
-                setZone(null);
+                reset();
+                if (!active) setArmed(type);
               }}
               aria-pressed={active}
               className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] transition active:scale-95 ${
@@ -174,64 +212,99 @@ export default function LiveMatch({
         })}
       </div>
 
-      {/* 2 · Zona de portería (solo tiros) */}
-      {needsZone && (
+      {/* Tiempo muerto: registra el minuto al instante */}
+      <button
+        onClick={timeout}
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-separator bg-surface py-2.5 text-[13px] font-semibold text-label active:scale-[0.99] active:border-brand"
+      >
+        <span className="text-base">⏱️</span> Tiempo muerto
+        <span className="text-label-3">({clock(store.elapsed)})</span>
+      </button>
+
+      {/* 2 · Jugador */}
+      {pickingPlayer && (
         <>
-          <p className="mt-4 mb-2 text-xs font-semibold text-label-2">
-            2 · ¿Por dónde?{" "}
-            <span className="text-label-3">({EVENT_LABELS[armed].label})</span>
-          </p>
-          <GoalZonePicker value={zone} onChange={setZone} />
+          <div className="mt-4 mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold text-label-2">
+              2 · Elige jugador{" "}
+              <span className="text-label-3">({EVENT_LABELS[armed].label})</span>
+            </p>
+            {squadIds.length > 0 && (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="text-[11px] font-medium text-sky-200"
+              >
+                {showAll ? `Solo convocados (${squadIds.length})` : "Ver plantilla"}
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => choosePlayer(null)}
+              className="rounded-xl border border-separator bg-surface px-2 py-3 text-sm text-label active:scale-95 active:border-brand"
+            >
+              Equipo
+            </button>
+            {shown.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => choosePlayer(p.id)}
+                className="truncate rounded-xl border border-separator bg-surface px-2 py-3 text-sm text-label active:scale-95 active:border-brand"
+              >
+                <span className="font-bold text-brand">{p.number ?? "–"}</span>{" "}
+                {p.name.split(" ")[0]}
+              </button>
+            ))}
+          </div>
+          {shown.length === 0 && (
+            <p className="mt-2 text-center text-[12px] text-label-3">
+              No hay convocados guardados. Pulsa &quot;Ver plantilla&quot;.
+            </p>
+          )}
         </>
       )}
 
-      {/* 3 · Jugador (registra el evento) */}
-      <div className="mt-4 mb-2 flex items-center justify-between">
-        <p className="text-xs font-semibold text-label-2">
-          {needsZone ? "3" : "2"} · Elige jugador{" "}
-          {armed ? (
-            <span className="text-brand">→ registra</span>
-          ) : (
-            <span className="text-label-3">(elige un evento antes)</span>
-          )}
-        </p>
-        {squadIds.length > 0 && (
+      {/* 3 · Zona de portería + 4 · Distancia (solo tiros, tras elegir jugador) */}
+      {isShot && picked && (
+        <>
+          <div className="mt-4 mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold text-label-2">
+              3 · ¿Por dónde?{" "}
+              <span className="text-label-3">
+                ({EVENT_LABELS[armed].label} · {playerLabel(pickedPlayer)})
+              </span>
+            </p>
+            <button onClick={reset} className="text-[11px] font-medium text-label-3">
+              Cancelar
+            </button>
+          </div>
+          <GoalZonePicker value={zone} onChange={setZone} />
+
+          <p className="mt-4 mb-2 text-xs font-semibold text-label-2">
+            4 · Distancia <span className="text-brand">→ registra</span>
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {SHOT_DISTANCES.map((d) => (
+              <button
+                key={d.value}
+                onClick={() => commit(pickedPlayer, armed, zone, d.value)}
+                className="rounded-xl border border-separator bg-surface px-1 py-3 text-[12px] font-semibold text-label active:scale-95 active:border-brand"
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
           <button
-            onClick={() => setShowAll((v) => !v)}
-            className="text-[11px] font-medium text-sky-200"
+            onClick={() => commit(pickedPlayer, armed, zone, null)}
+            className="mt-2 w-full rounded-xl border border-dashed border-separator py-2.5 text-[13px] font-medium text-label-2 active:scale-[0.99]"
           >
-            {showAll ? `Solo convocados (${squadIds.length})` : "Ver plantilla"}
+            Registrar sin distancia
           </button>
-        )}
-      </div>
-      <div className={`grid grid-cols-3 gap-2 ${armed ? "" : "opacity-40"}`}>
-        <button
-          onClick={() => register(null)}
-          disabled={!armed}
-          className="rounded-xl border border-separator bg-surface px-2 py-3 text-sm text-label active:scale-95 active:border-brand disabled:active:scale-100"
-        >
-          Equipo
-        </button>
-        {shown.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => register(p.id)}
-            disabled={!armed}
-            className="truncate rounded-xl border border-separator bg-surface px-2 py-3 text-sm text-label active:scale-95 active:border-brand disabled:active:scale-100"
-          >
-            <span className="font-bold text-brand">{p.number ?? "–"}</span>{" "}
-            {p.name.split(" ")[0]}
-          </button>
-        ))}
-      </div>
-      {shown.length === 0 && (
-        <p className="mt-2 text-center text-[12px] text-label-3">
-          No hay convocados guardados. Pulsa &quot;Ver plantilla&quot;.
-        </p>
+        </>
       )}
 
       {/* Eventos recientes */}
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-5 flex items-center justify-between">
         <p className="text-xs font-semibold text-label-2">Últimos ({store.events.length})</p>
         <button
           onClick={() => store.undoLast()}
@@ -258,7 +331,14 @@ export default function LiveMatch({
                 Z{e.goalZone}
               </span>
             )}
-            <span className="ml-auto truncate text-label-2">{playerLabel(e.playerId)}</span>
+            {e.distance && (
+              <span className="rounded bg-surface-2 px-1.5 text-[10px] text-label-2">
+                {distanceLabel(e.distance)}
+              </span>
+            )}
+            {e.eventType !== "timeout" && (
+              <span className="ml-auto truncate text-label-2">{playerLabel(e.playerId)}</span>
+            )}
           </li>
         ))}
       </ul>

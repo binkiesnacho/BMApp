@@ -18,7 +18,7 @@ import type {
   StatEventType,
   Team,
 } from "@/lib/types/database";
-import { EVENT_LABELS } from "@/lib/events";
+import { EVENT_LABELS, distanceLabel } from "@/lib/events";
 import { aggregateByPlayer, shootingAccuracy } from "@/lib/stats";
 import { EditIcon } from "@/components/ui/icons";
 
@@ -273,9 +273,16 @@ export default async function MatchDetailPage({
                   Z{e.goal_zone}
                 </span>
               )}
-              <span className="ml-auto truncate text-label-2">
-                {playerName(e.player_id)}
-              </span>
+              {e.distance && (
+                <span className="rounded bg-surface-2 px-1.5 text-[10px] text-label-2">
+                  {distanceLabel(e.distance)}
+                </span>
+              )}
+              {e.event_type !== "timeout" && (
+                <span className="ml-auto truncate text-label-2">
+                  {playerName(e.player_id)}
+                </span>
+              )}
             </li>
           );
         })}
