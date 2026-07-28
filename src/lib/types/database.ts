@@ -128,10 +128,24 @@ export interface TrainingDrawing {
   frameMs?: number;
 }
 
-/** Una pizarra de una fase: dibujo sobre la pista + descripción opcional. */
+/** Una pizarra: dibujo sobre la pista + descripción opcional. */
 export interface TrainingBoard {
   drawing: TrainingDrawing;
   description?: string | null;
+}
+
+/** Progresión de un ejercicio: una variante o complicación, con sus pizarras. */
+export interface TrainingProgression {
+  description?: string | null;
+  boards: TrainingBoard[];
+}
+
+/** Ejercicio: explicación (primero) y sus pizarras, más progresiones. */
+export interface TrainingExercise {
+  name?: string | null;
+  description?: string | null;
+  boards: TrainingBoard[];
+  progressions?: TrainingProgression[];
 }
 
 export interface TrainingPhase {
@@ -139,8 +153,10 @@ export interface TrainingPhase {
   minutes: number;
   /** Dibujo único (formato antiguo, solo lectura para datos existentes). */
   drawing?: TrainingDrawing | null;
-  /** Varias pizarras del ejercicio, cada una con su descripción. */
+  /** Pizarras sueltas de la fase (formato antiguo). */
   boards?: TrainingBoard[];
+  /** Ejercicios de la fase (formato actual). */
+  exercises?: TrainingExercise[];
 }
 
 export interface Training {

@@ -3,7 +3,51 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile } from "@/lib/auth";
-import type { Player, TrainingPhase } from "@/lib/types/database";
+import type {
+  TrainingBoard,
+  TrainingDrawing,
+  TrainingExercise,
+  TrainingPhase,
+  Player,
+} from "@/lib/types/database";
+
+/** ¿La pizarra tiene algo dibujado? (trazos, fichas o fotogramas) */
+function drawingHasContent(d: TrainingDrawing | null | undefined): d is TrainingDrawing {
+  if (!d) return false;
+  if ((d.strokes?.length ?? 0) > 0 || (d.tokens?.length ?? 0) > 0) return true;
+  return (d.frames ?? []).some(
+    (f) => f.strokes.length > 0 || f.tokens.length > 0
+  );
+}
+
+/** Deja solo las pizarras con dibujo, normalizando su descripción. */
+function cleanBoards(boards: TrainingBoard[] | undefined): TrainingBoard[] {
+  return (boards ?? [])
+    .filter((b) => drawingHasContent(b.drawing))
+    .map((b) => ({ drawing: b.drawing, description: b.description?.trim() || null }));
+}
+
+/** Normaliza un ejercicio; devuelve null si queda totalmente vacío. */
+function cleanExercise(ex: TrainingExercise): TrainingExercise | null {
+  const description = ex.description?.trim() || null;
+  const name = ex.name?.trim() || null;
+  const boards = cleanBoards(ex.boards);
+  const progressions = (ex.progressions ?? [])
+    .map((pr) => ({
+      description: pr.description?.trim() || null,
+      boards: cleanBoards(pr.boards),
+    }))
+    .filter((pr) => pr.description || pr.boards.length > 0);
+  if (!description && !name && boards.length === 0 && progressions.length === 0) {
+    return null;
+  }
+  return {
+    ...(name ? { name } : {}),
+    ...(description ? { description } : {}),
+    boards,
+    ...(progressions.length > 0 ? { progressions } : {}),
+  };
+}
 
 export interface CreateTrainingInput {
   teamId: string;
@@ -25,22 +69,17 @@ export async function createTrainingAction(
 
   const phases = input.phases
     .map((p) => {
-      // Conserva solo las pizarras con contenido (trazos o fichas).
-      const boards = (p.boards ?? [])
-        .filter(
-          (b) =>
-            b.drawing &&
-            ((b.drawing.strokes?.length ?? 0) > 0 ||
-              (b.drawing.tokens?.length ?? 0) > 0)
-        )
-        .map((b) => ({
-          drawing: b.drawing,
-          description: b.description?.trim() || null,
-        }));
+      const exercises = (p.exercises ?? [])
+        .map(cleanExercise)
+        .filter((ex): ex is TrainingExercise => ex !== null);
+      // Compatibilidad: si aún llegan pizarras sueltas (formato antiguo), se
+      // conservan tal cual.
+      const boards = cleanBoards(p.boards);
       return {
         name: String(p.name).trim(),
         minutes: Number(p.minutes) || 0,
         ...(boards.length > 0 ? { boards } : {}),
+        ...(exercises.length > 0 ? { exercises } : {}),
       };
     })
     .filter((p) => p.name);

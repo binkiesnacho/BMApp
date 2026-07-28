@@ -149,6 +149,8 @@ export default async function TrainingDetailPage({
                   </span>
                   <span className="font-mono text-brand">{p.minutes}&apos;</span>
                 </div>
+
+                {/* Formato antiguo: dibujo/pizarras sueltas de la fase */}
                 {p.drawing && p.drawing.strokes.length > 0 && (
                   <div className="mt-2">
                     <CourtView drawing={p.drawing} />
@@ -160,6 +162,52 @@ export default async function TrainingDetailPage({
                     {b.description && (
                       <p className="mt-1 text-xs text-label-2">{b.description}</p>
                     )}
+                  </div>
+                ))}
+
+                {/* Ejercicios: explicación primero, luego pizarras y progresiones */}
+                {p.exercises?.map((ex, ei) => (
+                  <div key={ei} className="mt-3 rounded-xl bg-surface/60 p-2.5">
+                    {ex.name && (
+                      <p className="text-[13px] font-semibold text-label">{ex.name}</p>
+                    )}
+                    {ex.description && (
+                      <p className="mt-0.5 whitespace-pre-line text-[13px] text-label-2">
+                        {ex.description}
+                      </p>
+                    )}
+                    {ex.boards.map((b, k) => (
+                      <div key={k} className="mt-2">
+                        <CourtView drawing={b.drawing} />
+                        {b.description && (
+                          <p className="mt-1 text-xs text-label-2">{b.description}</p>
+                        )}
+                      </div>
+                    ))}
+
+                    {ex.progressions?.map((pr, pi) => (
+                      <div
+                        key={pi}
+                        className="mt-2 rounded-lg border border-separator/70 p-2"
+                      >
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-200">
+                          Progresión {pi + 1}
+                        </p>
+                        {pr.description && (
+                          <p className="mt-0.5 whitespace-pre-line text-[13px] text-label-2">
+                            {pr.description}
+                          </p>
+                        )}
+                        {pr.boards.map((b, k) => (
+                          <div key={k} className="mt-2">
+                            <CourtView drawing={b.drawing} />
+                            {b.description && (
+                              <p className="mt-1 text-xs text-label-2">{b.description}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </li>

@@ -5,22 +5,44 @@ import { useRouter } from "next/navigation";
 import { createTrainingAction } from "./actions";
 import CourtDrawer from "@/components/court/CourtDrawer";
 import { DrawIcon } from "@/components/ui/icons";
+import {
+  MAX_TRAINING_FILE_MB,
+  TRAINING_FILE_ACCEPT,
+  uploadTrainingFile,
+} from "@/lib/trainingFiles";
 import type {
   Team,
   TrainingBoard,
   TrainingDrawing,
+  TrainingExercise,
   TrainingPhase,
+  TrainingProgression,
 } from "@/lib/types/database";
 
-// Pizarra en edición: el dibujo puede estar vacío (null) hasta que se dibuje.
-type EditBoard = { drawing: TrainingDrawing | null; description: string };
-type EditPhase = { name: string; minutes: number; boards: EditBoard[] };
+// Estructuras en edición: el dibujo puede estar vacío (null) hasta que se dibuje.
+type EditBoard = { drawing: TrainingDrawing | null };
+type EditProgression = { description: string; boards: EditBoard[] };
+type EditExercise = {
+  name: string;
+  description: string;
+  boards: EditBoard[];
+  progressions: EditProgression[];
+};
+type EditPhase = { name: string; minutes: number; exercises: EditExercise[] };
 
 const DEFAULT_PHASES: EditPhase[] = [
-  { name: "Calentamiento", minutes: 10, boards: [] },
-  { name: "Parte principal", minutes: 60, boards: [] },
-  { name: "Vuelta a la calma", minutes: 10, boards: [] },
+  { name: "Calentamiento", minutes: 10, exercises: [] },
+  { name: "Parte principal", minutes: 60, exercises: [] },
+  { name: "Vuelta a la calma", minutes: 10, exercises: [] },
 ];
+
+const emptyExercise = (): EditExercise => ({
+  name: "",
+  description: "",
+  boards: [],
+  progressions: [],
+});
+const emptyProgression = (): EditProgression => ({ description: "", boards: [] });
 
 export default function CreateTrainingForm({
   teams,
@@ -37,36 +59,33 @@ export default function CreateTrainingForm({
   const [description, setDescription] = useState("");
   const [phases, setPhases] = useState<EditPhase[]>(DEFAULT_PHASES);
   const [objectives, setObjectives] = useState<string[]>([""]);
+  const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /* ----- Actualizaciones anidadas (fase → ejercicio → progresión → pizarra) ----- */
+  function updatePhase(i: number, fn: (p: EditPhase) => EditPhase) {
+    setPhases((ps) => ps.map((p, j) => (j === i ? fn(p) : p)));
+  }
   function setPhase(i: number, patch: Partial<EditPhase>) {
-    setPhases((ps) => ps.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+    updatePhase(i, (p) => ({ ...p, ...patch }));
   }
-  function addBoard(i: number) {
-    setPhases((ps) =>
-      ps.map((p, j) =>
-        j === i
-          ? { ...p, boards: [...p.boards, { drawing: null, description: "" }] }
-          : p
-      )
-    );
+  function updateExercise(i: number, ei: number, fn: (e: EditExercise) => EditExercise) {
+    updatePhase(i, (p) => ({
+      ...p,
+      exercises: p.exercises.map((e, k) => (k === ei ? fn(e) : e)),
+    }));
   }
-  function setBoard(i: number, k: number, patch: Partial<EditBoard>) {
-    setPhases((ps) =>
-      ps.map((p, j) =>
-        j === i
-          ? { ...p, boards: p.boards.map((b, m) => (m === k ? { ...b, ...patch } : b)) }
-          : p
-      )
-    );
-  }
-  function removeBoard(i: number, k: number) {
-    setPhases((ps) =>
-      ps.map((p, j) =>
-        j === i ? { ...p, boards: p.boards.filter((_, m) => m !== k) } : p
-      )
-    );
+  function updateProgression(
+    i: number,
+    ei: number,
+    pi: number,
+    fn: (pr: EditProgression) => EditProgression
+  ) {
+    updateExercise(i, ei, (e) => ({
+      ...e,
+      progressions: e.progressions.map((pr, m) => (m === pi ? fn(pr) : pr)),
+    }));
   }
 
   const total = phases.reduce((s, p) => s + (Number(p.minutes) || 0), 0);
@@ -74,17 +93,26 @@ export default function CreateTrainingForm({
   async function submit() {
     setError(null);
     setSaving(true);
+
+    const boardsOut = (bs: EditBoard[]): TrainingBoard[] =>
+      bs.filter((b) => b.drawing).map((b) => ({ drawing: b.drawing as TrainingDrawing }));
+
     const phasesOut: TrainingPhase[] = phases.map((p) => {
-      const boards: TrainingBoard[] = p.boards
-        .filter(
-          (b): b is { drawing: TrainingDrawing; description: string } =>
-            !!b.drawing &&
-            ((b.drawing.strokes?.length ?? 0) > 0 ||
-              (b.drawing.tokens?.length ?? 0) > 0)
-        )
-        .map((b) => ({ drawing: b.drawing, description: b.description }));
-      return { name: p.name, minutes: p.minutes, boards };
+      const exercises: TrainingExercise[] = p.exercises.map((e) => {
+        const progressions: TrainingProgression[] = e.progressions.map((pr) => ({
+          description: pr.description,
+          boards: boardsOut(pr.boards),
+        }));
+        return {
+          name: e.name,
+          description: e.description,
+          boards: boardsOut(e.boards),
+          progressions,
+        };
+      });
+      return { name: p.name, minutes: p.minutes, exercises };
     });
+
     const res = await createTrainingAction({
       teamId,
       date,
@@ -93,11 +121,17 @@ export default function CreateTrainingForm({
       phases: phasesOut,
       objectives,
     });
-    setSaving(false);
-    if (res.error) {
-      setError(res.error);
+    if (res.error || !res.id) {
+      setSaving(false);
+      setError(res.error ?? "No se pudo crear.");
       return;
     }
+
+    // El entrenamiento ya existe: subimos los adjuntos y navegamos igualmente.
+    for (const f of files) {
+      await uploadTrainingFile(res.id, f);
+    }
+
     router.push(`/trainings/${res.id}`);
     router.refresh();
   }
@@ -118,13 +152,47 @@ export default function CreateTrainingForm({
   const addRowCls =
     "flex w-full items-center gap-2 rounded-xl border border-dashed border-separator px-3 py-2.5 text-sm font-medium text-label-2 hover:border-brand hover:text-label";
 
+  // Bloque de pizarras reutilizable (para ejercicios y progresiones).
+  function BoardList({
+    boards,
+    onAdd,
+    onSet,
+    onRemove,
+  }: {
+    boards: EditBoard[];
+    onAdd: () => void;
+    onSet: (bi: number, d: TrainingDrawing | null) => void;
+    onRemove: (bi: number) => void;
+  }) {
+    return (
+      <div className="space-y-2">
+        {boards.map((b, bi) => (
+          <div key={bi} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-label-3">
+                Pizarra {bi + 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => onRemove(bi)}
+                className="text-[11px] text-label-3 hover:text-red-400"
+              >
+                Quitar
+              </button>
+            </div>
+            <CourtDrawer value={b.drawing} onChange={(d) => onSet(bi, d)} />
+          </div>
+        ))}
+        <button type="button" onClick={onAdd} className={addRowCls}>
+          <DrawIcon size={16} /> Añadir pizarra
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 rounded-2xl border border-separator/60 bg-surface p-3">
-      <select
-        value={teamId}
-        onChange={(e) => setTeamId(e.target.value)}
-        className={inputCls}
-      >
+      <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className={inputCls}>
         <option value="">Equipo…</option>
         {teams.map((t) => (
           <option key={t.id} value={t.id}>
@@ -154,17 +222,13 @@ export default function CreateTrainingForm({
               <input
                 value={o}
                 onChange={(e) =>
-                  setObjectives((os) =>
-                    os.map((x, j) => (j === i ? e.target.value : x))
-                  )
+                  setObjectives((os) => os.map((x, j) => (j === i ? e.target.value : x)))
                 }
                 placeholder={`Objetivo ${i + 1}`}
                 className={inputCls + " flex-1"}
               />
               <button
-                onClick={() =>
-                  setObjectives((os) => os.filter((_, j) => j !== i))
-                }
+                onClick={() => setObjectives((os) => os.filter((_, j) => j !== i))}
                 className="px-2 text-label-3 hover:text-red-400"
                 aria-label="Quitar objetivo"
               >
@@ -178,20 +242,19 @@ export default function CreateTrainingForm({
           onClick={() => setObjectives((os) => [...os, ""])}
           className={addRowCls + " mt-2"}
         >
-          <span className="text-base leading-none text-brand">＋</span> Añadir
-          objetivo
+          <span className="text-base leading-none text-brand">＋</span> Añadir objetivo
         </button>
       </div>
 
       <textarea
-        placeholder="Descripción (opcional)"
+        placeholder="Descripción general (opcional)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         rows={2}
         className={inputCls}
       />
 
-      {/* Fases */}
+      {/* Fases con sus ejercicios */}
       <div>
         <p className="mb-1 text-xs font-semibold text-label-2">
           Fases · {total}&apos; total
@@ -203,7 +266,7 @@ export default function CreateTrainingForm({
                 <input
                   value={p.name}
                   onChange={(e) => setPhase(i, { name: e.target.value })}
-                  placeholder="Ejercicio / fase"
+                  placeholder="Fase (p. ej. Parte principal)"
                   className={inputCls + " flex-1"}
                 />
                 <input
@@ -223,63 +286,199 @@ export default function CreateTrainingForm({
                 </button>
               </div>
 
-              {/* Pizarras de la fase */}
-              {p.boards.map((b, k) => (
-                <div key={k} className="space-y-2 rounded-xl bg-canvas/60 p-2">
+              {/* Ejercicios de la fase */}
+              {p.exercises.map((ex, ei) => (
+                <div key={ei} className="space-y-2 rounded-xl bg-canvas/60 p-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-label-3">
-                      Pizarra {k + 1}
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-sky-200">
+                      Ejercicio {ei + 1}
                     </span>
                     <button
                       type="button"
-                      onClick={() => removeBoard(i, k)}
+                      onClick={() =>
+                        updatePhase(i, (ph) => ({
+                          ...ph,
+                          exercises: ph.exercises.filter((_, k) => k !== ei),
+                        }))
+                      }
                       className="text-[11px] text-label-3 hover:text-red-400"
                     >
                       Quitar
                     </button>
                   </div>
-                  <CourtDrawer
-                    value={b.drawing}
-                    onChange={(d) => setBoard(i, k, { drawing: d })}
-                  />
+
+                  {/* Explicación PRIMERO */}
                   <input
-                    value={b.description}
-                    onChange={(e) => setBoard(i, k, { description: e.target.value })}
-                    placeholder="Descripción del dibujo (opcional)"
+                    value={ex.name}
+                    onChange={(e) => updateExercise(i, ei, (x) => ({ ...x, name: e.target.value }))}
+                    placeholder="Nombre del ejercicio (opcional)"
                     className={inputCls}
                   />
+                  <textarea
+                    value={ex.description}
+                    onChange={(e) =>
+                      updateExercise(i, ei, (x) => ({ ...x, description: e.target.value }))
+                    }
+                    placeholder="Explicación / descripción del ejercicio"
+                    rows={2}
+                    className={inputCls}
+                  />
+
+                  {/* …y LUEGO las pizarras */}
+                  <BoardList
+                    boards={ex.boards}
+                    onAdd={() => updateExercise(i, ei, (x) => ({ ...x, boards: [...x.boards, { drawing: null }] }))}
+                    onSet={(bi, d) =>
+                      updateExercise(i, ei, (x) => ({
+                        ...x,
+                        boards: x.boards.map((b, m) => (m === bi ? { drawing: d } : b)),
+                      }))
+                    }
+                    onRemove={(bi) =>
+                      updateExercise(i, ei, (x) => ({
+                        ...x,
+                        boards: x.boards.filter((_, m) => m !== bi),
+                      }))
+                    }
+                  />
+
+                  {/* Progresiones (variantes / complicaciones) */}
+                  {ex.progressions.map((pr, pi) => (
+                    <div
+                      key={pi}
+                      className="space-y-2 rounded-lg border border-separator/70 p-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-label-2">
+                          Progresión {pi + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateExercise(i, ei, (x) => ({
+                              ...x,
+                              progressions: x.progressions.filter((_, m) => m !== pi),
+                            }))
+                          }
+                          className="text-[11px] text-label-3 hover:text-red-400"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                      <textarea
+                        value={pr.description}
+                        onChange={(e) =>
+                          updateProgression(i, ei, pi, (x) => ({ ...x, description: e.target.value }))
+                        }
+                        placeholder="En qué cambia respecto al ejercicio base"
+                        rows={2}
+                        className={inputCls}
+                      />
+                      <BoardList
+                        boards={pr.boards}
+                        onAdd={() =>
+                          updateProgression(i, ei, pi, (x) => ({
+                            ...x,
+                            boards: [...x.boards, { drawing: null }],
+                          }))
+                        }
+                        onSet={(bi, d) =>
+                          updateProgression(i, ei, pi, (x) => ({
+                            ...x,
+                            boards: x.boards.map((b, m) => (m === bi ? { drawing: d } : b)),
+                          }))
+                        }
+                        onRemove={(bi) =>
+                          updateProgression(i, ei, pi, (x) => ({
+                            ...x,
+                            boards: x.boards.filter((_, m) => m !== bi),
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateExercise(i, ei, (x) => ({
+                        ...x,
+                        progressions: [...x.progressions, emptyProgression()],
+                      }))
+                    }
+                    className="flex w-full items-center gap-2 rounded-lg border border-dashed border-separator px-3 py-2 text-[13px] font-medium text-label-3 hover:border-brand hover:text-label"
+                  >
+                    <span className="text-base leading-none text-brand">＋</span> Añadir progresión
+                  </button>
                 </div>
               ))}
 
               <button
                 type="button"
-                onClick={() => addBoard(i)}
+                onClick={() =>
+                  updatePhase(i, (ph) => ({ ...ph, exercises: [...ph.exercises, emptyExercise()] }))
+                }
                 className={addRowCls}
               >
-                <DrawIcon size={16} /> Añadir pizarra
+                <span className="text-base leading-none text-brand">＋</span> Añadir ejercicio
               </button>
             </div>
           ))}
         </div>
         <button
           type="button"
-          onClick={() =>
-            setPhases((ps) => [...ps, { name: "", minutes: 0, boards: [] }])
-          }
+          onClick={() => setPhases((ps) => [...ps, { name: "", minutes: 0, exercises: [] }])}
           className={addRowCls + " mt-2"}
         >
-          <span className="text-base leading-none text-brand">＋</span> Añadir
-          fase
+          <span className="text-base leading-none text-brand">＋</span> Añadir fase
         </button>
+      </div>
+
+      {/* Adjuntos: PDF o imagen (el entreno completo en papel/foto) */}
+      <div>
+        <p className="mb-1 text-xs font-semibold text-label-2">Adjuntos (PDF o imagen)</p>
+        {files.length > 0 && (
+          <ul className="mb-2 space-y-1">
+            {files.map((f, i) => (
+              <li
+                key={i}
+                className="flex items-center gap-2 rounded-lg bg-canvas px-3 py-2 text-[13px]"
+              >
+                <span>{f.type.startsWith("image/") ? "🖼️" : "📄"}</span>
+                <span className="min-w-0 flex-1 truncate text-label">{f.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setFiles((fs) => fs.filter((_, j) => j !== i))}
+                  className="text-label-3 hover:text-red-400"
+                  aria-label="Quitar adjunto"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <label className={addRowCls + " cursor-pointer justify-center"}>
+          <span className="text-base leading-none text-brand">＋</span> Añadir PDF o foto
+          <input
+            type="file"
+            accept={TRAINING_FILE_ACCEPT}
+            multiple
+            onChange={(e) => {
+              const list = Array.from(e.target.files ?? []);
+              e.target.value = "";
+              setFiles((fs) => [...fs, ...list]);
+            }}
+            className="hidden"
+          />
+        </label>
+        <p className="mt-1 text-[11px] text-label-3">
+          Fotos o PDFs, hasta {MAX_TRAINING_FILE_MB} MB. Solo los ve tu equipo.
+        </p>
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
       <div className="flex gap-2">
-        <button
-          onClick={submit}
-          disabled={saving}
-          className="btn btn-primary flex-1"
-        >
+        <button onClick={submit} disabled={saving} className="btn btn-primary flex-1">
           {saving ? "Creando…" : "Crear entrenamiento"}
         </button>
         <button onClick={() => setOpen(false)} className="btn btn-ghost">

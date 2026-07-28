@@ -2,16 +2,13 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { deleteTrainingFileAction, signTrainingFilesAction } from "../actions";
 import {
-  addTrainingFileAction,
-  deleteTrainingFileAction,
-  signTrainingFilesAction,
-} from "../actions";
+  MAX_TRAINING_FILE_MB as MAX_MB,
+  TRAINING_FILE_ACCEPT as ACCEPT,
+  uploadTrainingFile,
+} from "@/lib/trainingFiles";
 import type { TrainingFile } from "@/lib/types/database";
-
-const MAX_MB = 15;
-const ACCEPT = "image/*,application/pdf";
 
 function human(bytes: number | null) {
   if (!bytes) return "";
@@ -34,7 +31,6 @@ export default function TrainingFiles({
   canEdit: boolean;
 }) {
   const router = useRouter();
-  const supabase = createClient();
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -60,25 +56,7 @@ export default function TrainingFiles({
     setBusy(true);
     try {
       for (const file of list) {
-        if (file.size > MAX_MB * 1024 * 1024) {
-          throw new Error(`"${file.name}" supera ${MAX_MB} MB.`);
-        }
-        // La primera carpeta debe ser el id del entrenamiento: de ahí derivan
-        // los permisos de Storage.
-        const safe = file.name.replace(/[^\w.\-]+/g, "_");
-        const path = `${trainingId}/${Date.now()}-${safe}`;
-        const { error: upErr } = await supabase.storage
-          .from("training-files")
-          .upload(path, file, { cacheControl: "3600" });
-        if (upErr) throw upErr;
-
-        const res = await addTrainingFileAction({
-          trainingId,
-          path,
-          name: file.name,
-          mime: file.type || "application/octet-stream",
-          sizeBytes: file.size,
-        });
+        const res = await uploadTrainingFile(trainingId, file);
         if (res.error) throw new Error(res.error);
       }
       router.refresh();
