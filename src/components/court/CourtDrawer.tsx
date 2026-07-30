@@ -64,7 +64,6 @@ export default function CourtDrawer({
   const [tool, setTool] = useState<"draw" | "erase">("draw");
   const [current, setCurrent] = useState<DrawStroke | null>(null);
   const [preview, setPreview] = useState<DrawToken | null>(null);
-  const [undoStack, setUndoStack] = useState<DrawFrame[][]>([]);
   const [fs, setFs] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [playPos, setPlayPos] = useState(0);
@@ -129,9 +128,6 @@ export default function CourtDrawer({
   }, [playing, frames, frameMs]);
 
   /* ------------------------------ Utilidades ------------------------------ */
-  function pushUndo() {
-    setUndoStack((s) => [...s.slice(-29), frames]);
-  }
   function setFrame(updater: (f: DrawFrame) => DrawFrame) {
     setFrames((fs) => fs.map((f, i) => (i === idx ? updater(f) : f)));
   }
@@ -163,6 +159,22 @@ export default function CourtDrawer({
     }
   }
 
+  /** Distancia de un punto al segmento AB (para acertar en cualquier tramo). */
+  function distToSegment(
+    px: number,
+    py: number,
+    ax: number,
+    ay: number,
+    bx: number,
+    by: number
+  ) {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+  }
+
   /** Borra la ficha o el trazo que haya bajo el punto (sin apilar undo). */
   function eraseAt(x: number, y: number) {
     setFrame((f) => {
@@ -171,8 +183,18 @@ export default function CourtDrawer({
       let best = -1;
       let bestD = HIT_STROKE;
       f.strokes.forEach((s, i) => {
-        for (let k = 0; k + 1 < s.points.length; k += 2) {
-          const d = Math.hypot(s.points[k] - x, s.points[k + 1] - y);
+        const p = s.points;
+        if (p.length < 4) {
+          // Trazo de un solo punto: distancia a ese punto.
+          const d = Math.hypot((p[0] ?? 1e9) - x, (p[1] ?? 1e9) - y);
+          if (d < bestD) {
+            bestD = d;
+            best = i;
+          }
+          return;
+        }
+        for (let k = 0; k + 3 < p.length; k += 2) {
+          const d = distToSegment(x, y, p[k], p[k + 1], p[k + 2], p[k + 3]);
           if (d < bestD) {
             bestD = d;
             best = i;
@@ -191,7 +213,6 @@ export default function CourtDrawer({
     capture(svgRef.current, e.pointerId);
     const [x, y] = toCourt(e.clientX, e.clientY);
     if (tool === "erase") {
-      pushUndo();
       erasingRef.current = true;
       eraseAt(x, y);
       return;
@@ -219,7 +240,6 @@ export default function CourtDrawer({
       drawingRef.current = false;
       const c = currentRef.current;
       if (c && c.points.length >= 4) {
-        pushUndo();
         setFrame((f) => ({ ...f, strokes: [...f.strokes, c] }));
       }
       setCur(null);
@@ -233,11 +253,9 @@ export default function CourtDrawer({
     e.preventDefault();
     capture(svgRef.current, e.pointerId);
     if (tool === "erase") {
-      pushUndo();
       setFrame((f) => ({ ...f, tokens: f.tokens.filter((_, k) => k !== i) }));
       return;
     }
-    pushUndo();
     moveRef.current = i;
   }
 
@@ -263,34 +281,23 @@ export default function CourtDrawer({
     newShapeRef.current = null;
     if (shape && inside(e.clientX, e.clientY)) {
       const [x, y] = toCourt(e.clientX, e.clientY);
-      pushUndo();
       setFrame((f) => ({ ...f, tokens: [...f.tokens, { id: tokenId(), shape, x, y }] }));
     }
     setPreview(null);
   }
 
   /* ------------------------------- Acciones ------------------------------- */
-  function undo() {
-    const last = undoStack[undoStack.length - 1];
-    if (!last) return;
-    setFrames(last);
-    setIdx((i) => Math.min(i, last.length - 1));
-    setUndoStack((s) => s.slice(0, -1));
-  }
   function clearFrame() {
-    pushUndo();
     setFrame(() => ({ strokes: [], tokens: [] }));
   }
   function switchCourt(c: "full" | "half") {
     if (c === court) return;
     // Las coordenadas no son equivalentes entre pistas: se empieza de cero.
-    pushUndo();
     setFrames([{ strokes: [], tokens: [] }]);
     setIdx(0);
     setCourt(c);
   }
   function addFrame() {
-    pushUndo();
     // Duplica el fotograma actual conservando los ids: así las fichas saben
     // hacia dónde moverse y la interpolación funciona.
     const copy: DrawFrame = {
@@ -302,7 +309,6 @@ export default function CourtDrawer({
   }
   function deleteFrame() {
     if (frames.length < 2) return;
-    pushUndo();
     setFrames((fs) => fs.filter((_, i) => i !== idx));
     setIdx((i) => Math.max(0, i - 1));
   }
@@ -352,9 +358,9 @@ export default function CourtDrawer({
           : "flex flex-col gap-2"
       }
     >
-      {/* Barra de herramientas (una fila; hace scroll lateral si no cabe). */}
-      <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
-        <div className="min-w-0 shrink">
+      {/* Barra en dos filas agrupadas. Fila 1: pista + dibujar/borrador + pantalla completa. */}
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
           <Segmented<"full" | "half">
             value={court}
             onChange={switchCourt}
@@ -364,8 +370,6 @@ export default function CourtDrawer({
             ]}
           />
         </div>
-        <span aria-hidden className="mx-0.5 h-6 w-px shrink-0 bg-separator" />
-
         <button
           type="button"
           onClick={() => setTool("draw")}
@@ -388,8 +392,27 @@ export default function CourtDrawer({
             <path d="M8.5 19H20M4.8 16.2l7-7a2 2 0 0 1 2.8 0l4.4 4.4a2 2 0 0 1 0 2.8L16.5 19H10l-5.2-5.2a2 2 0 0 1 0-2.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <span aria-hidden className="mx-0.5 h-6 w-px shrink-0 bg-separator" />
+        <button
+          type="button"
+          onClick={() => setFs((v) => !v)}
+          aria-label={fs ? "Salir de pantalla completa" : "Pantalla completa"}
+          className={btn}
+        >
+          {fs ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
+      </div>
 
+      {/* Fila 2: fichas (atacante / defensor / balón) + limpiar. */}
+      <div className="flex items-center gap-2">
+        <span className="mr-0.5 text-[11px] text-label-3">Fichas</span>
         <button
           type="button"
           aria-label="Atacante (círculo)"
@@ -427,46 +450,16 @@ export default function CourtDrawer({
             <path d="M6 12a6 6 0 0 0 12 0M12 6a6 6 0 0 0 0 12" fill="none" stroke="#8a5200" strokeWidth="1" />
           </svg>
         </button>
-        <span aria-hidden className="mx-0.5 h-6 w-px shrink-0 bg-separator" />
-
-        <button
-          type="button"
-          onClick={undo}
-          disabled={undoStack.length === 0}
-          aria-label="Deshacer"
-          className={btn}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 7 4 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M4 12h11a5 5 0 0 1 0 10h-1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
         <button
           type="button"
           onClick={clearFrame}
           disabled={!frame.strokes.length && !frame.tokens.length}
           aria-label="Limpiar fotograma"
-          className={btn}
+          className={`${btn} ml-auto`}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6.5 7l.8 12a1 1 0 0 0 1 .9h7.4a1 1 0 0 0 1-.9l.8-12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => setFs((v) => !v)}
-          aria-label={fs ? "Salir de pantalla completa" : "Pantalla completa"}
-          className={btn}
-        >
-          {fs ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
         </button>
       </div>
 
