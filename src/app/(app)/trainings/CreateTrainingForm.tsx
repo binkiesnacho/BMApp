@@ -10,6 +10,7 @@ import {
   TRAINING_FILE_ACCEPT,
   uploadTrainingFile,
 } from "@/lib/trainingFiles";
+import { OBJECTIVE_CATALOG } from "@/lib/objectives";
 import type {
   Team,
   TrainingBoard,
@@ -58,10 +59,25 @@ export default function CreateTrainingForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [phases, setPhases] = useState<EditPhase[]>(DEFAULT_PHASES);
-  const [objectives, setObjectives] = useState<string[]>([""]);
+  const [objectives, setObjectives] = useState<string[]>([]);
+  const [cat, setCat] = useState<string | null>(null);
+  const [customObj, setCustomObj] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const activeCat = OBJECTIVE_CATALOG.find((c) => c.category === cat) ?? null;
+  function toggleObjective(item: string) {
+    setObjectives((os) =>
+      os.includes(item) ? os.filter((o) => o !== item) : [...os, item]
+    );
+  }
+  function addCustomObjective() {
+    const v = customObj.trim();
+    if (!v) return;
+    setObjectives((os) => (os.includes(v) ? os : [...os, v]));
+    setCustomObj("");
+  }
 
   /* ----- Actualizaciones anidadas (fase → ejercicio → progresión → pizarra) ----- */
   function updatePhase(i: number, fn: (p: EditPhase) => EditPhase) {
@@ -213,37 +229,107 @@ export default function CreateTrainingForm({
         className={inputCls}
       />
 
-      {/* Objetivos */}
+      {/* Objetivos técnico-tácticos: etiquetas por categoría + personalizados */}
       <div>
-        <p className="mb-1 text-xs font-semibold text-label-2">Objetivos</p>
-        <div className="space-y-2">
-          {objectives.map((o, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                value={o}
-                onChange={(e) =>
-                  setObjectives((os) => os.map((x, j) => (j === i ? e.target.value : x)))
-                }
-                placeholder={`Objetivo ${i + 1}`}
-                className={inputCls + " flex-1"}
-              />
+        <p className="mb-1 text-xs font-semibold text-label-2">
+          Objetivos técnico-tácticos
+        </p>
+
+        {/* Categoría (los objetivos no dependen del género) */}
+        <div className="no-scrollbar -mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1">
+          {OBJECTIVE_CATALOG.map((c) => {
+            const on = cat === c.category;
+            return (
               <button
-                onClick={() => setObjectives((os) => os.filter((_, j) => j !== i))}
-                className="px-2 text-label-3 hover:text-red-400"
-                aria-label="Quitar objetivo"
+                key={c.category}
+                type="button"
+                onClick={() => setCat(on ? null : c.category)}
+                className={`min-h-[34px] shrink-0 rounded-full px-3.5 text-[13px] font-medium transition active:scale-95 ${
+                  on ? "bg-brand text-white" : "bg-canvas text-label-2"
+                }`}
               >
-                ✕
+                {c.category}
               </button>
+            );
+          })}
+        </div>
+
+        {/* Catálogo de la categoría elegida */}
+        {activeCat &&
+          activeCat.groups.map((g) => (
+            <div key={g.label} className="mb-2">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-label-3">
+                {g.label}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {g.items.map((it) => {
+                  const on = objectives.includes(it);
+                  return (
+                    <button
+                      key={it}
+                      type="button"
+                      onClick={() => toggleObjective(it)}
+                      aria-pressed={on}
+                      className={`min-h-[32px] rounded-full border px-3 text-[12px] font-medium transition active:scale-95 ${
+                        on
+                          ? "border-brand bg-brand/20 text-sky-100"
+                          : "border-separator bg-canvas text-label-2"
+                      }`}
+                    >
+                      {on ? "✓ " : "+ "}
+                      {it}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ))}
+
+        {/* Objetivos seleccionados (de cualquier categoría + personalizados) */}
+        {objectives.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5 rounded-xl bg-canvas p-2">
+            {objectives.map((o, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1 text-[12px] font-medium text-white"
+              >
+                {o}
+                <button
+                  type="button"
+                  onClick={() => setObjectives((os) => os.filter((_, j) => j !== i))}
+                  className="text-[13px] leading-none opacity-80"
+                  aria-label={`Quitar ${o}`}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Objetivo personalizado */}
+        <div className="mt-2 flex gap-2">
+          <input
+            value={customObj}
+            onChange={(e) => setCustomObj(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCustomObjective();
+              }
+            }}
+            placeholder="Objetivo personalizado"
+            className={inputCls + " flex-1"}
+          />
+          <button
+            type="button"
+            onClick={addCustomObjective}
+            disabled={!customObj.trim()}
+            className="rounded-xl border border-separator px-3 text-sm font-medium text-label disabled:opacity-40"
+          >
+            Añadir
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setObjectives((os) => [...os, ""])}
-          className={addRowCls + " mt-2"}
-        >
-          <span className="text-base leading-none text-brand">＋</span> Añadir objetivo
-        </button>
       </div>
 
       <textarea
