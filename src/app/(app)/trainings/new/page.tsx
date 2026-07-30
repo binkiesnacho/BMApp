@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   canAdminister,
   canCapture,
+  getMyCoachTeamIds,
   getSessionProfile,
   isTecnico,
 } from "@/lib/auth";
@@ -18,13 +19,31 @@ export default async function NewTrainingPage() {
   if (!canCapture(profile) || !profile?.club_id) redirect("/trainings");
 
   const supabase = await createClient();
-  let q = supabase.from("teams").select("*").eq("club_id", profile.club_id);
-  if (isTecnico(profile)) q = q.eq("id", profile.team_id ?? "");
-  else if (!canAdminister(profile)) q = q.eq("coach_id", profile.id);
-  const manageable =
-    isTecnico(profile) && !profile.team_id
-      ? []
-      : (await q.returns<Team[]>()).data ?? [];
+  let manageable: Team[];
+
+  if (canAdminister(profile)) {
+    // Admin: cualquier equipo del club.
+    manageable =
+      (await supabase
+        .from("teams")
+        .select("*")
+        .eq("club_id", profile.club_id)
+        .order("name", { ascending: true })
+        .returns<Team[]>()).data ?? [];
+  } else {
+    // Entrenador: sus equipos (team_coaches + coach_id legado, multi-equipo).
+    // Técnico: además, su equipo asignado.
+    const ids = new Set(await getMyCoachTeamIds());
+    if (isTecnico(profile) && profile.team_id) ids.add(profile.team_id);
+    manageable = ids.size
+      ? (await supabase
+          .from("teams")
+          .select("*")
+          .in("id", [...ids])
+          .order("name", { ascending: true })
+          .returns<Team[]>()).data ?? []
+      : [];
+  }
 
   return (
     <Screen title="Nuevo entrenamiento" back="/trainings">

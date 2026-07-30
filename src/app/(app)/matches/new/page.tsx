@@ -2,7 +2,12 @@ import { redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
+import {
+  canAdminister,
+  getMyCoachTeamIds,
+  getSessionProfile,
+  isStaff,
+} from "@/lib/auth";
 import CreateMatchForm from "../CreateMatchForm";
 import type { Team } from "@/lib/types/database";
 
@@ -13,11 +18,28 @@ export default async function NewMatchPage() {
   if (!isStaff(profile) || !profile?.club_id) redirect("/matches");
 
   const supabase = await createClient();
-  const q = supabase.from("teams").select("*").eq("club_id", profile.club_id);
-  const { data } = canAdminister(profile)
-    ? await q.returns<Team[]>()
-    : await q.eq("coach_id", profile.id).returns<Team[]>();
-  const manageable = data ?? [];
+  let manageable: Team[];
+
+  if (canAdminister(profile)) {
+    manageable =
+      (await supabase
+        .from("teams")
+        .select("*")
+        .eq("club_id", profile.club_id)
+        .order("name", { ascending: true })
+        .returns<Team[]>()).data ?? [];
+  } else {
+    // Entrenador: sus equipos (team_coaches + coach_id legado, multi-equipo).
+    const ids = [...(await getMyCoachTeamIds())];
+    manageable = ids.length
+      ? (await supabase
+          .from("teams")
+          .select("*")
+          .in("id", ids)
+          .order("name", { ascending: true })
+          .returns<Team[]>()).data ?? []
+      : [];
+  }
 
   return (
     <Screen title="Nuevo partido" back="/matches">
