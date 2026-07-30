@@ -3,7 +3,7 @@ import Screen from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
-import { getMyTeams, getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getMyTeams, getSessionProfile } from "@/lib/auth";
 import MatchesTabs from "./MatchesTabs";
 import MatchTeamFilter from "./MatchTeamFilter";
 import type { Match, Team } from "@/lib/types/database";
@@ -28,7 +28,7 @@ export default async function MatchesPage({
     getSessionProfile(),
     getMyTeams(),
   ]);
-  const staff = isStaff(profile);
+  const staff = canCapture(profile);
   const supabase = await createClient();
 
   const [{ data: allTeams }, { data: matches }] = await Promise.all([

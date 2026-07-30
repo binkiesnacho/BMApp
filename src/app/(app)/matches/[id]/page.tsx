@@ -4,6 +4,7 @@ import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
 import {
   canCapture,
+  canCaptureTeam,
   canManageTeam,
   getMyCoachTeamIds,
   getSessionProfile,
@@ -85,7 +86,10 @@ export default async function MatchDetailPage({
         .returns<{ player_id: string }[]>(),
     ]);
 
-  const canManage = canManageTeam(profile, team ?? null, await getMyCoachTeamIds());
+  const coachTeamIds = await getMyCoachTeamIds();
+  const canManage = canManageTeam(profile, team ?? null, coachTeamIds);
+  // Editar/eliminar el partido: entrenadores y técnicos del equipo.
+  const canEdit = canCaptureTeam(profile, team ?? null, coachTeamIds);
   const observations = canManage
     ? await loadObservations(supabase, { matchId: id })
     : [];
@@ -108,7 +112,7 @@ export default async function MatchDetailPage({
       subtitle={fmtDate(match.date)}
       back="/matches"
       action={
-        canManage ? (
+        canEdit ? (
           <Link
             href={`/matches/${match.id}/edit`}
             className="btn btn-secondary w-full py-3.5"

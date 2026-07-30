@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { canCapture, getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getSessionProfile } from "@/lib/auth";
 import type {
   GoalZone,
   MatchStatus,
@@ -13,7 +13,7 @@ import type {
 
 export type MatchFormState = { error?: string };
 
-/** Crea un partido para un equipo (RLS: can_manage_team). */
+/** Crea un partido para un equipo (RLS: can_capture_team → entrenador o técnico). */
 export async function createMatchAction(
   _prev: MatchFormState,
   formData: FormData
@@ -28,7 +28,7 @@ export async function createMatchAction(
   if (!date) return { error: "Indica la fecha." };
 
   const { profile } = await getSessionProfile();
-  if (!isStaff(profile)) return { error: "Sin permisos." };
+  if (!canCapture(profile)) return { error: "Sin permisos." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("matches").insert({
@@ -67,7 +67,7 @@ export async function editMatchAction(
     : "scheduled";
 
   const { profile } = await getSessionProfile();
-  if (!isStaff(profile)) return { error: "Sin permisos." };
+  if (!canCapture(profile)) return { error: "Sin permisos." };
 
   const supabase = await createClient();
   // RLS (can_capture_team) limita al admin, al entrenador del equipo o al técnico.

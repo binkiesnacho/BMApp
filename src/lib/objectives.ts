@@ -9,6 +9,26 @@
 export type ObjectiveGroup = { label: string; items: string[] };
 export type ObjectiveCategory = { category: string; groups: ObjectiveGroup[] };
 
+/**
+ * Deduce la categoría a partir del nombre del equipo (p. ej. "Cadete masculino"
+ * → "Cadete"). Devuelve null si no reconoce ninguna. El orden importa:
+ * "pre-benjamín" también cae en Benjamín.
+ */
+export function inferCategory(teamName: string | null | undefined): string | null {
+  if (!teamName) return null;
+  const n = teamName
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // sin acentos
+  if (n.includes("benjam")) return "Benjamín";
+  if (n.includes("alev")) return "Alevín";
+  if (n.includes("infantil")) return "Infantil";
+  if (n.includes("cadete")) return "Cadete";
+  if (n.includes("juvenil")) return "Juvenil";
+  if (n.includes("senior") || n.includes("absolut")) return "Senior";
+  return null;
+}
+
 export const OBJECTIVE_CATALOG: ObjectiveCategory[] = [
   {
     category: "Benjamín",

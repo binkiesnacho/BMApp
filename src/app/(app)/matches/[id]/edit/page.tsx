@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
-import { canManageTeam, getMyCoachTeamIds, getSessionProfile } from "@/lib/auth";
+import { canCaptureTeam, getMyCoachTeamIds, getSessionProfile } from "@/lib/auth";
 import EditMatchForm from "../EditMatchForm";
 import { deleteMatchAction } from "../../actions";
 import type { Match, Team } from "@/lib/types/database";
@@ -24,13 +24,13 @@ export default async function EditMatchPage({
     .maybeSingle<Match>();
   if (!match) notFound();
 
-  // Solo admin o el entrenador de ESTE equipo pueden editar.
+  // Admin, entrenador o técnico de ESTE equipo pueden editar.
   const { data: team } = await supabase
     .from("teams")
     .select("id, coach_id")
     .eq("id", match.team_id)
     .maybeSingle<Pick<Team, "id" | "coach_id">>();
-  if (!canManageTeam(profile, team ?? null, await getMyCoachTeamIds()))
+  if (!canCaptureTeam(profile, team ?? null, await getMyCoachTeamIds()))
     redirect(`/matches/${id}`);
 
   return (

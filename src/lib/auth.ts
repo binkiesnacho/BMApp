@@ -165,6 +165,26 @@ export function isTecnico(profile: Profile | null): boolean {
   return rolesOf(profile).includes("tecnico");
 }
 
+/**
+ * ¿Puede CAPTURAR/gestionar ESTE equipo? (espejo de can_capture_team en la BD)
+ * Entrenadores y técnicos del equipo: crear/editar/ver/eliminar partidos, en
+ * vivo y entrenamientos. Admin/superadmin, cualquier equipo.
+ */
+export function canCaptureTeam(
+  profile: Profile | null,
+  team: { id?: string; coach_id: string | null } | null,
+  coachTeamIds?: Set<string>
+): boolean {
+  if (canManageTeam(profile, team, coachTeamIds)) return true;
+  // Técnico asignado a este equipo (profiles.team_id).
+  return (
+    !!profile &&
+    isTecnico(profile) &&
+    !!team?.id &&
+    profile.team_id === team.id
+  );
+}
+
 /** ¿Puede capturar? = staff o técnico (stats en vivo + crear entrenamientos). */
 export function canCapture(profile: Profile | null): boolean {
   return isStaff(profile) || isTecnico(profile);

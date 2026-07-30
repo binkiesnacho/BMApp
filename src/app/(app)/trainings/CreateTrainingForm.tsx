@@ -10,7 +10,7 @@ import {
   TRAINING_FILE_ACCEPT,
   uploadTrainingFile,
 } from "@/lib/trainingFiles";
-import { OBJECTIVE_CATALOG } from "@/lib/objectives";
+import { OBJECTIVE_CATALOG, inferCategory } from "@/lib/objectives";
 import type {
   Team,
   TrainingBoard,
@@ -53,14 +53,24 @@ export default function CreateTrainingForm({
   defaultOpen?: boolean;
 }) {
   const router = useRouter();
+  const initialTeamId = teams.length === 1 ? teams[0].id : "";
   const [open, setOpen] = useState(defaultOpen);
-  const [teamId, setTeamId] = useState(teams.length === 1 ? teams[0].id : "");
+  const [teamId, setTeamId] = useState(initialTeamId);
   const [date, setDate] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [phases, setPhases] = useState<EditPhase[]>(DEFAULT_PHASES);
   const [objectives, setObjectives] = useState<string[]>([]);
-  const [cat, setCat] = useState<string | null>(null);
+  // La categoría (para las etiquetas) se deduce del equipo; el usuario la puede
+  // cambiar. Al cambiar de equipo se vuelve a inferir.
+  const [cat, setCat] = useState<string | null>(() =>
+    inferCategory(teams.find((t) => t.id === initialTeamId)?.name)
+  );
+
+  function selectTeam(id: string) {
+    setTeamId(id);
+    setCat(inferCategory(teams.find((t) => t.id === id)?.name));
+  }
   const [customObj, setCustomObj] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
@@ -208,7 +218,7 @@ export default function CreateTrainingForm({
 
   return (
     <div className="space-y-3 rounded-2xl border border-separator/60 bg-surface p-3">
-      <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className={inputCls}>
+      <select value={teamId} onChange={(e) => selectTeam(e.target.value)} className={inputCls}>
         <option value="">Equipo…</option>
         {teams.map((t) => (
           <option key={t.id} value={t.id}>
