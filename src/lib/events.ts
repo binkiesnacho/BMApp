@@ -1,4 +1,8 @@
-import type { ShotDistance, StatEventType } from "@/lib/types/database";
+import type {
+  SanctionEvent,
+  ShotDistance,
+  StatEventType,
+} from "@/lib/types/database";
 
 /** Etiquetas, iconos y orden de los tipos de evento in-game. */
 export const EVENT_LABELS: Record<
@@ -9,13 +13,22 @@ export const EVENT_LABELS: Record<
   miss: { label: "Lanzamiento fallado", short: "L. Fallado", icon: "❌" },
   goal_conceded: { label: "Gol encajado", short: "Encajado", icon: "🥅" },
   save: { label: "Parada", short: "Parada", icon: "🧤" },
-  turnover: { label: "Error", short: "Error", icon: "🔄" },
+  turnover: { label: "Pérdida", short: "Pérdida", icon: "🔄" },
+  double: { label: "Dobles", short: "Dobles", icon: "✋" },
+  steps: { label: "Pasos", short: "Pasos", icon: "👣" },
   exclusion_2min: { label: "Exclusión 2'", short: "2 min", icon: "🟧" },
   yellow_card: { label: "Amarilla", short: "Amar.", icon: "🟨" },
   red_card: { label: "Roja", short: "Roja", icon: "🟥" },
   assist: { label: "Asistencia", short: "Asist.", icon: "🎯" },
   timeout: { label: "Tiempo muerto", short: "T. muerto", icon: "⏱️" },
 };
+
+/** Sanciones que se eligen tras pulsar "Sanción" (2 min / amarilla / roja). */
+export const SANCTION_OPTIONS: { value: SanctionEvent; label: string; icon: string }[] = [
+  { value: "exclusion_2min", label: "2 min", icon: "🟧" },
+  { value: "yellow_card", label: "Amarilla", icon: "🟨" },
+  { value: "red_card", label: "Roja", icon: "🟥" },
+];
 
 /**
  * Orden de los botones de evento en la captura en vivo.

@@ -45,6 +45,52 @@ const emptyExercise = (): EditExercise => ({
 });
 const emptyProgression = (): EditProgression => ({ description: "", boards: [] });
 
+const INPUT_CLS =
+  "w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand";
+const ADD_ROW_CLS =
+  "flex w-full items-center gap-2 rounded-xl border border-dashed border-separator px-3 py-2.5 text-sm font-medium text-label-2 hover:border-brand hover:text-label";
+
+/**
+ * Bloque de pizarras (para ejercicios y progresiones). Definido a NIVEL DE
+ * MÓDULO: si estuviera dentro del formulario, cada render lo recrearía y React
+ * remontaría el CourtDrawer, perdiendo el dibujo (por eso la pizarra no
+ * funcionaba en entrenamientos, solo en el modo pizarra suelto).
+ */
+function BoardList({
+  boards,
+  onAdd,
+  onSet,
+  onRemove,
+}: {
+  boards: EditBoard[];
+  onAdd: () => void;
+  onSet: (bi: number, d: TrainingDrawing | null) => void;
+  onRemove: (bi: number) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      {boards.map((b, bi) => (
+        <div key={bi} className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-label-3">Pizarra {bi + 1}</span>
+            <button
+              type="button"
+              onClick={() => onRemove(bi)}
+              className="text-[11px] text-label-3 hover:text-red-400"
+            >
+              Quitar
+            </button>
+          </div>
+          <CourtDrawer value={b.drawing} onChange={(d) => onSet(bi, d)} />
+        </div>
+      ))}
+      <button type="button" onClick={onAdd} className={ADD_ROW_CLS}>
+        <DrawIcon size={16} /> Añadir pizarra
+      </button>
+    </div>
+  );
+}
+
 export default function CreateTrainingForm({
   teams,
   defaultOpen = false,
@@ -153,9 +199,15 @@ export default function CreateTrainingForm({
       return;
     }
 
-    // El entrenamiento ya existe: subimos los adjuntos y navegamos igualmente.
+    // El entrenamiento ya existe: subimos los adjuntos pero NUNCA bloqueamos la
+    // navegación por ello (si un adjunto falla o lanza, igualmente continuamos;
+    // así el botón no se queda en "Creando…").
     for (const f of files) {
-      await uploadTrainingFile(res.id, f);
+      try {
+        await uploadTrainingFile(res.id, f);
+      } catch {
+        /* el entreno ya está creado; el adjunto se puede reintentar luego */
+      }
     }
 
     router.push(`/trainings/${res.id}`);
@@ -173,48 +225,8 @@ export default function CreateTrainingForm({
     );
   }
 
-  const inputCls =
-    "w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand";
-  const addRowCls =
-    "flex w-full items-center gap-2 rounded-xl border border-dashed border-separator px-3 py-2.5 text-sm font-medium text-label-2 hover:border-brand hover:text-label";
-
-  // Bloque de pizarras reutilizable (para ejercicios y progresiones).
-  function BoardList({
-    boards,
-    onAdd,
-    onSet,
-    onRemove,
-  }: {
-    boards: EditBoard[];
-    onAdd: () => void;
-    onSet: (bi: number, d: TrainingDrawing | null) => void;
-    onRemove: (bi: number) => void;
-  }) {
-    return (
-      <div className="space-y-2">
-        {boards.map((b, bi) => (
-          <div key={bi} className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-label-3">
-                Pizarra {bi + 1}
-              </span>
-              <button
-                type="button"
-                onClick={() => onRemove(bi)}
-                className="text-[11px] text-label-3 hover:text-red-400"
-              >
-                Quitar
-              </button>
-            </div>
-            <CourtDrawer value={b.drawing} onChange={(d) => onSet(bi, d)} />
-          </div>
-        ))}
-        <button type="button" onClick={onAdd} className={addRowCls}>
-          <DrawIcon size={16} /> Añadir pizarra
-        </button>
-      </div>
-    );
-  }
+  const inputCls = INPUT_CLS;
+  const addRowCls = ADD_ROW_CLS;
 
   return (
     <div className="space-y-3 rounded-2xl border border-separator/60 bg-surface p-3">

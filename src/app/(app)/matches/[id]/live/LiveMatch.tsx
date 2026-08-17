@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveGameStore } from "@/lib/store/liveGameStore";
-import { EVENT_ORDER, EVENT_LABELS, SHOT_DISTANCES, distanceLabel } from "@/lib/events";
+import {
+  EVENT_LABELS,
+  SHOT_DISTANCES,
+  SANCTION_OPTIONS,
+  distanceLabel,
+} from "@/lib/events";
 import GoalZonePicker from "@/components/match/GoalZonePicker";
 import { isShotEvent } from "@/lib/types/database";
 import { saveLiveMatchAction } from "../../actions";
@@ -14,6 +19,11 @@ import type {
   ShotDistance,
   StatEventType,
 } from "@/lib/types/database";
+
+// Slot del grid de eventos: un tipo real o el meta-botón "sancion".
+type EventSlot = StatEventType | "sancion";
+const SHOT_ROW: StatEventType[] = ["goal", "miss", "goal_conceded", "save"];
+const ACTION_ROW: EventSlot[] = ["sancion", "turnover", "double", "steps"];
 
 function clock(sec: number) {
   const m = Math.floor(sec / 60);
@@ -32,12 +42,13 @@ export default function LiveMatch({
 }) {
   const router = useRouter();
   const store = useLiveGameStore();
-  // Flujo: 1) evento → 2) jugador → (si es tiro) 3) zona → 4) distancia (registra).
-  const [armed, setArmed] = useState<StatEventType | null>(null);
-  const [picked, setPicked] = useState(false); // jugador ya elegido (flujo de tiro)
+  // Flujo: 1) evento → 2) jugador → (tiro) 3) zona → 4) distancia · (sanción) 3) tipo.
+  const [armed, setArmed] = useState<EventSlot | null>(null);
+  const [picked, setPicked] = useState(false); // jugador ya elegido (paso con subpaso)
   const [pickedPlayer, setPickedPlayer] = useState<string | null>(null);
   const [zone, setZone] = useState<GoalZone | null>(null);
   const [showAll, setShowAll] = useState(squadIds.length === 0);
+  const [timeoutActive, setTimeoutActive] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -74,7 +85,11 @@ export default function LiveMatch({
     return p ? `${p.number ?? ""} ${p.name}`.trim() : "?";
   };
 
-  const isShot = armed !== null && isShotEvent(armed);
+  const isShot = armed !== null && armed !== "sancion" && isShotEvent(armed);
+  const isSancion = armed === "sancion";
+  const needsSub = isShot || isSancion; // requiere subpaso tras elegir jugador
+  const armedLabel =
+    armed === null ? "" : armed === "sancion" ? "Sanción" : EVENT_LABELS[armed].label;
 
   function reset() {
     setArmed(null);
@@ -93,21 +108,31 @@ export default function LiveMatch({
     reset();
   }
 
-  // Paso 2: al elegir jugador, los eventos que no son tiro se registran ya;
-  // los tiros avanzan a zona + distancia.
+  // Paso 2: al elegir jugador, los eventos simples se registran ya; los tiros y
+  // las sanciones avanzan a su subpaso (zona/distancia o tipo de sanción).
   function choosePlayer(playerId: string | null) {
     if (!armed) return;
-    if (isShot) {
+    if (needsSub) {
       setPickedPlayer(playerId);
       setPicked(true);
     } else {
-      commit(playerId, armed, null, null);
+      commit(playerId, armed as StatEventType, null, null);
     }
   }
 
   function timeout() {
-    // Tiempo muerto: evento de equipo, registra el minuto actual.
-    store.addEvent(null, "timeout", null, null);
+    // Estado fresco del reloj (evita leer un valor obsoleto del render).
+    const running = useLiveGameStore.getState().isRunning;
+    if (timeoutActive) {
+      // Reanudar: se vuelve a poner en marcha el reloj de juego.
+      if (!running) store.toggleClock();
+      setTimeoutActive(false);
+    } else {
+      // Tiempo muerto: registra el minuto y para el reloj de juego.
+      store.addEvent(null, "timeout", null, null);
+      if (running) store.toggleClock();
+      setTimeoutActive(true);
+    }
   }
 
   async function save(finish: boolean) {
@@ -141,8 +166,8 @@ export default function LiveMatch({
   }
 
   const recent = [...store.events].slice(-6).reverse();
-  // El grid de jugadores está activo si hay evento y aún no se pasó a zona (tiro).
-  const pickingPlayer = armed !== null && !(isShot && picked);
+  // El grid de jugadores está activo si hay evento y aún no se pasó al subpaso.
+  const pickingPlayer = armed !== null && !(needsSub && picked);
 
   return (
     <div className="px-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
@@ -156,7 +181,10 @@ export default function LiveMatch({
           <div className="text-center">
             <p className="font-mono text-lg text-label">{clock(store.elapsed)}</p>
             <button
-              onClick={() => store.toggleClock()}
+              onClick={() => {
+                store.toggleClock();
+                setTimeoutActive(false);
+              }}
               className={`mt-1 rounded-lg px-3 py-1 text-xs font-semibold ${
                 store.isRunning ? "bg-amber-600 text-white" : "bg-emerald-600 text-white"
               }`}
@@ -185,18 +213,21 @@ export default function LiveMatch({
         </div>
       </div>
 
-      {/* 1 · Evento */}
+      {/* 1 · Evento (2 filas de 4: tiros arriba; sanción/pérdida/dobles/pasos abajo) */}
       <p className="mt-4 mb-2 text-xs font-semibold text-label-2">1 · Elige evento</p>
       <div className="grid grid-cols-4 gap-2">
-        {EVENT_ORDER.map((type) => {
-          const info = EVENT_LABELS[type];
-          const active = armed === type;
+        {[...SHOT_ROW, ...ACTION_ROW].map((slot) => {
+          const info =
+            slot === "sancion"
+              ? { icon: "🟨", short: "Sanción" }
+              : EVENT_LABELS[slot];
+          const active = armed === slot;
           return (
             <button
-              key={type}
+              key={slot}
               onClick={() => {
                 reset();
-                if (!active) setArmed(type);
+                if (!active) setArmed(slot);
               }}
               aria-pressed={active}
               className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] transition active:scale-95 ${
@@ -212,13 +243,20 @@ export default function LiveMatch({
         })}
       </div>
 
-      {/* Tiempo muerto: registra el minuto al instante */}
+      {/* Tiempo muerto: para el reloj; vuelve a pulsar para reanudar el juego */}
       <button
         onClick={timeout}
-        className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-separator bg-surface py-2.5 text-[13px] font-semibold text-label active:scale-[0.99] active:border-brand"
+        className={`mt-2 flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-[13px] font-semibold transition active:scale-[0.99] ${
+          timeoutActive
+            ? "border-amber-500 bg-amber-500/15 text-amber-300"
+            : "border-separator bg-surface text-label active:border-brand"
+        }`}
       >
-        <span className="text-base">⏱️</span> Tiempo muerto
-        <span className="text-label-3">({clock(store.elapsed)})</span>
+        <span className="text-base">⏱️</span>
+        {timeoutActive ? "Reanudar juego" : "Tiempo muerto"}
+        <span className={timeoutActive ? "text-amber-300/80" : "text-label-3"}>
+          ({clock(store.elapsed)})
+        </span>
       </button>
 
       {/* 2 · Jugador */}
@@ -226,8 +264,7 @@ export default function LiveMatch({
         <>
           <div className="mt-4 mb-2 flex items-center justify-between">
             <p className="text-xs font-semibold text-label-2">
-              2 · Elige jugador{" "}
-              <span className="text-label-3">({EVENT_LABELS[armed].label})</span>
+              2 · Elige jugador <span className="text-label-3">({armedLabel})</span>
             </p>
             {squadIds.length > 0 && (
               <button
@@ -271,7 +308,7 @@ export default function LiveMatch({
             <p className="text-xs font-semibold text-label-2">
               3 · ¿Por dónde?{" "}
               <span className="text-label-3">
-                ({EVENT_LABELS[armed].label} · {playerLabel(pickedPlayer)})
+                ({armedLabel} · {playerLabel(pickedPlayer)})
               </span>
             </p>
             <button onClick={reset} className="text-[11px] font-medium text-label-3">
@@ -287,7 +324,7 @@ export default function LiveMatch({
             {SHOT_DISTANCES.map((d) => (
               <button
                 key={d.value}
-                onClick={() => commit(pickedPlayer, armed, zone, d.value)}
+                onClick={() => commit(pickedPlayer, armed as StatEventType, zone, d.value)}
                 className="rounded-xl border border-separator bg-surface px-1 py-3 text-[12px] font-semibold text-label active:scale-95 active:border-brand"
               >
                 {d.label}
@@ -295,11 +332,39 @@ export default function LiveMatch({
             ))}
           </div>
           <button
-            onClick={() => commit(pickedPlayer, armed, zone, null)}
+            onClick={() => commit(pickedPlayer, armed as StatEventType, zone, null)}
             className="mt-2 w-full rounded-xl border border-dashed border-separator py-2.5 text-[13px] font-medium text-label-2 active:scale-[0.99]"
           >
             Registrar sin distancia
           </button>
+        </>
+      )}
+
+      {/* 3 · Tipo de sanción (tras elegir jugador), como el subpaso de la zona */}
+      {isSancion && picked && (
+        <>
+          <div className="mt-4 mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold text-label-2">
+              3 · Tipo de sanción{" "}
+              <span className="text-brand">→ registra</span>{" "}
+              <span className="text-label-3">({playerLabel(pickedPlayer)})</span>
+            </p>
+            <button onClick={reset} className="text-[11px] font-medium text-label-3">
+              Cancelar
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {SANCTION_OPTIONS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => commit(pickedPlayer, s.value, null, null)}
+                className="flex flex-col items-center gap-1 rounded-xl border border-separator bg-surface py-3 text-[12px] font-semibold text-label active:scale-95 active:border-brand"
+              >
+                <span className="text-lg">{s.icon}</span>
+                {s.label}
+              </button>
+            ))}
+          </div>
         </>
       )}
 

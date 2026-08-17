@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canCapture, getSessionProfile } from "@/lib/auth";
 import type {
@@ -108,9 +109,13 @@ export async function createTrainingAction(
 export async function deleteTrainingAction(formData: FormData): Promise<void> {
   const trainingId = String(formData.get("trainingId") ?? "");
   if (!trainingId) return;
+  const { profile } = await getSessionProfile();
+  if (!canCapture(profile)) return;
   const supabase = await createClient();
   await supabase.from("trainings").delete().eq("id", trainingId);
   revalidatePath("/trainings");
+  // Volver a la lista: si no, la página del entreno recién borrado da notFound.
+  redirect("/trainings");
 }
 
 /**

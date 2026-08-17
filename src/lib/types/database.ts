@@ -18,7 +18,17 @@ export type StatEventType =
   | "turnover"
   | "assist"
   | "goal_conceded"
-  | "timeout";
+  | "timeout"
+  | "double"
+  | "steps";
+
+/** Sanciones (se eligen tras pulsar "Sanción", como la zona de portería). */
+export const SANCTION_EVENTS = [
+  "exclusion_2min",
+  "yellow_card",
+  "red_card",
+] as const;
+export type SanctionEvent = (typeof SANCTION_EVENTS)[number];
 
 /** Origen del lanzamiento (solo en eventos de tiro). counter = contraataque. */
 export type ShotDistance = "6m" | "7m" | "9m" | "counter";
