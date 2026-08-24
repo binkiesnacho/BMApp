@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionProfile, isStaff } from "@/lib/auth";
+import { canCapture, getSessionProfile } from "@/lib/auth";
 import { EditIcon } from "@/components/ui/icons";
 import PlayerRow from "./PlayerRow";
 import type { Player, Team } from "@/lib/types/database";
@@ -15,7 +15,7 @@ export default async function TeamDetailPage({
 }) {
   const { id } = await params;
   const { profile } = await getSessionProfile();
-  const canEdit = isStaff(profile);
+  const canEdit = canCapture(profile);
 
   const supabase = await createClient();
 

@@ -3,7 +3,7 @@ import Screen from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/Card";
 import { SectionTitle } from "@/components/ui/List";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
+import { canAdminister, canCapture, getSessionProfile } from "@/lib/auth";
 import MembershipToggle from "@/components/admin/MembershipToggle";
 import AddPlayerForm from "../AddPlayerForm";
 import PlayerRow from "../PlayerRow";
@@ -18,7 +18,9 @@ export default async function EditRosterPage({
 }) {
   const { id } = await params;
   const { profile } = await getSessionProfile();
-  if (!isStaff(profile)) redirect(`/teams/${id}`);
+  // Entrenadores, técnicos y admin. La RLS (can_capture_team) refuerza que solo
+  // sea sobre su propio equipo; para otros, la consulta del equipo hará notFound.
+  if (!canCapture(profile)) redirect(`/teams/${id}`);
   const isAdmin = canAdminister(profile);
 
   const supabase = await createClient();

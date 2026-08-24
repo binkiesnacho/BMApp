@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { canAdminister, getSessionProfile, isStaff } from "@/lib/auth";
+import { canAdminister, canCapture, getSessionProfile, isStaff } from "@/lib/auth";
 
 export type AdminFormState = { error?: string; ok?: boolean };
 
@@ -113,14 +113,16 @@ export async function setTeamCoachAction(
   return {};
 }
 
-/** Asigna/quita a una persona como JUGADOR de un equipo (admin o entrenador). */
+/** Asigna/quita a una persona como JUGADOR de un equipo (admin, entrenador o técnico). */
 export async function setTeamPlayerAction(
   teamId: string,
   profileId: string,
   present: boolean
 ): Promise<{ error?: string }> {
-  const { profile } = await requireStaff();
-  if (!profile) return { error: "Sin permisos." };
+  // Rol suficiente (staff o técnico); la RPC set_team_player refuerza el equipo
+  // concreto vía can_capture_team.
+  const { profile } = await getSessionProfile();
+  if (!canCapture(profile)) return { error: "Sin permisos." };
   const supabase = await createClient();
   const { error: rpcErr } = await supabase.rpc("set_team_player", {
     target_team: teamId,
