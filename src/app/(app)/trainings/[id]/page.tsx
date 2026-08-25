@@ -76,16 +76,25 @@ export default async function TrainingDetailPage({
         .returns<TrainingFile[]>(),
     ]);
 
-  // Nombre de quien pasó lista, para que otros sepan quién registró las faltas.
-  let takenByName: string | null = null;
-  if (training.attendance_by) {
-    const { data: by } = await supabase
+  // Nombres del autor del entreno y de quien pasó lista.
+  const nameIds = [training.author_id, training.attendance_by].filter(
+    Boolean
+  ) as string[];
+  const nameById = new Map<string, string>();
+  if (nameIds.length) {
+    const { data: people } = await supabase
       .from("profiles")
-      .select("name")
-      .eq("id", training.attendance_by)
-      .maybeSingle<Pick<Profile, "name">>();
-    takenByName = by?.name ?? null;
+      .select("id, name")
+      .in("id", nameIds)
+      .returns<Pick<Profile, "id" | "name">[]>();
+    (people ?? []).forEach((p) => nameById.set(p.id, p.name));
   }
+  const authorName = training.author_id
+    ? nameById.get(training.author_id) ?? null
+    : null;
+  const takenByName = training.attendance_by
+    ? nameById.get(training.attendance_by) ?? null
+    : null;
 
   const canManage = canManageTeam(profile, team ?? null, await getMyCoachTeamIds());
   const observations = canManage
@@ -110,6 +119,12 @@ export default async function TrainingDetailPage({
       subtitle={fmtDate(training.date)}
       back="/trainings"
     >
+      {authorName && (
+        <p className="-mt-1 mb-3 px-1 text-[13px] text-label-3">
+          Creado por <span className="text-label-2">{authorName}</span>
+        </p>
+      )}
+
       {/* Objetivos (justo debajo del título, encima de la descripción) */}
       {training.objectives.length > 0 && (
         <section className="mb-4 rounded-2xl border border-separator/60 bg-surface p-4">

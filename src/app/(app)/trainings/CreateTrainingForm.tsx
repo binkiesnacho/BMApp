@@ -164,6 +164,10 @@ export default function CreateTrainingForm({
 
   async function submit() {
     setError(null);
+    if (!title.trim()) {
+      setError("Ponle un título (p. ej. el nº de sesión).");
+      return;
+    }
     setSaving(true);
 
     const boardsOut = (bs: EditBoard[]): TrainingBoard[] =>
@@ -244,12 +248,19 @@ export default function CreateTrainingForm({
         onChange={(e) => setDate(e.target.value)}
         className={inputCls}
       />
-      <input
-        placeholder="Título (opcional)"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className={inputCls}
-      />
+      <div>
+        <input
+          required
+          placeholder="Título · p. ej. Sesión 12"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={inputCls}
+        />
+        <p className="mt-1 px-1 text-[11px] text-label-3">
+          Obligatorio. Usa el número de sesión (p. ej. &quot;Sesión 12&quot;). Se
+          guarda quién lo crea.
+        </p>
+      </div>
 
       {/* Objetivos técnico-tácticos: etiquetas por categoría + personalizados */}
       <div>

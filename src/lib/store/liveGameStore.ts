@@ -60,6 +60,8 @@ export const useLiveGameStore = create<LiveGameState>((set, get) => ({
 
   addEvent: (playerId, eventType, goalZone = null, distance = null) =>
     set((s) => ({
+      // Un gol encajado suma al tanteo rival (los +/- quedan para corregir).
+      oppScore: eventType === "goal_conceded" ? s.oppScore + 1 : s.oppScore,
       events: [
         ...s.events,
         {
@@ -74,7 +76,18 @@ export const useLiveGameStore = create<LiveGameState>((set, get) => ({
       ],
     })),
 
-  undoLast: () => set((s) => ({ events: s.events.slice(0, -1) })),
+  undoLast: () =>
+    set((s) => {
+      const last = s.events[s.events.length - 1];
+      return {
+        events: s.events.slice(0, -1),
+        // Deshacer un gol encajado también resta del tanteo rival.
+        oppScore:
+          last?.eventType === "goal_conceded"
+            ? Math.max(0, s.oppScore - 1)
+            : s.oppScore,
+      };
+    }),
 
   setOppScore: (n) => set({ oppScore: Math.max(0, n) }),
 

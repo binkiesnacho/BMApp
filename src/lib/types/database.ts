@@ -177,6 +177,8 @@ export interface Training {
   description: string | null;
   phases: TrainingPhase[];
   objectives: string[];
+  /** Entrenador/técnico que creó el entrenamiento. */
+  author_id: string | null;
   /** Cuándo se pasó lista (null = aún sin hacer). */
   attendance_taken_at: string | null;
   /** Quién pasó lista. */

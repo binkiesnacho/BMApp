@@ -67,6 +67,8 @@ export async function createTrainingAction(
   if (!canCapture(profile)) return { error: "Sin permisos." };
   if (!input.teamId) return { error: "Selecciona un equipo." };
   if (!input.date) return { error: "Indica la fecha." };
+  const title = input.title.trim();
+  if (!title) return { error: "Ponle un título (p. ej. el nº de sesión)." };
 
   const phases = input.phases
     .map((p) => {
@@ -92,10 +94,11 @@ export async function createTrainingAction(
     .insert({
       team_id: input.teamId,
       date: new Date(input.date).toISOString(),
-      title: input.title.trim() || null,
+      title,
       description: input.description.trim() || null,
       phases,
       objectives,
+      author_id: profile!.id,
     })
     .select("id")
     .single<{ id: string }>();

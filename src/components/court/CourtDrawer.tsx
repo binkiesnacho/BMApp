@@ -61,7 +61,9 @@ export default function CourtDrawer({
   const [court, setCourt] = useState<"full" | "half">(value?.court ?? "full");
   const [frames, setFrames] = useState<DrawFrame[]>(() => withIds(framesOf(value)));
   const [idx, setIdx] = useState(0);
-  const [tool, setTool] = useState<"draw" | "erase">("draw");
+  // "move": arrastrar fichas · "draw": pintar líneas (fichas bloqueadas) ·
+  // "erase": borrar. Por defecto "move" para colocar/mover sin pintar sin querer.
+  const [tool, setTool] = useState<"move" | "draw" | "erase">("move");
   const [current, setCurrent] = useState<DrawStroke | null>(null);
   const [preview, setPreview] = useState<DrawToken | null>(null);
   const [fs, setFs] = useState(false);
@@ -209,6 +211,7 @@ export default function CourtDrawer({
   /* -------- Dibujo, borrado y movimiento de fichas (sobre el SVG) -------- */
   function svgDown(e: React.PointerEvent) {
     if (playing) return;
+    if (tool === "move") return; // en modo mover, tocar la pista no dibuja
     e.preventDefault();
     capture(svgRef.current, e.pointerId);
     const [x, y] = toCourt(e.clientX, e.clientY);
@@ -249,13 +252,20 @@ export default function CourtDrawer({
   }
   function tokenDown(e: React.PointerEvent, i: number) {
     if (playing) return;
-    e.stopPropagation();
-    e.preventDefault();
-    capture(svgRef.current, e.pointerId);
+    // Al pintar, las fichas quedan bloqueadas: no interceptamos el puntero y el
+    // trazo se dibuja por encima (el evento sube al <svg>).
+    if (tool === "draw") return;
     if (tool === "erase") {
+      e.stopPropagation();
+      e.preventDefault();
+      capture(svgRef.current, e.pointerId);
       setFrame((f) => ({ ...f, tokens: f.tokens.filter((_, k) => k !== i) }));
       return;
     }
+    // tool === "move": arrastrar la ficha.
+    e.stopPropagation();
+    e.preventDefault();
+    capture(svgRef.current, e.pointerId);
     moveRef.current = i;
   }
 
@@ -372,9 +382,20 @@ export default function CourtDrawer({
         </div>
         <button
           type="button"
+          onClick={() => setTool("move")}
+          aria-pressed={tool === "move"}
+          aria-label="Mover fichas"
+          className={`${btn} ${tool === "move" ? on : ""}`}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3v18M3 12h18M12 3 9.5 5.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
           onClick={() => setTool("draw")}
           aria-pressed={tool === "draw"}
-          aria-label="Dibujar"
+          aria-label="Pintar"
           className={`${btn} ${tool === "draw" ? on : ""}`}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -482,7 +503,7 @@ export default function CourtDrawer({
           className={`touch-none select-none rounded-xl ${big ? "h-full w-full" : "w-full"}`}
           style={{
             display: "block",
-            cursor: tool === "erase" ? "cell" : "crosshair",
+            cursor: tool === "erase" ? "cell" : tool === "move" ? "default" : "crosshair",
             touchAction: "none",
             WebkitUserSelect: "none",
             userSelect: "none",
@@ -510,10 +531,19 @@ export default function CourtDrawer({
             <g
               key={t.id ?? i}
               onPointerDown={(e) => tokenDown(e, i)}
-              style={{ cursor: playing ? "default" : "move" }}
+              style={{
+                cursor: playing ? "default" : tool === "move" ? "move" : "inherit",
+              }}
             >
-              {/* Zona de toque generosa: mover fichas con el dedo debe ser fácil. */}
-              <circle cx={t.x} cy={t.y} r={HIT_TOKEN} fill="transparent" />
+              {/* Zona de toque generosa solo al mover; al pintar no intercepta
+                  para poder dibujar por encima de la ficha. */}
+              <circle
+                cx={t.x}
+                cy={t.y}
+                r={HIT_TOKEN}
+                fill="transparent"
+                style={{ pointerEvents: tool === "draw" ? "none" : "auto" }}
+              />
               <CourtToken shape={t.shape} x={t.x} y={t.y} />
             </g>
           ))}
