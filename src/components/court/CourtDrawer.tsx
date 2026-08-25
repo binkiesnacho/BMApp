@@ -62,8 +62,8 @@ export default function CourtDrawer({
   const [frames, setFrames] = useState<DrawFrame[]>(() => withIds(framesOf(value)));
   const [idx, setIdx] = useState(0);
   // "move": arrastrar fichas · "draw": pintar líneas (fichas bloqueadas) ·
-  // "erase": borrar. Por defecto "move" para colocar/mover sin pintar sin querer.
-  const [tool, setTool] = useState<"move" | "draw" | "erase">("move");
+  // "erase": borrar. Por defecto "draw" para dibujar directamente.
+  const [tool, setTool] = useState<"move" | "draw" | "erase">("draw");
   const [current, setCurrent] = useState<DrawStroke | null>(null);
   const [preview, setPreview] = useState<DrawToken | null>(null);
   const [fs, setFs] = useState(false);
