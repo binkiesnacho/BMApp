@@ -29,7 +29,8 @@ type EditExercise = {
   boards: EditBoard[];
   progressions: EditProgression[];
 };
-type EditPhase = { name: string; minutes: number; exercises: EditExercise[] };
+// minutes puede quedar "" mientras se edita (para poder borrar el 0 y teclear).
+type EditPhase = { name: string; minutes: number | ""; exercises: EditExercise[] };
 
 const DEFAULT_PHASES: EditPhase[] = [
   { name: "Calentamiento", minutes: 10, exercises: [] },
@@ -186,7 +187,7 @@ export default function CreateTrainingForm({
           progressions,
         };
       });
-      return { name: p.name, minutes: p.minutes, exercises };
+      return { name: p.name, minutes: Number(p.minutes) || 0, exercises };
     });
 
     const res = await createTrainingAction({
@@ -392,7 +393,11 @@ export default function CreateTrainingForm({
                   type="number"
                   min={0}
                   value={p.minutes}
-                  onChange={(e) => setPhase(i, { minutes: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setPhase(i, {
+                      minutes: e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
                   className="w-16 rounded-xl border border-separator bg-canvas px-2 py-2.5 text-sm text-label outline-none focus:border-brand"
                 />
                 <button
@@ -545,7 +550,7 @@ export default function CreateTrainingForm({
         </div>
         <button
           type="button"
-          onClick={() => setPhases((ps) => [...ps, { name: "", minutes: 0, exercises: [] }])}
+          onClick={() => setPhases((ps) => [...ps, { name: "", minutes: "", exercises: [] }])}
           className={addRowCls + " mt-2"}
         >
           <span className="text-base leading-none text-brand">＋</span> Añadir fase
