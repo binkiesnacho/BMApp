@@ -57,11 +57,21 @@ export default async function EditRosterPage({
     (players ?? []).map((p) => p.profile_id).filter(Boolean) as string[]
   );
 
+  const auto = team.auto_position; // equipo automático (p. ej. Porteros)
+
   return (
     <Screen title="Editar plantilla" subtitle={team.name} back={`/teams/${team.id}`}>
+      {auto && (
+        <p className="mb-4 rounded-2xl border border-separator/60 bg-surface p-3 text-[13px] text-label-2">
+          Plantilla automática: se genera con los jugadores de posición{" "}
+          <span className="text-label">{auto}</span> de los demás equipos. Aquí solo
+          se asigna el entrenador.
+        </p>
+      )}
+
       {/* Asignar personas del club a este equipo (jugador / entrenador) */}
       <div className="mb-5">
-        <SectionTitle>Miembros del club</SectionTitle>
+        <SectionTitle>{auto ? "Entrenador" : "Miembros del club"}</SectionTitle>
         <ul className="space-y-2">
           {members?.map((m) => (
             <li
@@ -77,6 +87,7 @@ export default async function EditRosterPage({
                 isCoach={coachSet.has(m.id)}
                 isPlayer={playerProfileSet.has(m.id)}
                 canAssignCoach={isAdmin}
+                canAssignPlayer={!auto}
               />
             </li>
           ))}
@@ -86,20 +97,31 @@ export default async function EditRosterPage({
         </ul>
       </div>
 
-      {/* Roster manual (jugadores sin cuenta) */}
+      {/* Roster manual (solo en equipos no automáticos) */}
       <SectionTitle>Plantilla</SectionTitle>
-      <div className="mb-4">
-        <AddPlayerForm teamId={team.id} />
-      </div>
+      {!auto && (
+        <div className="mb-4">
+          <AddPlayerForm teamId={team.id} />
+        </div>
+      )}
 
       <ul className="space-y-2">
         {players?.map((player) => (
-          <PlayerRow key={player.id} player={player} teamId={team.id} canEdit />
+          <PlayerRow
+            key={player.id}
+            player={player}
+            teamId={team.id}
+            canEdit={!auto}
+          />
         ))}
       </ul>
 
       {(!players || players.length === 0) && (
-        <EmptyState icon="👥">Añade el primer jugador arriba.</EmptyState>
+        <EmptyState icon="👥">
+          {auto
+            ? `Sin jugadores de posición ${auto} todavía.`
+            : "Añade el primer jugador arriba."}
+        </EmptyState>
       )}
     </Screen>
   );

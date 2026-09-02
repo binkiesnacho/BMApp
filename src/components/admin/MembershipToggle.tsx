@@ -18,12 +18,15 @@ export default function MembershipToggle({
   isCoach,
   isPlayer,
   canAssignCoach,
+  canAssignPlayer = true,
 }: {
   teamId: string;
   profileId: string;
   isCoach: boolean;
   isPlayer: boolean;
   canAssignCoach: boolean;
+  /** En equipos automáticos (porteros) la plantilla no se asigna a mano. */
+  canAssignPlayer?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -48,14 +51,16 @@ export default function MembershipToggle({
 
   return (
     <div className="flex items-center gap-1.5">
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => toggle("player", !isPlayer)}
-        className={pill(isPlayer)}
-      >
-        {isPlayer ? "✓ " : "+ "}Jugador
-      </button>
+      {canAssignPlayer && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => toggle("player", !isPlayer)}
+          className={pill(isPlayer)}
+        >
+          {isPlayer ? "✓ " : "+ "}Jugador
+        </button>
+      )}
       {canAssignCoach && (
         <button
           type="button"

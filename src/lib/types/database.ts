@@ -71,6 +71,9 @@ export interface Team {
   club_id: string;
   name: string;
   coach_id: string | null;
+  /** Si está, el equipo se autogenera con los jugadores de esa posición
+   *  (p. ej. "Portero" → equipo Porteros); su plantilla es de solo lectura. */
+  auto_position: string | null;
   created_at: string;
 }
 

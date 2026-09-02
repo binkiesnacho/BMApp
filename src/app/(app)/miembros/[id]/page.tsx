@@ -72,10 +72,10 @@ async function MemberManagement({
     await Promise.all([
       supabase
         .from("teams")
-        .select("id, name")
+        .select("id, name, auto_position")
         .eq("club_id", clubId)
         .order("name", { ascending: true })
-        .returns<Pick<Team, "id" | "name">[]>(),
+        .returns<Pick<Team, "id" | "name" | "auto_position">[]>(),
       supabase
         .from("team_coaches")
         .select("team_id")
@@ -110,7 +110,11 @@ async function MemberManagement({
         <SectionTitle>Equipos</SectionTitle>
         <TeamMembershipManager
           memberId={member.id}
-          teams={teams ?? []}
+          teams={(teams ?? []).map((t) => ({
+            id: t.id,
+            name: t.name,
+            auto: !!t.auto_position,
+          }))}
           coachTeamIds={coachTeamIds}
           playerTeamIds={playerTeamIds}
           canAssignCoach

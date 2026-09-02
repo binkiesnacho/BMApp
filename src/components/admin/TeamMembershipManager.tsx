@@ -3,7 +3,7 @@
 import { useState } from "react";
 import MembershipToggle from "./MembershipToggle";
 
-type TeamOpt = { id: string; name: string };
+type TeamOpt = { id: string; name: string; auto?: boolean };
 
 /**
  * Gestión compacta de equipos de un miembro: los equipos donde ya participa se
@@ -41,6 +41,7 @@ export default function TeamMembershipManager({
         isCoach={coach.has(t.id)}
         isPlayer={player.has(t.id)}
         canAssignCoach={canAssignCoach}
+        canAssignPlayer={!t.auto}
       />
     </li>
   );
