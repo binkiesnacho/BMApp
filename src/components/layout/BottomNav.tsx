@@ -74,19 +74,21 @@ const Icon = {
   ),
 };
 
-export default function BottomNav({ pizarra = false }: { pizarra?: boolean }) {
+export default function BottomNav({ capture = false }: { capture?: boolean }) {
   const pathname = usePathname();
 
   // `activePath` es el prefijo de pathname (sin query) que marca la pestaña activa.
-  // Nav mínimo: el resto de funciones vive dentro del equipo. Calendario,
-  // entrenos y estadísticas se abren desde el hub del equipo.
-  // "Mi ficha" está oculto mientras los jugadores no usen la app (la ruta
-  // /mi-ficha sigue existiendo, solo no se enlaza desde el menú).
+  // Nav mínimo para jugadores (Inicio + Equipos). El cuerpo técnico (`capture`)
+  // suma accesos directos a Entrenamientos y a la Pizarra, sus dos herramientas
+  // de trabajo. "Mi ficha" sigue oculto (la ruta /mi-ficha existe, no se enlaza).
   const items = [
     { href: "/", label: "Inicio", icon: Icon.home, activePath: "/", exact: true },
     { href: "/equipo", label: "Equipos", icon: Icon.equipo, activePath: "/equipo" },
-    ...(pizarra
-      ? [{ href: "/pizarra", label: "Pizarra", icon: Icon.pizarra, activePath: "/pizarra" }]
+    ...(capture
+      ? [
+          { href: "/trainings", label: "Entrenamientos", icon: Icon.trainings, activePath: "/trainings" },
+          { href: "/pizarra", label: "Pizarra", icon: Icon.pizarra, activePath: "/pizarra" },
+        ]
       : []),
   ];
 

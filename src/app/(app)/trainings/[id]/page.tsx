@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import Screen from "@/components/ui/Screen";
 import { createClient } from "@/lib/supabase/server";
@@ -118,6 +119,24 @@ export default async function TrainingDetailPage({
       title={training.title || "Entrenamiento"}
       subtitle={fmtDate(training.date)}
       back="/trainings"
+      trailing={
+        staff ? (
+          <Link
+            href={`/trainings/${training.id}/edit`}
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-2xl border border-separator bg-surface px-3.5 text-[15px] font-semibold text-white transition active:scale-[0.96]"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 20h4L18.5 9.5a2 2 0 0 0 0-2.83l-1.17-1.17a2 2 0 0 0-2.83 0L4 16v4z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Editar
+          </Link>
+        ) : undefined
+      }
     >
       {authorName && (
         <p className="-mt-1 mb-3 px-1 text-[13px] text-label-3">

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createTrainingAction } from "./actions";
+import { createTrainingAction, updateTrainingAction } from "./actions";
 import CourtDrawer from "@/components/court/CourtDrawer";
 import { DrawIcon } from "@/components/ui/icons";
 import {
@@ -45,6 +45,41 @@ const emptyExercise = (): EditExercise => ({
   progressions: [],
 });
 const emptyProgression = (): EditProgression => ({ description: "", boards: [] });
+
+/** Valores iniciales del formulario cuando se edita un entrenamiento existente. */
+export type TrainingInitial = {
+  teamId: string;
+  dateIso: string;
+  title: string;
+  description: string;
+  phases: TrainingPhase[];
+  objectives: string[];
+};
+
+/** Convierte las fases guardadas (TrainingPhase) a la forma editable (EditPhase),
+ *  preservando las pizarras del formato antiguo (dibujo/boards sueltos de la fase)
+ *  como un ejercicio para que no se pierdan al guardar. */
+function toEditPhases(phases: TrainingPhase[]): EditPhase[] {
+  return phases.map((p) => {
+    const exercises: EditExercise[] = (p.exercises ?? []).map((ex) => ({
+      name: ex.name ?? "",
+      description: ex.description ?? "",
+      boards: (ex.boards ?? []).map((b) => ({ drawing: b.drawing })),
+      progressions: (ex.progressions ?? []).map((pr) => ({
+        description: pr.description ?? "",
+        boards: (pr.boards ?? []).map((b) => ({ drawing: b.drawing })),
+      })),
+    }));
+    const legacyBoards: EditBoard[] = [
+      ...(p.drawing ? [{ drawing: p.drawing }] : []),
+      ...(p.boards ?? []).map((b) => ({ drawing: b.drawing })),
+    ];
+    if (legacyBoards.length) {
+      exercises.unshift({ name: "", description: "", boards: legacyBoards, progressions: [] });
+    }
+    return { name: p.name, minutes: p.minutes, exercises };
+  });
+}
 
 const INPUT_CLS =
   "w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand";
@@ -95,19 +130,38 @@ function BoardList({
 export default function CreateTrainingForm({
   teams,
   defaultOpen = false,
+  mode = "create",
+  trainingId,
+  initial,
 }: {
   teams: Team[];
   defaultOpen?: boolean;
+  /** "edit" reutiliza el formulario para modificar un entrenamiento existente. */
+  mode?: "create" | "edit";
+  trainingId?: string;
+  initial?: TrainingInitial;
 }) {
   const router = useRouter();
-  const initialTeamId = teams.length === 1 ? teams[0].id : "";
+  const isEdit = mode === "edit";
+  const initialTeamId = initial?.teamId ?? (teams.length === 1 ? teams[0].id : "");
   const [open, setOpen] = useState(defaultOpen);
   const [teamId, setTeamId] = useState(initialTeamId);
   const [date, setDate] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [phases, setPhases] = useState<EditPhase[]>(DEFAULT_PHASES);
-  const [objectives, setObjectives] = useState<string[]>([]);
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [phases, setPhases] = useState<EditPhase[]>(
+    initial ? toEditPhases(initial.phases) : DEFAULT_PHASES
+  );
+  const [objectives, setObjectives] = useState<string[]>(initial?.objectives ?? []);
+
+  // La fecha se convierte a hora local en cliente (el servidor puede estar en
+  // otra zona), por eso se rellena tras montar en vez de en el render inicial.
+  useEffect(() => {
+    if (!initial?.dateIso) return;
+    const d = new Date(initial.dateIso);
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    setDate(local.toISOString().slice(0, 16));
+  }, [initial?.dateIso]);
   // La categoría (para las etiquetas) se deduce del equipo; el usuario la puede
   // cambiar. Al cambiar de equipo se vuelve a inferir.
   const [cat, setCat] = useState<string | null>(() =>
@@ -190,23 +244,28 @@ export default function CreateTrainingForm({
       return { name: p.name, minutes: Number(p.minutes) || 0, exercises };
     });
 
-    const res = await createTrainingAction({
+    const payload = {
       teamId,
       date,
       title,
       description,
       phases: phasesOut,
       objectives,
-    });
+    };
+    const res =
+      isEdit && trainingId
+        ? await updateTrainingAction({ ...payload, trainingId })
+        : await createTrainingAction(payload);
     if (res.error || !res.id) {
       setSaving(false);
-      setError(res.error ?? "No se pudo crear.");
+      setError(res.error ?? (isEdit ? "No se pudo guardar." : "No se pudo crear."));
       return;
     }
 
     // El entrenamiento ya existe: subimos los adjuntos pero NUNCA bloqueamos la
     // navegación por ello (si un adjunto falla o lanza, igualmente continuamos;
-    // así el botón no se queda en "Creando…").
+    // así el botón no se queda en "Creando…"). Al editar, los adjuntos se
+    // gestionan desde el propio detalle, no aquí.
     for (const f of files) {
       try {
         await uploadTrainingFile(res.id, f);
@@ -557,7 +616,9 @@ export default function CreateTrainingForm({
         </button>
       </div>
 
-      {/* Adjuntos: PDF o imagen (el entreno completo en papel/foto) */}
+      {/* Adjuntos: PDF o imagen (el entreno completo en papel/foto).
+          Al editar se gestionan desde el detalle, no aquí. */}
+      {!isEdit && (
       <div>
         <p className="mb-1 text-xs font-semibold text-label-2">Adjuntos (PDF o imagen)</p>
         {files.length > 0 && (
@@ -599,13 +660,27 @@ export default function CreateTrainingForm({
           Fotos o PDFs, hasta {MAX_TRAINING_FILE_MB} MB. Solo los ve tu equipo.
         </p>
       </div>
+      )}
 
       {error && <p className="text-sm text-red-400">{error}</p>}
       <div className="flex gap-2">
         <button onClick={submit} disabled={saving} className="btn btn-primary flex-1">
-          {saving ? "Creando…" : "Crear entrenamiento"}
+          {isEdit
+            ? saving
+              ? "Guardando…"
+              : "Guardar cambios"
+            : saving
+              ? "Creando…"
+              : "Crear entrenamiento"}
         </button>
-        <button onClick={() => setOpen(false)} className="btn btn-ghost">
+        <button
+          onClick={() =>
+            isEdit && trainingId
+              ? router.push(`/trainings/${trainingId}`)
+              : setOpen(false)
+          }
+          className="btn btn-ghost"
+        >
           Cancelar
         </button>
       </div>

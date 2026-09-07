@@ -59,17 +59,12 @@ export interface CreateTrainingInput {
   objectives: string[];
 }
 
-/** Crea un entrenamiento. Devuelve el id para navegar al detalle. */
-export async function createTrainingAction(
-  input: CreateTrainingInput
-): Promise<{ error?: string; id?: string }> {
-  const { profile } = await getSessionProfile();
-  if (!canCapture(profile)) return { error: "Sin permisos." };
-  if (!input.teamId) return { error: "Selecciona un equipo." };
-  if (!input.date) return { error: "Indica la fecha." };
-  const title = input.title.trim();
-  if (!title) return { error: "Ponle un título (p. ej. el nº de sesión)." };
+export interface UpdateTrainingInput extends CreateTrainingInput {
+  trainingId: string;
+}
 
+/** Limpia fases y objetivos para guardarlos (compartido por crear y editar). */
+function normalizeTraining(input: CreateTrainingInput) {
   const phases = input.phases
     .map((p) => {
       const exercises = (p.exercises ?? [])
@@ -87,6 +82,21 @@ export async function createTrainingAction(
     })
     .filter((p) => p.name);
   const objectives = input.objectives.map((o) => o.trim()).filter(Boolean);
+  return { phases, objectives };
+}
+
+/** Crea un entrenamiento. Devuelve el id para navegar al detalle. */
+export async function createTrainingAction(
+  input: CreateTrainingInput
+): Promise<{ error?: string; id?: string }> {
+  const { profile } = await getSessionProfile();
+  if (!canCapture(profile)) return { error: "Sin permisos." };
+  if (!input.teamId) return { error: "Selecciona un equipo." };
+  if (!input.date) return { error: "Indica la fecha." };
+  const title = input.title.trim();
+  if (!title) return { error: "Ponle un título (p. ej. el nº de sesión)." };
+
+  const { phases, objectives } = normalizeTraining(input);
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -106,6 +116,40 @@ export async function createTrainingAction(
   if (error) return { error: error.message };
   revalidatePath("/trainings");
   return { id: data.id };
+}
+
+/** Edita un entrenamiento existente (título, fecha, fases, objetivos…). */
+export async function updateTrainingAction(
+  input: UpdateTrainingInput
+): Promise<{ error?: string; id?: string }> {
+  const { profile } = await getSessionProfile();
+  if (!canCapture(profile)) return { error: "Sin permisos." };
+  if (!input.trainingId) return { error: "Entrenamiento no válido." };
+  if (!input.teamId) return { error: "Selecciona un equipo." };
+  if (!input.date) return { error: "Indica la fecha." };
+  const title = input.title.trim();
+  if (!title) return { error: "Ponle un título (p. ej. el nº de sesión)." };
+
+  const { phases, objectives } = normalizeTraining(input);
+
+  const supabase = await createClient();
+  // La RLS (can_capture_team) garantiza que solo se edite el propio equipo.
+  const { error } = await supabase
+    .from("trainings")
+    .update({
+      team_id: input.teamId,
+      date: new Date(input.date).toISOString(),
+      title,
+      description: input.description.trim() || null,
+      phases,
+      objectives,
+    })
+    .eq("id", input.trainingId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/trainings");
+  revalidatePath(`/trainings/${input.trainingId}`);
+  return { id: input.trainingId };
 }
 
 /** Elimina un entrenamiento. */
