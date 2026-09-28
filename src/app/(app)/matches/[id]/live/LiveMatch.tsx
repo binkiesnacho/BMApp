@@ -73,6 +73,20 @@ export default function LiveMatch({
     [store.events]
   );
 
+  // Partes: 1ª (0→halfLength), descanso, 2ª (halfLength→2·halfLength), final.
+  const periodEndSec = store.period === 1 ? store.halfLength : store.halfLength * 2;
+  const halfOver = store.elapsed >= periodEndSec;
+  const firstHalfDone = store.period === 1 && halfOver; // descanso
+  const matchOver = store.period === 2 && halfOver; // final
+  const periodLabel = matchOver
+    ? "Final"
+    : firstHalfDone
+      ? "Descanso"
+      : store.period === 1
+        ? "1ª parte"
+        : "2ª parte";
+  const halfMin = Math.round(store.halfLength / 60);
+
   const squad = useMemo(() => new Set(squadIds), [squadIds]);
   const shown = useMemo(
     () => (showAll ? players : players.filter((p) => squad.has(p.id))),
@@ -179,18 +193,37 @@ export default function LiveMatch({
             <p className="font-mono text-3xl font-bold text-brand">{ourScore}</p>
           </div>
           <div className="text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-label-2">
+              {periodLabel}
+            </p>
             <p className="font-mono text-lg text-label">{clock(store.elapsed)}</p>
-            <button
-              onClick={() => {
-                store.toggleClock();
-                setTimeoutActive(false);
-              }}
-              className={`mt-1 rounded-lg px-3 py-1 text-xs font-semibold ${
-                store.isRunning ? "bg-amber-600 text-white" : "bg-emerald-600 text-white"
-              }`}
-            >
-              {store.isRunning ? "Pausar" : "Iniciar"}
-            </button>
+            {firstHalfDone ? (
+              <button
+                onClick={() => {
+                  store.startSecondHalf();
+                  setTimeoutActive(false);
+                }}
+                className="mt-1 rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-white"
+              >
+                2ª parte ▶
+              </button>
+            ) : matchOver ? (
+              <p className="mt-1 rounded-lg bg-surface-2 px-3 py-1 text-xs font-semibold text-label-2">
+                Fin del tiempo
+              </p>
+            ) : (
+              <button
+                onClick={() => {
+                  store.toggleClock();
+                  setTimeoutActive(false);
+                }}
+                className={`mt-1 rounded-lg px-3 py-1 text-xs font-semibold ${
+                  store.isRunning ? "bg-amber-600 text-white" : "bg-emerald-600 text-white"
+                }`}
+              >
+                {store.isRunning ? "Pausar" : "Iniciar"}
+              </button>
+            )}
           </div>
           <div className="text-center">
             <p className="max-w-20 truncate text-[10px] text-label-2">{match.opponent}</p>
@@ -210,6 +243,27 @@ export default function LiveMatch({
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Minutos por parte (25–30 según categoría; final = 2 partes) */}
+        <div className="mt-2 flex items-center justify-center gap-2 text-[11px]">
+          <span className="text-label-3">Min/parte</span>
+          {[20, 25, 30].map((m) => {
+            const on = halfMin === m;
+            return (
+              <button
+                key={m}
+                onClick={() => store.setHalfMinutes(m)}
+                aria-pressed={on}
+                className={`rounded-full px-2.5 py-0.5 font-semibold transition ${
+                  on ? "bg-brand text-white" : "bg-surface-2 text-label-2"
+                }`}
+              >
+                {m}&apos;
+              </button>
+            );
+          })}
+          <span className="text-label-3">· final {halfMin * 2}&apos;</span>
         </div>
       </div>
 

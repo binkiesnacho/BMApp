@@ -20,6 +20,10 @@ interface LiveGameState {
   isRunning: boolean;
   /** segundos de reloj de partido transcurridos */
   elapsed: number;
+  /** Duración de cada parte en segundos (25–30 min según categoría). */
+  halfLength: number;
+  /** Parte en curso: 1 (0→halfLength) o 2 (halfLength→2·halfLength). */
+  period: 1 | 2;
   /** goles del rival (los nuestros se cuentan de los eventos 'goal') */
   oppScore: number;
   events: LiveEvent[];
@@ -27,6 +31,12 @@ interface LiveGameState {
   startMatch: (matchId: string, initialOppScore?: number) => void;
   toggleClock: () => void;
   tick: () => void;
+  /** Fija los minutos por parte (recalcula el tope del reloj). */
+  setHalfMinutes: (minutes: number) => void;
+  /** Arranca la 2ª parte: fija el reloj al minuto que le toca (halfLength). */
+  startSecondHalf: () => void;
+  /** Segundos a los que termina la parte en curso. */
+  periodEnd: () => number;
   addEvent: (
     playerId: string | null,
     eventType: StatEventType,
@@ -38,25 +48,51 @@ interface LiveGameState {
   reset: () => void;
 }
 
+const DEFAULT_HALF = 30 * 60; // 30 min por parte por defecto
+
 export const useLiveGameStore = create<LiveGameState>((set, get) => ({
   matchId: null,
   isRunning: false,
   elapsed: 0,
+  halfLength: DEFAULT_HALF,
+  period: 1,
   oppScore: 0,
   events: [],
 
   startMatch: (matchId, initialOppScore = 0) =>
-    set({
+    set((s) => ({
       matchId,
       isRunning: false,
       elapsed: 0,
+      // Conserva la duración por parte que el entrenador haya configurado.
+      halfLength: s.halfLength,
+      period: 1,
       oppScore: initialOppScore,
       events: [],
-    }),
+    })),
 
   toggleClock: () => set((s) => ({ isRunning: !s.isRunning })),
 
-  tick: () => set((s) => (s.isRunning ? { elapsed: s.elapsed + 1 } : {})),
+  periodEnd: () => {
+    const s = get();
+    return s.period === 1 ? s.halfLength : s.halfLength * 2;
+  },
+
+  tick: () =>
+    set((s) => {
+      if (!s.isRunning) return {};
+      const limit = s.period === 1 ? s.halfLength : s.halfLength * 2;
+      const next = s.elapsed + 1;
+      // Al llegar al tope de la parte, el reloj se para exactamente ahí.
+      if (next >= limit) return { elapsed: limit, isRunning: false };
+      return { elapsed: next };
+    }),
+
+  setHalfMinutes: (minutes) =>
+    set(() => ({ halfLength: Math.max(1, Math.round(minutes)) * 60 })),
+
+  startSecondHalf: () =>
+    set((s) => ({ period: 2, elapsed: s.halfLength, isRunning: false })),
 
   addEvent: (playerId, eventType, goalZone = null, distance = null) =>
     set((s) => ({
@@ -92,5 +128,14 @@ export const useLiveGameStore = create<LiveGameState>((set, get) => ({
   setOppScore: (n) => set({ oppScore: Math.max(0, n) }),
 
   reset: () =>
-    set({ matchId: null, isRunning: false, elapsed: 0, oppScore: 0, events: [] }),
+    set((s) => ({
+      matchId: null,
+      isRunning: false,
+      elapsed: 0,
+      // La duración por parte es una preferencia; se mantiene entre partidos.
+      halfLength: s.halfLength,
+      period: 1,
+      oppScore: 0,
+      events: [],
+    })),
 }));
