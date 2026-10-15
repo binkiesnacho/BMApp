@@ -56,21 +56,25 @@ const DEFENSE: Record<DefenseSystem, Slot[]> = {
     { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
   "3-2-1": [
-    { key: "D1", label: "Lateral izq.", short: "LI", x: 27, y: 84, pos: "Lateral izquierdo" },
-    { key: "D2", label: "Central", short: "CE", x: 50, y: 79, pos: "Central" },
-    { key: "D3", label: "Lateral der.", short: "LD", x: 73, y: 84, pos: "Lateral derecho" },
-    { key: "D4", label: "Avanzado izq.", short: "AI", x: 37, y: 67, pos: "Lateral izquierdo" },
-    { key: "D5", label: "Avanzado der.", short: "AD", x: 63, y: 67, pos: "Lateral derecho" },
-    { key: "D6", label: "Punta", short: "PU", x: 50, y: 57, pos: "Central" },
+    // Abajo: los 3 defienden a los extremos → bien abiertos a la banda.
+    { key: "D1", label: "Exterior izq.", short: "EI", x: 13, y: 86, pos: "Extremo izquierdo" },
+    { key: "D2", label: "Central", short: "CE", x: 50, y: 81, pos: "Central" },
+    { key: "D3", label: "Exterior der.", short: "ED", x: 87, y: 86, pos: "Extremo derecho" },
+    // Arriba: con amplitud, casi en línea, el central (punta) más arriba.
+    { key: "D4", label: "Avanzado izq.", short: "AI", x: 30, y: 67, pos: "Lateral izquierdo" },
+    { key: "D5", label: "Avanzado der.", short: "AD", x: 70, y: 67, pos: "Lateral derecho" },
+    { key: "D6", label: "Punta", short: "PU", x: 50, y: 59, pos: "Central" },
     { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
   "3-3": [
-    { key: "D1", label: "Central izq.", short: "CI", x: 31, y: 83, pos: "Central" },
-    { key: "D2", label: "Central", short: "CE", x: 50, y: 79, pos: "Central" },
-    { key: "D3", label: "Central der.", short: "CD", x: 69, y: 83, pos: "Central" },
-    { key: "D4", label: "Avanzado izq.", short: "AI", x: 26, y: 64, pos: "Lateral izquierdo" },
-    { key: "D5", label: "Avanzado centro", short: "AC", x: 50, y: 64, pos: "Central" },
-    { key: "D6", label: "Avanzado der.", short: "AD", x: 74, y: 64, pos: "Lateral derecho" },
+    // Abajo: los 3 un poco más cerrados que en el 3-2-1.
+    { key: "D1", label: "Central izq.", short: "CI", x: 30, y: 85, pos: "Central" },
+    { key: "D2", label: "Central", short: "CE", x: 50, y: 81, pos: "Central" },
+    { key: "D3", label: "Central der.", short: "CD", x: 70, y: 85, pos: "Central" },
+    // Arriba: con amplitud, casi en línea, el del centro un poco más arriba.
+    { key: "D4", label: "Avanzado izq.", short: "AI", x: 21, y: 64, pos: "Lateral izquierdo" },
+    { key: "D5", label: "Avanzado centro", short: "AC", x: 50, y: 60, pos: "Central" },
+    { key: "D6", label: "Avanzado der.", short: "AD", x: 79, y: 64, pos: "Lateral derecho" },
     { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
 };
