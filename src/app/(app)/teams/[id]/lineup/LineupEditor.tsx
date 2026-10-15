@@ -60,17 +60,18 @@ const DEFENSE: Record<DefenseSystem, Slot[]> = {
     { key: "D1", label: "Exterior izq.", short: "EI", x: 13, y: 86, pos: "Extremo izquierdo" },
     { key: "D2", label: "Central", short: "CE", x: 50, y: 81, pos: "Central" },
     { key: "D3", label: "Exterior der.", short: "ED", x: 87, y: 86, pos: "Extremo derecho" },
-    // Arriba: con amplitud, casi en línea, el central (punta) más arriba.
-    { key: "D4", label: "Avanzado izq.", short: "AI", x: 30, y: 67, pos: "Lateral izquierdo" },
-    { key: "D5", label: "Avanzado der.", short: "AD", x: 70, y: 67, pos: "Lateral derecho" },
-    { key: "D6", label: "Punta", short: "PU", x: 50, y: 59, pos: "Central" },
+    // Arriba: como la línea del 3-3 (amplia, casi en línea, centro más arriba)
+    // pero un poco más abajo.
+    { key: "D4", label: "Avanzado izq.", short: "AI", x: 21, y: 68, pos: "Lateral izquierdo" },
+    { key: "D5", label: "Avanzado der.", short: "AD", x: 79, y: 68, pos: "Lateral derecho" },
+    { key: "D6", label: "Punta", short: "PU", x: 50, y: 64, pos: "Central" },
     { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
   "3-3": [
-    // Abajo: los 3 un poco más cerrados que en el 3-2-1.
-    { key: "D1", label: "Central izq.", short: "CI", x: 30, y: 85, pos: "Central" },
+    // Abajo: igual que en el 3-2-1 (extremos abiertos a la banda, central salido).
+    { key: "D1", label: "Exterior izq.", short: "EI", x: 13, y: 86, pos: "Extremo izquierdo" },
     { key: "D2", label: "Central", short: "CE", x: 50, y: 81, pos: "Central" },
-    { key: "D3", label: "Central der.", short: "CD", x: 70, y: 85, pos: "Central" },
+    { key: "D3", label: "Exterior der.", short: "ED", x: 87, y: 86, pos: "Extremo derecho" },
     // Arriba: con amplitud, casi en línea, el del centro un poco más arriba.
     { key: "D4", label: "Avanzado izq.", short: "AI", x: 21, y: 64, pos: "Lateral izquierdo" },
     { key: "D5", label: "Avanzado centro", short: "AC", x: 50, y: 60, pos: "Central" },
