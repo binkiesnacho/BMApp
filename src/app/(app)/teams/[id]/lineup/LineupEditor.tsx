@@ -60,11 +60,11 @@ const DEFENSE: Record<DefenseSystem, Slot[]> = {
     { key: "D1", label: "Exterior izq.", short: "EI", x: 13, y: 86, pos: "Extremo izquierdo" },
     { key: "D2", label: "Central", short: "CE", x: 50, y: 81, pos: "Central" },
     { key: "D3", label: "Exterior der.", short: "ED", x: 87, y: 86, pos: "Extremo derecho" },
-    // Arriba: como la línea del 3-3 (amplia, casi en línea, centro más arriba)
-    // pero un poco más abajo.
-    { key: "D4", label: "Avanzado izq.", short: "AI", x: 21, y: 68, pos: "Lateral izquierdo" },
-    { key: "D5", label: "Avanzado der.", short: "AD", x: 79, y: 68, pos: "Lateral derecho" },
-    { key: "D6", label: "Punta", short: "PU", x: 50, y: 64, pos: "Central" },
+    // Arriba: como la línea del 3-3 pero más abajo; los laterales quedan justo
+    // por encima de la línea de puntos (9 m) y la punta algo más adelantada.
+    { key: "D4", label: "Avanzado izq.", short: "AI", x: 21, y: 76, pos: "Lateral izquierdo" },
+    { key: "D5", label: "Avanzado der.", short: "AD", x: 79, y: 76, pos: "Lateral derecho" },
+    { key: "D6", label: "Punta", short: "PU", x: 50, y: 70, pos: "Central" },
     { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
   "3-3": [
