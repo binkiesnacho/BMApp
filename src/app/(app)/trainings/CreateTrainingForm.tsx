@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTrainingAction, updateTrainingAction } from "./actions";
 import CourtDrawer from "@/components/court/CourtDrawer";
@@ -49,7 +49,8 @@ const emptyProgression = (): EditProgression => ({ description: "", boards: [] }
 /** Valores iniciales del formulario cuando se edita un entrenamiento existente. */
 export type TrainingInitial = {
   teamId: string;
-  dateIso: string;
+  /** Ya en formato datetime-local ("YYYY-MM-DDTHH:mm"), calculado en el servidor. */
+  date: string;
   title: string;
   description: string;
   phases: TrainingPhase[];
@@ -146,7 +147,7 @@ export default function CreateTrainingForm({
   const initialTeamId = initial?.teamId ?? (teams.length === 1 ? teams[0].id : "");
   const [open, setOpen] = useState(defaultOpen);
   const [teamId, setTeamId] = useState(initialTeamId);
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(initial?.date ?? "");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [phases, setPhases] = useState<EditPhase[]>(
@@ -154,14 +155,6 @@ export default function CreateTrainingForm({
   );
   const [objectives, setObjectives] = useState<string[]>(initial?.objectives ?? []);
 
-  // La fecha se convierte a hora local en cliente (el servidor puede estar en
-  // otra zona), por eso se rellena tras montar en vez de en el render inicial.
-  useEffect(() => {
-    if (!initial?.dateIso) return;
-    const d = new Date(initial.dateIso);
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-    setDate(local.toISOString().slice(0, 16));
-  }, [initial?.dateIso]);
   // La categoría (para las etiquetas) se deduce del equipo; el usuario la puede
   // cambiar. Al cambiar de equipo se vuelve a inferir.
   const [cat, setCat] = useState<string | null>(() =>

@@ -1,26 +1,29 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { addPlayerAction, type PlayerFormState } from "./actions";
 import PositionChips from "./PositionChips";
 
 const initialState: PlayerFormState = {};
 
 export default function AddPlayerForm({ teamId }: { teamId: string }) {
-  const [state, formAction, pending] = useActionState(
-    addPlayerAction,
-    initialState
-  );
   const formRef = useRef<HTMLFormElement>(null);
   // Al añadir con éxito, remonta los chips para limpiar la selección.
   const [resetKey, setResetKey] = useState(0);
 
-  useEffect(() => {
-    if (!pending && !state.error) {
-      formRef.current?.reset();
-      setResetKey((k) => k + 1);
-    }
-  }, [pending, state]);
+  // El reset se hace tras resolverse la acción (no en un efecto): así se limpian
+  // los campos y los chips solo cuando el alta ha ido bien.
+  const [state, formAction, pending] = useActionState(
+    async (prev: PlayerFormState, fd: FormData) => {
+      const res = await addPlayerAction(prev, fd);
+      if (!res.error) {
+        formRef.current?.reset();
+        setResetKey((k) => k + 1);
+      }
+      return res;
+    },
+    initialState
+  );
 
   return (
     <form

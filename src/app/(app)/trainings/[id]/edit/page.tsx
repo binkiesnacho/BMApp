@@ -7,6 +7,22 @@ import type { Team, Training } from "@/lib/types/database";
 
 export const metadata = { title: "Editar entrenamiento" };
 
+/** ISO → valor de <input type="datetime-local"> en hora de España (el club juega
+ *  en esa zona), para que la fecha salga correcta sin depender del TZ del server. */
+function toLocalInput(iso: string): string {
+  const p = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Madrid",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const get = (t: string) => p.find((x) => x.type === t)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
 export default async function EditTrainingPage({
   params,
 }: {
@@ -42,7 +58,7 @@ export default async function EditTrainingPage({
         defaultOpen
         initial={{
           teamId: training.team_id,
-          dateIso: training.date,
+          date: toLocalInput(training.date),
           title: training.title ?? "",
           description: training.description ?? "",
           phases: training.phases,
