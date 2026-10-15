@@ -6,10 +6,11 @@ import CourtLines from "@/components/court/CourtLines";
 import { DEFENSE_SYSTEMS } from "@/lib/types/database";
 import type { DefenseSystem, Player, TeamLineup } from "@/lib/types/database";
 
-/** Un hueco de la pista: posición en % (x,y) sobre la pista horizontal y la
+/** Un hueco de la pista: posición en % (x,y) sobre la pista VERTICAL y la
  *  posición sugerida para ordenar los jugadores del desplegable.
- *  Pista como en la pizarra: 40×20 m horizontal, portería izq = ataque,
- *  portería der = defensa. x menor = más a la izquierda. */
+ *  Pista como en la pizarra pero en vertical: portería de arriba = ataque,
+ *  portería de abajo = defensa. x = ancho (0 izq … 100 der), y = largo
+ *  (0 arriba … 100 abajo). */
 type Slot = {
   key: string;
   label: string;
@@ -19,54 +20,57 @@ type Slot = {
   pos: string | null;
 };
 
-// Ataque: atacamos la portería izquierda. x menor = más cerca de la portería.
+// Ataque: atacamos la portería de arriba. Extremos en los corners (pegados a la
+// banda y cerca de la línea de gol); laterales abiertos a la banda; central y
+// pivote por el centro.
 const ATTACK: Slot[] = [
-  { key: "PT", label: "Portero", short: "PT", x: 4, y: 50, pos: "Portero" },
-  { key: "EI", label: "Extremo izq.", short: "EI", x: 15, y: 16, pos: "Extremo izquierdo" },
-  { key: "ED", label: "Extremo der.", short: "ED", x: 15, y: 84, pos: "Extremo derecho" },
-  { key: "PV", label: "Pivote", short: "PV", x: 19, y: 50, pos: "Pivote" },
-  { key: "LI", label: "Lateral izq.", short: "LI", x: 32, y: 31, pos: "Lateral izquierdo" },
-  { key: "LD", label: "Lateral der.", short: "LD", x: 32, y: 69, pos: "Lateral derecho" },
-  { key: "CE", label: "Central", short: "CE", x: 41, y: 50, pos: "Central" },
+  { key: "PT", label: "Portero", short: "PT", x: 50, y: 5, pos: "Portero" },
+  { key: "EI", label: "Extremo izq.", short: "EI", x: 7, y: 15, pos: "Extremo izquierdo" },
+  { key: "ED", label: "Extremo der.", short: "ED", x: 93, y: 15, pos: "Extremo derecho" },
+  { key: "PV", label: "Pivote", short: "PV", x: 50, y: 21, pos: "Pivote" },
+  { key: "LI", label: "Lateral izq.", short: "LI", x: 15, y: 39, pos: "Lateral izquierdo" },
+  { key: "LD", label: "Lateral der.", short: "LD", x: 85, y: 39, pos: "Lateral derecho" },
+  { key: "CE", label: "Central", short: "CE", x: 50, y: 45, pos: "Central" },
 ];
 
-// Defensa: defendemos la portería derecha. x mayor = más cerca de la portería.
+// Defensa: defendemos la portería de abajo. Las líneas se despliegan a lo ancho;
+// los exteriores van pegados a la banda (defienden a los extremos).
 const DEFENSE: Record<DefenseSystem, Slot[]> = {
   "6-0": [
-    { key: "D1", label: "Exterior izq.", short: "EI", x: 74, y: 12, pos: "Extremo izquierdo" },
-    { key: "D2", label: "Lateral izq.", short: "LI", x: 74, y: 29, pos: "Lateral izquierdo" },
-    { key: "D3", label: "Central izq.", short: "CI", x: 74, y: 44, pos: "Central" },
-    { key: "D4", label: "Central der.", short: "CD", x: 74, y: 56, pos: "Central" },
-    { key: "D5", label: "Lateral der.", short: "LD", x: 74, y: 71, pos: "Lateral derecho" },
-    { key: "D6", label: "Exterior der.", short: "ED", x: 74, y: 88, pos: "Extremo derecho" },
-    { key: "PT", label: "Portero", short: "PT", x: 96, y: 50, pos: "Portero" },
+    { key: "D1", label: "Exterior izq.", short: "EI", x: 9, y: 78, pos: "Extremo izquierdo" },
+    { key: "D2", label: "Lateral izq.", short: "LI", x: 29, y: 78, pos: "Lateral izquierdo" },
+    { key: "D3", label: "Central izq.", short: "CI", x: 43, y: 78, pos: "Central" },
+    { key: "D4", label: "Central der.", short: "CD", x: 57, y: 78, pos: "Central" },
+    { key: "D5", label: "Lateral der.", short: "LD", x: 71, y: 78, pos: "Lateral derecho" },
+    { key: "D6", label: "Exterior der.", short: "ED", x: 91, y: 78, pos: "Extremo derecho" },
+    { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
   "5-1": [
-    { key: "D1", label: "Exterior izq.", short: "EI", x: 77, y: 14, pos: "Extremo izquierdo" },
-    { key: "D2", label: "Lateral izq.", short: "LI", x: 77, y: 33, pos: "Lateral izquierdo" },
-    { key: "D3", label: "Central", short: "CE", x: 77, y: 50, pos: "Central" },
-    { key: "D4", label: "Lateral der.", short: "LD", x: 77, y: 67, pos: "Lateral derecho" },
-    { key: "D5", label: "Exterior der.", short: "ED", x: 77, y: 86, pos: "Extremo derecho" },
-    { key: "AV", label: "Avanzado", short: "AV", x: 62, y: 50, pos: "Central" },
-    { key: "PT", label: "Portero", short: "PT", x: 96, y: 50, pos: "Portero" },
+    { key: "D1", label: "Exterior izq.", short: "EI", x: 12, y: 80, pos: "Extremo izquierdo" },
+    { key: "D2", label: "Lateral izq.", short: "LI", x: 32, y: 80, pos: "Lateral izquierdo" },
+    { key: "D3", label: "Central", short: "CE", x: 50, y: 80, pos: "Central" },
+    { key: "D4", label: "Lateral der.", short: "LD", x: 68, y: 80, pos: "Lateral derecho" },
+    { key: "D5", label: "Exterior der.", short: "ED", x: 88, y: 80, pos: "Extremo derecho" },
+    { key: "AV", label: "Avanzado", short: "AV", x: 50, y: 63, pos: "Central" },
+    { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
   "3-2-1": [
-    { key: "D1", label: "Lateral izq.", short: "LI", x: 80, y: 22, pos: "Lateral izquierdo" },
-    { key: "D2", label: "Central", short: "CE", x: 80, y: 50, pos: "Central" },
-    { key: "D3", label: "Lateral der.", short: "LD", x: 80, y: 78, pos: "Lateral derecho" },
-    { key: "D4", label: "Avanzado izq.", short: "AI", x: 67, y: 35, pos: "Lateral izquierdo" },
-    { key: "D5", label: "Avanzado der.", short: "AD", x: 67, y: 65, pos: "Lateral derecho" },
-    { key: "D6", label: "Punta", short: "PU", x: 57, y: 50, pos: "Central" },
-    { key: "PT", label: "Portero", short: "PT", x: 96, y: 50, pos: "Portero" },
+    { key: "D1", label: "Lateral izq.", short: "LI", x: 22, y: 82, pos: "Lateral izquierdo" },
+    { key: "D2", label: "Central", short: "CE", x: 50, y: 82, pos: "Central" },
+    { key: "D3", label: "Lateral der.", short: "LD", x: 78, y: 82, pos: "Lateral derecho" },
+    { key: "D4", label: "Avanzado izq.", short: "AI", x: 36, y: 68, pos: "Lateral izquierdo" },
+    { key: "D5", label: "Avanzado der.", short: "AD", x: 64, y: 68, pos: "Lateral derecho" },
+    { key: "D6", label: "Punta", short: "PU", x: 50, y: 58, pos: "Central" },
+    { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
   "3-3": [
-    { key: "D1", label: "Central izq.", short: "CI", x: 80, y: 22, pos: "Central" },
-    { key: "D2", label: "Central", short: "CE", x: 80, y: 50, pos: "Central" },
-    { key: "D3", label: "Central der.", short: "CD", x: 80, y: 78, pos: "Central" },
-    { key: "D4", label: "Avanzado izq.", short: "AI", x: 64, y: 22, pos: "Lateral izquierdo" },
-    { key: "D5", label: "Avanzado centro", short: "AC", x: 64, y: 50, pos: "Central" },
-    { key: "D6", label: "Avanzado der.", short: "AD", x: 64, y: 78, pos: "Lateral derecho" },
-    { key: "PT", label: "Portero", short: "PT", x: 96, y: 50, pos: "Portero" },
+    { key: "D1", label: "Central izq.", short: "CI", x: 25, y: 82, pos: "Central" },
+    { key: "D2", label: "Central", short: "CE", x: 50, y: 82, pos: "Central" },
+    { key: "D3", label: "Central der.", short: "CD", x: 75, y: 82, pos: "Central" },
+    { key: "D4", label: "Avanzado izq.", short: "AI", x: 25, y: 66, pos: "Lateral izquierdo" },
+    { key: "D5", label: "Avanzado centro", short: "AC", x: 50, y: 66, pos: "Central" },
+    { key: "D6", label: "Avanzado der.", short: "AD", x: 75, y: 66, pos: "Lateral derecho" },
+    { key: "PT", label: "Portero", short: "PT", x: 50, y: 94, pos: "Portero" },
   ],
 };
 
@@ -184,7 +188,7 @@ export default function LineupEditor({
         aria-label={`${slot.label}${p ? `: ${p.name}` : ""}`}
       >
         <span
-          className={`flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold shadow transition ${
+          className={`flex h-8 w-8 items-center justify-center rounded-full border text-[11px] font-bold shadow transition ${
             isActive
               ? "border-white bg-white text-canvas"
               : p
@@ -197,7 +201,7 @@ export default function LineupEditor({
         {/* Bajo el círculo solo el nombre del asignado: el código ya identifica
             el hueco y así las etiquetas no se solapan entre huecos próximos. */}
         {name && (
-          <span className="mx-auto mt-0.5 block max-w-[58px] truncate rounded bg-black/65 px-1 text-center text-[9px] leading-tight text-white">
+          <span className="mx-auto mt-0.5 block max-w-[64px] truncate rounded bg-black/65 px-1 text-center text-[10px] leading-tight text-white">
             {name}
           </span>
         )}
@@ -238,22 +242,24 @@ export default function LineupEditor({
 
       {/* Cabecera de bloques (fuera de la pista para no tapar a los extremos) */}
       <div className="mb-1 flex items-center justify-between px-1 text-[11px] font-semibold uppercase tracking-wide text-label-2">
-        <span>◀ Ataque</span>
-        <span>Defensa · {system} ▶</span>
+        <span>▲ Ataque</span>
+        <span>Defensa · {system} ▼</span>
       </div>
 
-      {/* Pista completa (misma que la pizarra): ataque a la izquierda, defensa a
-          la derecha. La pista 40×20 m llena el contenedor sin deformarse. */}
+      {/* Pista completa (misma que la pizarra) pero en VERTICAL: la pista 40×20 m
+          se dibuja rotada 90° (portería arriba = ataque, abajo = defensa). */}
       <div
         className="relative mx-auto w-full overflow-hidden rounded-2xl border border-separator/50"
-        style={{ aspectRatio: "2 / 1" }}
+        style={{ aspectRatio: "1 / 2" }}
       >
         <svg
-          viewBox="0 0 400 200"
+          viewBox="0 0 200 400"
           preserveAspectRatio="none"
           className="absolute inset-0 h-full w-full"
         >
-          <CourtLines />
+          <g transform="translate(200,0) rotate(90)">
+            <CourtLines />
+          </g>
         </svg>
 
         {ATTACK.map((s) => slotMarker("attack", s))}
