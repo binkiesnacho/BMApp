@@ -49,6 +49,12 @@ export default async function TeamHubPage({
           icon="👥"
         />
         <Tile
+          href={`/teams/${team.id}/lineup`}
+          title="Alineación"
+          subtitle="Ataque y defensa"
+          icon="📋"
+        />
+        <Tile
           href={`/stats?team=${team.id}`}
           title="Estadísticas"
           subtitle="Por jugador"

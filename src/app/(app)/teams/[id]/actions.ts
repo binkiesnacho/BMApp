@@ -3,12 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
+import { DEFENSE_SYSTEMS, PLAYER_POSITIONS } from "@/lib/types/database";
+import type { DefenseSystem } from "@/lib/types/database";
+
 export type PlayerFormState = { error?: string };
 
-/** Refresca tanto la vista de plantilla como la pantalla de edición. */
+/** Refresca la plantilla, su edición y la alineación (depende de las posiciones). */
 function revalidateRoster(teamId: string) {
   revalidatePath(`/teams/${teamId}`);
   revalidatePath(`/teams/${teamId}/edit`);
+  revalidatePath(`/teams/${teamId}/lineup`);
+}
+
+/** Lee las posiciones marcadas del formulario, validadas y sin duplicados. */
+function readPositions(formData: FormData): string[] {
+  const picked = formData.getAll("positions").map((v) => String(v));
+  const valid = (PLAYER_POSITIONS as readonly string[]).filter((p) =>
+    picked.includes(p)
+  );
+  return [...new Set(valid)];
 }
 
 /**
@@ -22,7 +35,7 @@ export async function addPlayerAction(
   const teamId = String(formData.get("teamId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const numberRaw = String(formData.get("number") ?? "").trim();
-  const position = String(formData.get("position") ?? "").trim() || null;
+  const positions = readPositions(formData);
 
   if (!teamId) return { error: "Equipo no válido." };
   if (!name) return { error: "Escribe el nombre del jugador." };
@@ -37,7 +50,8 @@ export async function addPlayerAction(
     team_id: teamId,
     name,
     number,
-    position,
+    positions,
+    position: positions[0] ?? null,
   });
 
   if (error) return { error: error.message };
@@ -55,7 +69,7 @@ export async function editPlayerAction(
   const teamId = String(formData.get("teamId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const numberRaw = String(formData.get("number") ?? "").trim();
-  const position = String(formData.get("position") ?? "").trim() || null;
+  const positions = readPositions(formData);
 
   if (!playerId) return { error: "Jugador no válido." };
   if (!name) return { error: "Escribe el nombre del jugador." };
@@ -68,7 +82,7 @@ export async function editPlayerAction(
   const supabase = await createClient();
   const { error } = await supabase
     .from("players")
-    .update({ name, number, position })
+    .update({ name, number, positions, position: positions[0] ?? null })
     .eq("id", playerId);
 
   if (error) return { error: error.message };
@@ -110,6 +124,54 @@ export async function linkPlayerAccountAction(
   }
 
   revalidateRoster(teamId);
+}
+
+/**
+ * Guarda la alineación de un equipo (ataque + sistema defensivo + defensa).
+ * Se llama automáticamente en cada cambio; la RLS (can_capture_team) decide
+ * quién puede escribir. Solo se conservan ids de jugadores del propio equipo.
+ */
+export async function saveLineupAction(input: {
+  teamId: string;
+  defenseSystem: string;
+  attack: Record<string, string>;
+  defense: Record<string, string>;
+}): Promise<{ error?: string }> {
+  const { teamId } = input;
+  if (!teamId) return { error: "Equipo no válido." };
+
+  const defenseSystem: DefenseSystem = (
+    DEFENSE_SYSTEMS as readonly string[]
+  ).includes(input.defenseSystem)
+    ? (input.defenseSystem as DefenseSystem)
+    : "6-0";
+
+  const supabase = await createClient();
+
+  // Solo se guardan huecos ocupados por jugadores que existen en el equipo.
+  const { data: roster } = await supabase
+    .from("players")
+    .select("id")
+    .eq("team_id", teamId)
+    .returns<{ id: string }[]>();
+  const valid = new Set((roster ?? []).map((r) => r.id));
+  const clean = (m: Record<string, string>) =>
+    Object.fromEntries(
+      Object.entries(m ?? {}).filter(([, pid]) => valid.has(pid))
+    );
+
+  const { error } = await supabase.from("team_lineups").upsert(
+    {
+      team_id: teamId,
+      defense_system: defenseSystem,
+      attack: clean(input.attack),
+      defense: clean(input.defense),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "team_id" }
+  );
+  if (error) return { error: error.message };
+  return {};
 }
 
 /** Elimina un jugador (RLS: solo quien gestiona el equipo). */

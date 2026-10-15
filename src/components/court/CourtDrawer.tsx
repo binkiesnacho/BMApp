@@ -23,7 +23,7 @@ import type {
 } from "@/lib/types/database";
 
 const STROKE = "#ffffff";
-const WIDTH = 2.6;
+const WIDTH = 2.1;
 /** Radio (en unidades de pista) para tocar una ficha o borrar un trazo. */
 const HIT_TOKEN = 14;
 const HIT_STROKE = 8;

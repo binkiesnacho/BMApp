@@ -82,10 +82,39 @@ export interface Player {
   team_id: string;
   name: string;
   number: number | null;
+  /** Posición principal (= positions[0]); se mantiene por compatibilidad. */
   position: string | null;
+  /** Todas las posiciones que puede ocupar el jugador. */
+  positions: string[];
   /** Cuenta (profiles) vinculada a esta ficha del roster. */
   profile_id: string | null;
   created_at: string;
+}
+
+/** Posiciones de balonmano (se asignan en la plantilla; un jugador puede varias). */
+export const PLAYER_POSITIONS = [
+  "Portero",
+  "Extremo izquierdo",
+  "Lateral izquierdo",
+  "Central",
+  "Lateral derecho",
+  "Extremo derecho",
+  "Pivote",
+] as const;
+export type PlayerPosition = (typeof PLAYER_POSITIONS)[number];
+
+/** Sistemas defensivos disponibles en la alineación. */
+export const DEFENSE_SYSTEMS = ["6-0", "5-1", "3-2-1", "3-3"] as const;
+export type DefenseSystem = (typeof DEFENSE_SYSTEMS)[number];
+
+/** Alineación de un equipo: ataque fijo + sistema defensivo + defensa.
+ *  `attack`/`defense` mapean la clave de cada hueco al id del jugador. */
+export interface TeamLineup {
+  team_id: string;
+  defense_system: DefenseSystem;
+  attack: Record<string, string>;
+  defense: Record<string, string>;
+  updated_at: string;
 }
 
 export interface Match {

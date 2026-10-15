@@ -1,17 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { addPlayerAction, type PlayerFormState } from "./actions";
-
-const POSITIONS = [
-  "Portero",
-  "Extremo izquierdo",
-  "Lateral izquierdo",
-  "Central",
-  "Lateral derecho",
-  "Extremo derecho",
-  "Pivote",
-];
+import PositionChips from "./PositionChips";
 
 const initialState: PlayerFormState = {};
 
@@ -21,9 +12,14 @@ export default function AddPlayerForm({ teamId }: { teamId: string }) {
     initialState
   );
   const formRef = useRef<HTMLFormElement>(null);
+  // Al añadir con éxito, remonta los chips para limpiar la selección.
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
-    if (!pending && !state.error) formRef.current?.reset();
+    if (!pending && !state.error) {
+      formRef.current?.reset();
+      setResetKey((k) => k + 1);
+    }
   }, [pending, state]);
 
   return (
@@ -50,18 +46,10 @@ export default function AddPlayerForm({ teamId }: { teamId: string }) {
           className="flex-1 rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
         />
       </div>
-      <select
-        name="position"
-        defaultValue=""
-        className="w-full rounded-xl border border-separator bg-canvas px-3 py-2.5 text-sm text-label outline-none focus:border-brand"
-      >
-        <option value="">Posición (opcional)</option>
-        {POSITIONS.map((p) => (
-          <option key={p} value={p}>
-            {p}
-          </option>
-        ))}
-      </select>
+      <div>
+        <p className="mb-1.5 text-[12px] text-label-3">Posiciones (opcional)</p>
+        <PositionChips key={resetKey} />
+      </div>
       {state.error && <p className="text-sm text-red-400">{state.error}</p>}
       <button
         type="submit"

@@ -7,17 +7,8 @@ import {
   deletePlayerAction,
   type PlayerFormState,
 } from "./actions";
+import PositionChips from "./PositionChips";
 import type { Player } from "@/lib/types/database";
-
-const POSITIONS = [
-  "Portero",
-  "Extremo izquierdo",
-  "Lateral izquierdo",
-  "Central",
-  "Lateral derecho",
-  "Extremo derecho",
-  "Pivote",
-];
 
 export default function PlayerRow({
   player,
@@ -60,18 +51,10 @@ export default function PlayerRow({
               className="flex-1 rounded-xl border border-separator bg-canvas px-3 py-2 text-sm text-label outline-none focus:border-brand"
             />
           </div>
-          <select
-            name="position"
-            defaultValue={player.position ?? ""}
-            className="w-full rounded-xl border border-separator bg-canvas px-3 py-2 text-sm text-label outline-none focus:border-brand"
-          >
-            <option value="">Posición (opcional)</option>
-            {POSITIONS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+          <div>
+            <p className="mb-1.5 text-[12px] text-label-3">Posiciones</p>
+            <PositionChips initial={player.positions ?? []} />
+          </div>
           {state.error && <p className="text-sm text-red-400">{state.error}</p>}
           <div className="flex gap-2">
             <button
@@ -106,8 +89,10 @@ export default function PlayerRow({
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium text-label">{player.name}</p>
-            {player.position && (
-              <p className="truncate text-xs text-label-2">{player.position}</p>
+            {player.positions?.length > 0 && (
+              <p className="truncate text-xs text-label-2">
+                {player.positions.join(" · ")}
+              </p>
             )}
             {player.profile_id && (
               <p className="truncate text-xs text-emerald-400">🔗 con cuenta</p>

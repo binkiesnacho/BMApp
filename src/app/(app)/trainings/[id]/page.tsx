@@ -118,7 +118,7 @@ export default async function TrainingDetailPage({
     <Screen
       title={training.title || "Entrenamiento"}
       subtitle={fmtDate(training.date)}
-      back="/trainings"
+      back={`/trainings?team=${training.team_id}`}
       trailing={
         staff ? (
           <Link
