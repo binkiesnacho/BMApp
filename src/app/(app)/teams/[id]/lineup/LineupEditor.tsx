@@ -215,17 +215,35 @@ export default function LineupEditor({
     );
   };
 
-  // Jugadores ordenados para el desplegable: primero los que tienen esa posición.
+  // Jugadores elegibles para el hueco activo: solo quienes juegan esa posición
+  // (en ataque) o no tienen posición asignada, y que no estén YA alineados en el
+  // mismo bloque (ataque y defensa son independientes). El ocupante del propio
+  // hueco sí aparece, para poder confirmarlo o cambiarlo.
   const pickerPlayers = useMemo(() => {
     if (!active) return [];
     const want = active.slot.pos;
-    return [...players].sort((a, b) => {
-      const am = want && a.positions?.includes(want) ? 0 : 1;
-      const bm = want && b.positions?.includes(want) ? 0 : 1;
-      if (am !== bm) return am - bm;
-      return (a.number ?? 999) - (b.number ?? 999);
-    });
-  }, [active, players]);
+
+    const used = new Set<string>();
+    if (active.phase === "attack") {
+      for (const [k, pid] of Object.entries(attack)) {
+        if (k !== active.slot.key) used.add(pid);
+      }
+    } else {
+      const prefix = `${system}:`;
+      const self = `${system}:${active.slot.key}`;
+      for (const [k, pid] of Object.entries(defense)) {
+        if (k.startsWith(prefix) && k !== self) used.add(pid);
+      }
+    }
+
+    return players
+      .filter((p) => {
+        if (used.has(p.id)) return false;
+        const noPos = !p.positions || p.positions.length === 0;
+        return noPos || (want != null && p.positions.includes(want));
+      })
+      .sort((a, b) => (a.number ?? 999) - (b.number ?? 999));
+  }, [active, players, attack, defense, system]);
 
   return (
     <div>
@@ -316,7 +334,7 @@ export default function LineupEditor({
           </div>
           <div className="grid grid-cols-2 gap-2">
             {pickerPlayers.map((p) => {
-              const match = active.slot.pos && p.positions?.includes(active.slot.pos);
+              const noPos = !p.positions || p.positions.length === 0;
               return (
                 <button
                   key={p.id}
@@ -329,18 +347,21 @@ export default function LineupEditor({
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate">{p.name}</span>
-                    {match && (
-                      <span className="block truncate text-[10px] text-emerald-400">
-                        {active.slot.pos}
-                      </span>
-                    )}
+                    <span
+                      className={`block truncate text-[10px] ${
+                        noPos ? "text-label-3" : "text-emerald-400"
+                      }`}
+                    >
+                      {noPos ? "Sin posición" : p.positions.join(" · ")}
+                    </span>
                   </span>
                 </button>
               );
             })}
-            {players.length === 0 && (
+            {pickerPlayers.length === 0 && (
               <p className="col-span-2 text-[13px] text-label-3">
-                No hay jugadores en la plantilla.
+                Nadie de la plantilla juega esta posición (ni está libre) y sin
+                alinear.
               </p>
             )}
           </div>
